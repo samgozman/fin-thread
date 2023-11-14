@@ -1,0 +1,25 @@
+name: Unit tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  unit_test_go:
+    name: Go unit tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 1.21
+
+    - name: Run journalist unit tests
+      working-directory: ./journalist
+      run: go test -v ./...
+
+    - name: Run main unit tests
+      run: go test -v ./...
