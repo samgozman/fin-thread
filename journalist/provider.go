@@ -36,7 +36,7 @@ func NewNews(title, description, link, date string) (*News, error) {
 
 // NewsProvider is the interface for the data fetcher (via RSS, API, etc.)
 type NewsProvider interface {
-	Fetch(ctx context.Context) ([]News, error)
+	Fetch(ctx context.Context) ([]*News, error)
 }
 
 // RssProvider is the RSS provider implementation
