@@ -30,7 +30,17 @@ func (j *Journalist) GetLatestNews(ctx context.Context) ([]*News, error) {
 
 	for i := 0; i < len(j.providers); i++ {
 		wg.Add(1)
-		go fetchWorker(&ctx, &wg, &resultCh, &errorCh, &j.providers[i])
+		go func(id int) {
+			defer wg.Done()
+
+			result, err := j.providers[id].Fetch(ctx)
+			if err != nil {
+				errorCh <- err
+				return
+			}
+
+			resultCh <- result
+		}(i)
 	}
 
 	wg.Wait()
@@ -56,18 +66,4 @@ func (j *Journalist) GetLatestNews(ctx context.Context) ([]*News, error) {
 
 	// TODO: Return real results
 	return nil, nil
-}
-
-func fetchWorker(ctx *context.Context, wg *sync.WaitGroup, resCh *chan []*News, errCh *chan error, p *NewsProvider) {
-	defer wg.Done()
-
-	result, err := (*p).Fetch(*ctx)
-	if err != nil {
-		*errCh <- err
-		return
-	}
-
-	// TODO: Return a structure with source name and result
-	*resCh <- result
-	return
 }
