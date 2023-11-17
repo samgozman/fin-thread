@@ -11,14 +11,15 @@ import (
 )
 
 type News struct {
-	ID          string    // ID is the md5 hash of link + date
-	Title       string    // Title is the title of the news
-	Description string    // Description is the description of the news
-	Link        string    // Link is the link to the news
-	Date        time.Time // Date is the date of the news
+	ID           string    // ID is the md5 hash of link + date
+	Title        string    // Title is the title of the news
+	Description  string    // Description is the description of the news
+	Link         string    // Link is the link to the news
+	Date         time.Time // Date is the date of the news
+	ProviderName string    // ProviderName is the name of the provider that fetched the news
 }
 
-func NewNews(title, description, link, date string) (*News, error) {
+func NewNews(title, description, link, date, provider string) (*News, error) {
 	dateTime, err := parseDate(date)
 	if err != nil {
 		return nil, err
@@ -27,11 +28,12 @@ func NewNews(title, description, link, date string) (*News, error) {
 	hash := md5.Sum([]byte(link + dateTime.String()))
 
 	return &News{
-		ID:          hex.EncodeToString(hash[:]),
-		Title:       title,
-		Description: description,
-		Link:        link,
-		Date:        dateTime,
+		ID:           hex.EncodeToString(hash[:]),
+		Title:        title,
+		Description:  description,
+		Link:         link,
+		Date:         dateTime,
+		ProviderName: provider,
 	}, nil
 }
 
@@ -64,7 +66,7 @@ func (r *RssProvider) Fetch(ctx context.Context) ([]*News, error) {
 
 	var news []*News
 	for _, item := range feed.Items {
-		newsItem, err := NewNews(item.Title, item.Description, item.Link, item.Published)
+		newsItem, err := NewNews(item.Title, item.Description, item.Link, item.Published, r.Name)
 		if err != nil {
 			return nil, NewProviderErr(r.Name, err.Error())
 		}
