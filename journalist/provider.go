@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"time"
 
 	"github.com/mmcdole/gofeed"
@@ -58,17 +59,34 @@ func (r *RssProvider) Fetch(ctx context.Context) ([]*News, error) {
 	fp := gofeed.NewParser()
 	feed, err := fp.ParseURLWithContext(r.Url, ctx)
 	if err != nil {
-		return nil, err
+		return nil, NewProviderErr(r.Name, err.Error())
 	}
 
 	var news []*News
 	for _, item := range feed.Items {
 		newsItem, err := NewNews(item.Title, item.Description, item.Link, item.Published)
 		if err != nil {
-			return nil, err
+			return nil, NewProviderErr(r.Name, err.Error())
 		}
 		news = append(news, newsItem)
 	}
 
 	return news, nil
+}
+
+// ProviderErr is the error type for the NewsProvider
+type ProviderErr struct {
+	Err          string
+	ProviderName string
+}
+
+func (e *ProviderErr) Error() string {
+	return fmt.Sprintf("Provider %s error: %s", e.ProviderName, e.Err)
+}
+
+func NewProviderErr(providerName, err string) *ProviderErr {
+	return &ProviderErr{
+		Err:          err,
+		ProviderName: providerName,
+	}
 }
