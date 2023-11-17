@@ -2,7 +2,6 @@ package journalist
 
 import (
 	"context"
-	"fmt"
 	"sync"
 )
 
@@ -18,10 +17,10 @@ func NewJournalist(providers []NewsProvider) *Journalist {
 	}
 }
 
-// GetLatestNews fetches the latest news from all providers and merges them into unified list
-func (j *Journalist) GetLatestNews(ctx context.Context) ([]*News, error) {
+// GetLatestNews fetches the latest news from all providers and merges them into unified list.
+// Errors are collected and returned in array of ProviderErr
+func (j *Journalist) GetLatestNews(ctx context.Context) ([]*News, []error) {
 	// Create channels to collect results and errors
-	// TODO: Create a structure to collect results, like {source: "name", result: []*News}
 	resultCh := make(chan []*News, len(j.providers))
 	errorCh := make(chan error, len(j.providers))
 
@@ -59,11 +58,5 @@ func (j *Journalist) GetLatestNews(ctx context.Context) ([]*News, error) {
 		errors = append(errors, err)
 	}
 
-	// print results
-	for _, result := range results {
-		fmt.Println(result)
-	}
-
-	// TODO: Return real results
-	return nil, nil
+	return results, errors
 }
