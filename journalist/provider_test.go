@@ -137,6 +137,10 @@ func TestRssProvider_Fetch(t *testing.T) {
 					t.Error("RssProvider.Fetch() news.Date is empty")
 					return
 				}
+				if news.ProviderName != tt.fields.Name {
+					t.Errorf("RssProvider.Fetch() news.ProviderName = %v, want %v", news.ProviderName, tt.fields.Name)
+					return
+				}
 			}
 		})
 	}
