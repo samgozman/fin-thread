@@ -13,6 +13,7 @@ type News struct {
 	Link         string    // Link is the link to the news
 	Date         time.Time // Date is the date of the news
 	ProviderName string    // ProviderName is the name of the provider that fetched the news
+	// TODO: Add creator field if possible
 }
 
 func NewNews(title, description, link, date, provider string) (*News, error) {
