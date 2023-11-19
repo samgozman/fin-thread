@@ -26,7 +26,10 @@ func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) []*
 	return nil
 }
 
-func (c *Composer) findNewsMetaData(ctx context.Context, news []*journalist.News) []*NewsMeta {
+// findNewsMetaData finds tickers, markets and hashtags mentioned in the news.
+//
+// Returns map of NewsID -> NewsMeta
+func (c *Composer) findNewsMetaData(ctx context.Context, news []*journalist.News) map[string]*NewsMeta {
 	// TODO: implement (use OpenAiClient)
 	return nil
 }
