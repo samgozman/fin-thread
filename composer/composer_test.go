@@ -80,12 +80,12 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Should return original news and error if OpenAI returns fails",
+			name: "Should return original news (except overdue) and error if OpenAI returns fails",
 			args: args{
 				ctx:  context.Background(),
 				news: []*journalist.News{news[0], news[1], news[2]},
 			},
-			want:    []*journalist.News{news[0], news[1], news[2]},
+			want:    []*journalist.News{news[0], news[1]},
 			wantErr: true,
 		},
 	}
@@ -115,6 +115,10 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Composer.ChooseMostImportantNews() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+
+			if len(got) != len(tt.want) {
+				t.Errorf("Composer.ChooseMostImportantNews() wrong news len = %v, want %v", len(got), len(tt.want))
 			}
 
 			for i, n := range got {
