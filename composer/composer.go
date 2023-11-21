@@ -11,7 +11,7 @@ import (
 )
 
 type OpenAiClientInterface interface {
-	CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (*openai.ChatCompletionResponse, error)
+	CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (response openai.ChatCompletionResponse, error error)
 }
 
 type Composer struct {

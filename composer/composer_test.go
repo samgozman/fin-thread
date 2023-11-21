@@ -17,9 +17,9 @@ type MockOpenAiClient struct {
 	mock.Mock
 }
 
-func (m *MockOpenAiClient) CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (*openai.ChatCompletionResponse, error) {
+func (m *MockOpenAiClient) CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (response openai.ChatCompletionResponse, error error) {
 	args := m.Called(ctx, req)
-	return args.Get(0).(*openai.ChatCompletionResponse), args.Error(1)
+	return args.Get(0).(openai.ChatCompletionResponse), args.Error(1)
 }
 
 func TestComposer_ChooseMostImportantNews(t *testing.T) {
@@ -95,10 +95,10 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 		// Set expectations for the mock client
 		if tt.wantErr {
 			mockError := errors.New("some error")
-			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(&openai.ChatCompletionResponse{}, mockError)
+			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{}, mockError)
 		} else {
 			wantNewsJson, _ := json.Marshal(tt.want)
-			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(&openai.ChatCompletionResponse{
+			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{
 				Choices: []openai.ChatCompletionChoice{
 					{
 						Message: openai.ChatCompletionMessage{
