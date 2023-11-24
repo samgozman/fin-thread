@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/sashabaranov/go-openai"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/samgozman/go-fin-feed/journalist"
-	"github.com/sashabaranov/go-openai"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -125,6 +125,111 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 				if !reflect.DeepEqual(n, tt.want[i]) {
 					t.Errorf("Composer.ChooseMostImportantNews() = %v, want %v", n, tt.want[i])
 				}
+			}
+		})
+	}
+}
+
+func TestComposer_findNewsMetaData(t *testing.T) {
+	type args struct {
+		ctx  context.Context
+		news []*journalist.News
+	}
+	tests := []struct {
+		name    string
+		args    args
+		mockRes string
+		want    map[string]*NewsMeta
+		wantErr bool
+	}{
+		{
+			name: "Should pass and return correct meta data",
+			args: args{
+				ctx: context.Background(),
+				news: []*journalist.News{
+					{
+						ID:          "1234",
+						Title:       "Up 10% In The Last One Month, What's Next For Morgan Stanley Stock?",
+						Description: "Morgan Stanley&amp;rsquo;s stock&amp;nbsp;(NYSE: MS) has lost roughly 6% YTD, as compared to the 18% rise in the S&amp;amp;P500 over the same period. Further, the stock is currently trading at $80 per share, which is 11% below its fair value of $90 &amp;ndash; Trefis&amp;rsquo; estimate for&amp;nbsp;Mor",
+					},
+				},
+			},
+			mockRes: "[{\n  \"id\": \"1234\",\n  \"tickers\": [\"MS\"],\n  \"markets\": [\"SPY\"],\n  \"hashtags\": []\n}]",
+			want: map[string]*NewsMeta{
+				"1234": {
+					Tickers:  []string{"MS"},
+					Markets:  []string{"SPY"},
+					Hashtags: []string{},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Should pass and return empty meta data",
+			args: args{
+				ctx: context.Background(),
+				news: []*journalist.News{
+					{
+						ID:          "1",
+						Title:       "Blah blah blah",
+						Description: "Blah blah blah",
+					},
+				},
+			},
+			mockRes: "[{\n  \"id\": \"1\",\n  \"tickers\": [],\n  \"markets\": [],\n  \"hashtags\": []\n}]",
+			want: map[string]*NewsMeta{
+				"1": {
+					Tickers:  []string{},
+					Markets:  []string{},
+					Hashtags: []string{},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Should return error if OpenAI fails",
+			args: args{
+				ctx: context.Background(),
+				news: []*journalist.News{
+					{
+						ID:          "1",
+						Title:       "Blah blah blah",
+						Description: "Blah blah blah",
+					},
+				},
+			},
+			mockRes: "",
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		mockClient := new(MockOpenAiClient)
+
+		if tt.wantErr {
+			mockError := errors.New("some error")
+			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{}, mockError)
+		} else {
+			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{
+				Choices: []openai.ChatCompletionChoice{
+					{
+						Message: openai.ChatCompletionMessage{
+							Content: tt.mockRes,
+						},
+					},
+				},
+			}, nil)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			c := NewComposer(mockClient)
+			got, err := c.findNewsMetaData(tt.args.ctx, tt.args.news)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("findNewsMetaData() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("findNewsMetaData() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

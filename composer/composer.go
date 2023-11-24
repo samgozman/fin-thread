@@ -80,9 +80,61 @@ func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) []*
 // findNewsMetaData finds tickers, markets and hashtags mentioned in the news.
 //
 // Returns map of NewsID -> NewsMeta
-func (c *Composer) findNewsMetaData(ctx context.Context, news []*journalist.News) map[string]*NewsMeta {
-	// TODO: implement (use OpenAiClient)
-	return nil
+func (c *Composer) findNewsMetaData(ctx context.Context, news []*journalist.News) (map[string]*NewsMeta, error) {
+	jsonNews, err := json.Marshal(news)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.OpenAiClient.CreateChatCompletion(
+		ctx,
+		openai.ChatCompletionRequest{
+			Model: openai.GPT3Dot5Turbo1106,
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role: openai.ChatMessageRoleSystem,
+					Content: `You will be given a JSON array of financial news with ID. 
+					Your job is to find meta data in those messages and response with string JSON array of format:
+					[{id:"", tickers:[], markets:[], hashtags:[]}]
+					If news are mentioning some companies and stocks you need to find appropriate stocks 'tickers'. 
+					If news are about some market events you need to fill 'markets' with some index tickers (like SPY, QQQ, or RUT etc.) based on the context.
+					News context can be also related to some popular topics, we call it 'hashtags'.
+					You only need to choose appropriate hashtag (0-3) from this list: inflation, interestrates, crisis, unemployment, bankruptcy, dividends, IPO, debt, war, buybacks, fed.
+					It is OK if you don't find find some tickers, markets or hashtags. It's also possible that you will find none.`,
+				},
+				{
+					Role:    openai.ChatMessageRoleUser,
+					Content: string(jsonNews),
+				},
+			},
+			Temperature:      1,
+			MaxTokens:        2048,
+			TopP:             1,
+			FrequencyPenalty: 0,
+			PresencePenalty:  0,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var newsMeta []*newsMetaParsed
+	err = json.Unmarshal([]byte(resp.Choices[0].Message.Content), &newsMeta)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert newsMeta to map
+	newsMetaMap := make(map[string]*NewsMeta)
+	for _, meta := range newsMeta {
+		newsMetaMap[meta.ID] = &NewsMeta{
+			Tickers:  meta.Tickers,
+			Markets:  meta.Markets,
+			Hashtags: meta.Hashtags,
+		}
+	}
+
+	return newsMetaMap, nil
 }
 
 type NewsMeta struct {
@@ -95,4 +147,11 @@ type ComposedNews struct {
 	NewsID   string
 	Text     string
 	MetaData *NewsMeta
+}
+
+type newsMetaParsed struct {
+	ID       string   `json:"id"`
+	Tickers  []string `json:"tickers"`
+	Markets  []string `json:"markets"`
+	Hashtags []string `json:"hashtags"`
 }
