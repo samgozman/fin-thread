@@ -3,6 +3,9 @@ package composer
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/samber/lo"
@@ -71,10 +74,103 @@ func (c *Composer) ChooseMostImportantNews(ctx context.Context, news []*journali
 	return filteredNews, nil
 }
 
-func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) []*ComposedNews {
-	// TODO: implement (use OpenAiClient)
-	// Call findNewsMetaData
-	return nil
+func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]*ComposedNews, []error) {
+	composedCh := make(chan []*ComposedNews, 1)
+	metaCh := make(chan map[string]*NewsMeta, 1)
+	errorCh := make(chan error, 2)
+
+	var wg sync.WaitGroup
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+
+		meta, err := c.findNewsMetaData(ctx, news)
+		if err != nil {
+			errorCh <- errors.New(fmt.Sprintf("[ComposeNews] error in findNewsMetaData: %s", err))
+			return
+		}
+
+		metaCh <- meta
+	}()
+
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+
+		jsonNews, err := json.Marshal(news)
+		if err != nil {
+			errorCh <- errors.New(fmt.Sprintf("[ComposeNews] error in json.Marshal: %s", err))
+			return
+		}
+
+		resp, err := c.OpenAiClient.CreateChatCompletion(
+			ctx,
+			openai.ChatCompletionRequest{
+				Model: openai.GPT3Dot5Turbo1106,
+				Messages: []openai.ChatCompletionMessage{
+					{
+						Role: openai.ChatMessageRoleSystem,
+						Content: `You will be given a JSON array of financial news with ID. 
+						Your job is to work with news feeds from users (financial, investments, market topics).
+						Each news has a title and description. You need to combine the title and description
+						and rewrite it so it would be more straight to the point and look more original.
+						Response with string JSON array of format:
+						[{news_id:"", text:""}]`,
+					},
+					{
+						Role:    openai.ChatMessageRoleUser,
+						Content: string(jsonNews),
+					},
+				},
+				Temperature:      1,
+				MaxTokens:        2048,
+				TopP:             1,
+				FrequencyPenalty: 0,
+				PresencePenalty:  0,
+			},
+		)
+
+		if err != nil {
+			errorCh <- errors.New(fmt.Sprintf("[ComposeNews] error in OpenAiClient.CreateChatCompletion: %s", err))
+			return
+		}
+
+		var composedNews []*ComposedNews
+		err = json.Unmarshal([]byte(resp.Choices[0].Message.Content), &composedNews)
+		if err != nil {
+			errorCh <- errors.New(fmt.Sprintf("[ComposeNews] error in json.Unmarshal: %s", err))
+			return
+		}
+
+		composedCh <- composedNews
+	}()
+
+	wg.Wait()
+	close(composedCh)
+	close(metaCh)
+	close(errorCh)
+
+	var r []*ComposedNews
+	var e []error
+	var m map[string]*NewsMeta
+
+	for result := range composedCh {
+		r = append(r, result...)
+	}
+
+	for err := range errorCh {
+		e = append(e, err)
+	}
+
+	for meta := range metaCh {
+		m = meta
+	}
+
+	for _, n := range r {
+		n.MetaData = m[n.NewsID]
+	}
+
+	return r, e
 }
 
 // findNewsMetaData finds tickers, markets and hashtags mentioned in the news.
@@ -144,9 +240,9 @@ type NewsMeta struct {
 }
 
 type ComposedNews struct {
-	NewsID   string
-	Text     string
-	MetaData *NewsMeta
+	NewsID   string    `json:"news_id"`
+	Text     string    `json:"text"`
+	MetaData *NewsMeta `json:"meta_data"`
 }
 
 type newsMetaParsed struct {
