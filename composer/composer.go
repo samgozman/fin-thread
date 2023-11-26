@@ -19,10 +19,11 @@ type OpenAiClientInterface interface {
 
 type Composer struct {
 	OpenAiClient OpenAiClientInterface
+	Config       *Config
 }
 
 func NewComposer(openAiClient OpenAiClientInterface) *Composer {
-	return &Composer{OpenAiClient: openAiClient}
+	return &Composer{OpenAiClient: openAiClient, Config: DefaultConfig()}
 }
 
 func (c *Composer) ChooseMostImportantNews(ctx context.Context, news []*journalist.News) ([]*journalist.News, error) {
@@ -43,11 +44,8 @@ func (c *Composer) ChooseMostImportantNews(ctx context.Context, news []*journali
 			Model: openai.GPT3Dot5Turbo1106,
 			Messages: []openai.ChatCompletionMessage{
 				{
-					Role: openai.ChatMessageRoleSystem,
-					Content: "You will be given a JSON array of financial news. " +
-						"You need to remove from array blank, purposeless, clickbait, advertising or non-financial news. " +
-						"Most  important news right know is inflation, interest rates, war, elections, crisis, unemployment index etc. " +
-						"Return the response in the same JSON format. If none of the news are important, return empty array [].",
+					Role:    openai.ChatMessageRoleSystem,
+					Content: c.Config.ImportancePrompt,
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
@@ -109,13 +107,8 @@ func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]
 				Model: openai.GPT3Dot5Turbo1106,
 				Messages: []openai.ChatCompletionMessage{
 					{
-						Role: openai.ChatMessageRoleSystem,
-						Content: `You will be given a JSON array of financial news with ID. 
-						Your job is to work with news feeds from users (financial, investments, market topics).
-						Each news has a title and description. You need to combine the title and description
-						and rewrite it so it would be more straight to the point and look more original.
-						Response with string JSON array of format:
-						[{news_id:"", text:""}]`,
+						Role:    openai.ChatMessageRoleSystem,
+						Content: c.Config.ComposePrompt,
 					},
 					{
 						Role:    openai.ChatMessageRoleUser,
@@ -183,15 +176,8 @@ func (c *Composer) findNewsMetaData(ctx context.Context, jsonNews string) (map[s
 			Model: openai.GPT3Dot5Turbo1106,
 			Messages: []openai.ChatCompletionMessage{
 				{
-					Role: openai.ChatMessageRoleSystem,
-					Content: `You will be given a JSON array of financial news with ID. 
-					Your job is to find meta data in those messages and response with string JSON array of format:
-					[{id:"", tickers:[], markets:[], hashtags:[]}]
-					If news are mentioning some companies and stocks you need to find appropriate stocks 'tickers'. 
-					If news are about some market events you need to fill 'markets' with some index tickers (like SPY, QQQ, or RUT etc.) based on the context.
-					News context can be also related to some popular topics, we call it 'hashtags'.
-					You only need to choose appropriate hashtag (0-3) from this list: inflation, interestrates, crisis, unemployment, bankruptcy, dividends, IPO, debt, war, buybacks, fed.
-					It is OK if you don't find find some tickers, markets or hashtags. It's also possible that you will find none.`,
+					Role:    openai.ChatMessageRoleSystem,
+					Content: c.Config.MetaPrompt,
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
