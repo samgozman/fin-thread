@@ -80,8 +80,8 @@ func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]
 	errorCh := make(chan error, 2)
 
 	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 
 		meta, err := c.findNewsMetaData(ctx, news)
@@ -93,8 +93,8 @@ func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]
 		metaCh <- meta
 	}()
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 
 		jsonNews, err := json.Marshal(news)
