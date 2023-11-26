@@ -75,6 +75,12 @@ func (c *Composer) ChooseMostImportantNews(ctx context.Context, news []*journali
 }
 
 func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]*ComposedNews, []error) {
+	j, err := json.Marshal(news)
+	if err != nil {
+		return nil, []error{err}
+	}
+	jsonNews := string(j)
+
 	composedCh := make(chan []*ComposedNews, 1)
 	metaCh := make(chan map[string]*NewsMeta, 1)
 	errorCh := make(chan error, 2)
@@ -84,7 +90,7 @@ func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]
 	go func() {
 		defer wg.Done()
 
-		meta, err := c.findNewsMetaData(ctx, news)
+		meta, err := c.findNewsMetaData(ctx, jsonNews)
 		if err != nil {
 			errorCh <- errors.New(fmt.Sprintf("[ComposeNews] error in findNewsMetaData: %s", err))
 			return
@@ -96,12 +102,6 @@ func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-
-		jsonNews, err := json.Marshal(news)
-		if err != nil {
-			errorCh <- errors.New(fmt.Sprintf("[ComposeNews] error in json.Marshal: %s", err))
-			return
-		}
 
 		resp, err := c.OpenAiClient.CreateChatCompletion(
 			ctx,
@@ -119,7 +119,7 @@ func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]
 					},
 					{
 						Role:    openai.ChatMessageRoleUser,
-						Content: string(jsonNews),
+						Content: jsonNews,
 					},
 				},
 				Temperature:      1,
@@ -176,12 +176,7 @@ func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]
 // findNewsMetaData finds tickers, markets and hashtags mentioned in the news.
 //
 // Returns map of NewsID -> NewsMeta
-func (c *Composer) findNewsMetaData(ctx context.Context, news []*journalist.News) (map[string]*NewsMeta, error) {
-	jsonNews, err := json.Marshal(news)
-	if err != nil {
-		return nil, err
-	}
-
+func (c *Composer) findNewsMetaData(ctx context.Context, jsonNews string) (map[string]*NewsMeta, error) {
 	resp, err := c.OpenAiClient.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
@@ -200,7 +195,7 @@ func (c *Composer) findNewsMetaData(ctx context.Context, news []*journalist.News
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
-					Content: string(jsonNews),
+					Content: jsonNews,
 				},
 			},
 			Temperature:      1,

@@ -62,7 +62,7 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "Should pass and return 2 news",
+			name: "Should pass and return 2 jsonNews",
 			args: args{
 				ctx:  context.Background(),
 				news: []*journalist.News{news[0], news[1], news[2]},
@@ -71,7 +71,7 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Should pass and return 0 news",
+			name: "Should pass and return 0 jsonNews",
 			args: args{
 				ctx:  context.Background(),
 				news: []*journalist.News{news[2]},
@@ -80,7 +80,7 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Should return original news (except overdue) and error if OpenAI returns fails",
+			name: "Should return original jsonNews (except overdue) and error if OpenAI returns fails",
 			args: args{
 				ctx:  context.Background(),
 				news: []*journalist.News{news[0], news[1], news[2]},
@@ -118,7 +118,7 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 			}
 
 			if len(got) != len(tt.want) {
-				t.Errorf("Composer.ChooseMostImportantNews() wrong news len = %v, want %v", len(got), len(tt.want))
+				t.Errorf("Composer.ChooseMostImportantNews() wrong jsonNews len = %v, want %v", len(got), len(tt.want))
 			}
 
 			for i, n := range got {
@@ -131,9 +131,26 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 }
 
 func TestComposer_findNewsMetaData(t *testing.T) {
+	tt1 := []*journalist.News{
+		{
+			ID:          "1234",
+			Title:       "Up 10% In The Last One Month, What's Next For Morgan Stanley Stock?",
+			Description: "Morgan Stanley&amp;rsquo;s stock&amp;nbsp;(NYSE: MS) has lost roughly 6% YTD, as compared to the 18% rise in the S&amp;amp;P500 over the same period. Further, the stock is currently trading at $80 per share, which is 11% below its fair value of $90 &amp;ndash; Trefis&amp;rsquo; estimate for&amp;nbsp;Mor",
+		},
+	}
+	tt2 := []*journalist.News{
+		{
+			ID:          "1",
+			Title:       "Blah blah blah",
+			Description: "Blah blah blah",
+		},
+	}
+	jsonTt1, _ := json.Marshal(tt1)
+	jsonTt2, _ := json.Marshal(tt2)
+
 	type args struct {
-		ctx  context.Context
-		news []*journalist.News
+		ctx      context.Context
+		jsonNews string
 	}
 	tests := []struct {
 		name    string
@@ -145,14 +162,8 @@ func TestComposer_findNewsMetaData(t *testing.T) {
 		{
 			name: "Should pass and return correct meta data",
 			args: args{
-				ctx: context.Background(),
-				news: []*journalist.News{
-					{
-						ID:          "1234",
-						Title:       "Up 10% In The Last One Month, What's Next For Morgan Stanley Stock?",
-						Description: "Morgan Stanley&amp;rsquo;s stock&amp;nbsp;(NYSE: MS) has lost roughly 6% YTD, as compared to the 18% rise in the S&amp;amp;P500 over the same period. Further, the stock is currently trading at $80 per share, which is 11% below its fair value of $90 &amp;ndash; Trefis&amp;rsquo; estimate for&amp;nbsp;Mor",
-					},
-				},
+				ctx:      context.Background(),
+				jsonNews: string(jsonTt1),
 			},
 			mockRes: "[{\n  \"id\": \"1234\",\n  \"tickers\": [\"MS\"],\n  \"markets\": [\"SPY\"],\n  \"hashtags\": []\n}]",
 			want: map[string]*NewsMeta{
@@ -167,14 +178,8 @@ func TestComposer_findNewsMetaData(t *testing.T) {
 		{
 			name: "Should pass and return empty meta data",
 			args: args{
-				ctx: context.Background(),
-				news: []*journalist.News{
-					{
-						ID:          "1",
-						Title:       "Blah blah blah",
-						Description: "Blah blah blah",
-					},
-				},
+				ctx:      context.Background(),
+				jsonNews: string(jsonTt2),
 			},
 			mockRes: "[{\n  \"id\": \"1\",\n  \"tickers\": [],\n  \"markets\": [],\n  \"hashtags\": []\n}]",
 			want: map[string]*NewsMeta{
@@ -189,14 +194,8 @@ func TestComposer_findNewsMetaData(t *testing.T) {
 		{
 			name: "Should return error if OpenAI fails",
 			args: args{
-				ctx: context.Background(),
-				news: []*journalist.News{
-					{
-						ID:          "1",
-						Title:       "Blah blah blah",
-						Description: "Blah blah blah",
-					},
-				},
+				ctx:      context.Background(),
+				jsonNews: string(jsonTt2),
 			},
 			mockRes: "",
 			want:    nil,
@@ -223,7 +222,7 @@ func TestComposer_findNewsMetaData(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			c := NewComposer(mockClient)
-			got, err := c.findNewsMetaData(tt.args.ctx, tt.args.news)
+			got, err := c.findNewsMetaData(tt.args.ctx, tt.args.jsonNews)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("findNewsMetaData() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -249,7 +248,7 @@ func TestComposer_ComposeNews(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name: "Should pass and return correct composed news",
+			name: "Should pass and return correct composed jsonNews",
 			args: args{
 				ctx: context.Background(),
 				news: []*journalist.News{
@@ -334,11 +333,11 @@ func TestComposer_ComposeNews(t *testing.T) {
 				Messages: []openai.ChatCompletionMessage{
 					{
 						Role: openai.ChatMessageRoleSystem,
-						Content: `You will be given a JSON array of financial news with ID. 
+						Content: `You will be given a JSON array of financial jsonNews with ID. 
 					Your job is to find meta data in those messages and response with string JSON array of format:
 					[{id:"", tickers:[], markets:[], hashtags:[]}]
-					If news are mentioning some companies and stocks you need to find appropriate stocks 'tickers'. 
-					If news are about some market events you need to fill 'markets' with some index tickers (like SPY, QQQ, or RUT etc.) based on the context.
+					If jsonNews are mentioning some companies and stocks you need to find appropriate stocks 'tickers'. 
+					If jsonNews are about some market events you need to fill 'markets' with some index tickers (like SPY, QQQ, or RUT etc.) based on the context.
 					News context can be also related to some popular topics, we call it 'hashtags'.
 					You only need to choose appropriate hashtag (0-3) from this list: inflation, interestrates, crisis, unemployment, bankruptcy, dividends, IPO, debt, war, buybacks, fed.
 					It is OK if you don't find find some tickers, markets or hashtags. It's also possible that you will find none.`,
@@ -367,9 +366,9 @@ func TestComposer_ComposeNews(t *testing.T) {
 				Messages: []openai.ChatCompletionMessage{
 					{
 						Role: openai.ChatMessageRoleSystem,
-						Content: `You will be given a JSON array of financial news with ID. 
-						Your job is to work with news feeds from users (financial, investments, market topics).
-						Each news has a title and description. You need to combine the title and description
+						Content: `You will be given a JSON array of financial jsonNews with ID. 
+						Your job is to work with jsonNews feeds from users (financial, investments, market topics).
+						Each jsonNews has a title and description. You need to combine the title and description
 						and rewrite it so it would be more straight to the point and look more original.
 						Response with string JSON array of format:
 						[{news_id:"", text:""}]`,
