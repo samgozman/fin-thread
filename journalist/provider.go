@@ -3,13 +3,14 @@ package journalist
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/mmcdole/gofeed"
 )
 
 // NewsProvider is the interface for the data fetcher (via RSS, API, etc.)
 type NewsProvider interface {
-	Fetch(ctx context.Context) ([]*News, error)
+	Fetch(ctx context.Context, until time.Time) ([]*News, error)
 }
 
 // RssProvider is the RSS provider implementation
@@ -26,8 +27,8 @@ func NewRssProvider(name, url string) *RssProvider {
 	}
 }
 
-// Fetch fetches the news from the RSS feed
-func (r *RssProvider) Fetch(ctx context.Context) ([]*News, error) {
+// Fetch fetches the news from the RSS feed until the given date
+func (r *RssProvider) Fetch(ctx context.Context, until time.Time) ([]*News, error) {
 	fp := gofeed.NewParser()
 	feed, err := fp.ParseURLWithContext(r.Url, ctx)
 	if err != nil {
@@ -41,6 +42,14 @@ func (r *RssProvider) Fetch(ctx context.Context) ([]*News, error) {
 			return nil, NewProviderErr(r.Name, err.Error())
 		}
 		news = append(news, newsItem)
+	}
+
+	// Filter news by date
+	for i, n := range news {
+		if n.Date.Before(until) {
+			news = news[:i]
+			break
+		}
 	}
 
 	return news, nil

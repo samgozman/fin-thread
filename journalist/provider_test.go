@@ -51,7 +51,7 @@ func TestRssProvider_Fetch(t *testing.T) {
 			}
 			ctx, cancel := context.WithTimeout(tt.args.ctx, 10*time.Second)
 			defer cancel()
-			got, err := r.Fetch(ctx)
+			got, err := r.Fetch(ctx, time.Now().AddDate(0, 0, -3))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RssProvider.Fetch() error = %v, wantErr %v", err, tt.wantErr)
 				return

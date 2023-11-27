@@ -3,6 +3,7 @@ package journalist
 import (
 	"context"
 	"sync"
+	"time"
 )
 
 // Journalist is the main struct that fetches the news from all providers and merges them into unified list
@@ -17,9 +18,9 @@ func NewJournalist(providers []NewsProvider) *Journalist {
 	}
 }
 
-// GetLatestNews fetches the latest news from all providers and merges them into unified list.
+// GetLatestNews fetches the latest news (until date) from all providers and merges them into unified list.
 // Errors are collected and returned in array of ProviderErr
-func (j *Journalist) GetLatestNews(ctx context.Context) ([]*News, []error) {
+func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) ([]*News, []error) {
 	// Create channels to collect results and errors
 	resultCh := make(chan []*News, len(j.providers))
 	errorCh := make(chan error, len(j.providers))
@@ -32,7 +33,7 @@ func (j *Journalist) GetLatestNews(ctx context.Context) ([]*News, []error) {
 		go func(id int) {
 			defer wg.Done()
 
-			result, err := j.providers[id].Fetch(ctx)
+			result, err := j.providers[id].Fetch(ctx, until)
 			if err != nil {
 				errorCh <- err
 				return
