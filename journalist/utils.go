@@ -7,6 +7,7 @@ func parseDate(dateString string) (time.Time, error) {
 	// List of potential layouts to try
 	layouts := []string{
 		time.RFC1123,
+		time.RFC1123Z,
 		time.RFC3339,
 	}
 
