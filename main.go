@@ -65,7 +65,6 @@ func main() {
 		}
 
 		// Filter news by keywords, if Title do not contain any of the keywords - skip it
-		// TODO: Move to utils, remove N+1 complexity
 		filterKeywords := []string{"European Union", "United States", "United Kingdom", "China", "Germany", "France", "Japan", "Italy", "India"}
 		var filteredNews []*journalist.News
 		for _, n := range news {
