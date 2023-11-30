@@ -2,15 +2,48 @@ package main
 
 import (
 	"github.com/go-co-op/gocron"
+	"github.com/spf13/viper"
+	"log"
 	"time"
 
+	. "github.com/samgozman/go-fin-feed/composer"
 	. "github.com/samgozman/go-fin-feed/journalist"
+	. "github.com/samgozman/go-fin-feed/publisher"
 )
 
-// TODO: Add TgPublisher to App structure and use it in the jobs
+// Env is a structure that holds all the environment variables that are used in the app
+type Env struct {
+	TelegramChannelID string `mapstructure:"TELEGRAM_CHANNEL_ID"`
+	TelegramBotToken  string `mapstructure:"TELEGRAM_BOT_TOKEN"`
+	OpenAiToken       string `mapstructure:"OPENAI_TOKEN"`
+}
+
 func main() {
-	app := App{
-		staff: Staff{
+	// Initialize viper
+	viper.AddConfigPath(".")
+	viper.SetConfigFile(".env")
+	// Read envs from the system if file is not present
+	viper.AutomaticEnv()
+
+	// Read the config file, if present
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Println("No config file found, reading from the system env")
+	}
+
+	var env Env
+	err = viper.Unmarshal(&env)
+	if err != nil {
+		log.Fatal("Error unmarshalling config:", err)
+	}
+
+	pub, err := NewTelegramPublisher(env.TelegramChannelID, env.TelegramBotToken)
+	if err != nil {
+		panic(err)
+	}
+
+	app := &App{
+		staff: &Staff{
 			marketJournalist: NewJournalist([]NewsProvider{
 				NewRssProvider("bloomberg:markets", "https://feeds.bloomberg.com/markets/news.rss"),
 				NewRssProvider("cnbc:finance", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"),
@@ -32,11 +65,13 @@ func main() {
 				NewRssProvider("trading-economics:government-debt", "https://tradingeconomics.com/rss/news.aspx?i=government+debt"),
 			}),
 		},
+		composer:  NewComposer(env.OpenAiToken),
+		publisher: pub,
 	}
 
 	s := gocron.NewScheduler(time.UTC)
 	// .WaitForSchedule()
-	_, err := s.Every(60).Second().Do(app.CreateMarketNewsJob(time.Now().Add(-60 * time.Second)))
+	_, err = s.Every(60).Second().Do(app.CreateMarketNewsJob(time.Now().Add(-60 * time.Second)))
 	if err != nil {
 		return
 	}
@@ -49,5 +84,6 @@ func main() {
 	defer s.Stop()
 	s.StartAsync()
 
+	log.Println("Started fin-feed successfully")
 	select {}
 }

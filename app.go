@@ -6,11 +6,15 @@ import (
 	"strings"
 	"time"
 
+	. "github.com/samgozman/go-fin-feed/composer"
 	. "github.com/samgozman/go-fin-feed/journalist"
+	. "github.com/samgozman/go-fin-feed/publisher"
 )
 
 type App struct {
-	staff Staff
+	staff     *Staff
+	composer  *Composer
+	publisher *TelegramPublisher
 }
 
 func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
