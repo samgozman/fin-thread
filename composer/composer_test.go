@@ -110,7 +110,10 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			c := NewComposer(mockClient)
+			c := &Composer{
+				OpenAiClient: mockClient,
+				Config:       DefaultConfig(),
+			}
 			got, err := c.ChooseMostImportantNews(tt.args.ctx, tt.args.news)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Composer.ChooseMostImportantNews() error = %v, wantErr %v", err, tt.wantErr)
@@ -221,7 +224,10 @@ func TestComposer_findNewsMetaData(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			c := NewComposer(mockClient)
+			c := &Composer{
+				OpenAiClient: mockClient,
+				Config:       DefaultConfig(),
+			}
 			got, err := c.findNewsMetaData(tt.args.ctx, tt.args.jsonNews)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("findNewsMetaData() error = %v, wantErr %v", err, tt.wantErr)
@@ -384,7 +390,10 @@ func TestComposer_ComposeNews(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			c := NewComposer(mockClient)
+			c := &Composer{
+				OpenAiClient: mockClient,
+				Config:       DefaultConfig(),
+			}
 			got, got1 := c.ComposeNews(tt.args.ctx, tt.args.news)
 
 			for i, n := range got {

@@ -22,8 +22,8 @@ type Composer struct {
 	Config       *Config
 }
 
-func NewComposer(openAiClient OpenAiClientInterface) *Composer {
-	return &Composer{OpenAiClient: openAiClient, Config: DefaultConfig()}
+func NewComposer(oaiToken string) *Composer {
+	return &Composer{OpenAiClient: openai.NewClient(oaiToken), Config: DefaultConfig()}
 }
 
 func (c *Composer) ChooseMostImportantNews(ctx context.Context, news []*journalist.News) ([]*journalist.News, error) {
