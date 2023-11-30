@@ -19,7 +19,7 @@ type App struct {
 
 func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
 		news, e := a.staff.marketJournalist.GetLatestNews(ctx, until)
@@ -28,8 +28,17 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 			return
 		}
 
-		for _, n := range news {
-			fmt.Println(n)
+		formattedNews, err := a.PrepareNews(ctx, news)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		for _, n := range formattedNews {
+			err := a.publisher.Publish(n)
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 }
@@ -62,10 +71,44 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 			}
 		}
 
-		for _, n := range filteredNews {
-			fmt.Println(n)
+		formattedNews, err := a.PrepareNews(ctx, news)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		for _, n := range formattedNews {
+			err := a.publisher.Publish(n)
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
+}
+
+func (a *App) PrepareNews(ctx context.Context, news []*News) ([]string, error) {
+	if len(news) == 0 {
+		return nil, fmt.Errorf("no news to prepare")
+	}
+
+	importantNews, err := a.composer.ChooseMostImportantNews(ctx, news)
+	if err != nil {
+		return nil, err
+	}
+
+	composedNews, err := a.composer.ComposeNews(ctx, importantNews)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Add some custom formatting to the news
+	var formattedNews []string
+	for _, n := range composedNews {
+		str := fmt.Sprintf("ID: %s\nHashtags: %s\nTickers: %s\nMarkets: %s\n%s", n.NewsID, n.MetaData.Hashtags, n.MetaData.Tickers, n.MetaData.Markets, n.Text)
+		formattedNews = append(formattedNews, str)
+	}
+
+	return formattedNews, nil
 }
 
 // Staff is the structure that holds all the journalists
