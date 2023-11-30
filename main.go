@@ -4,6 +4,7 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/spf13/viper"
 	"log"
+	"os"
 	"time"
 
 	. "github.com/samgozman/go-fin-feed/composer"
@@ -22,19 +23,23 @@ func main() {
 	// Initialize viper
 	viper.AddConfigPath(".")
 	viper.SetConfigFile(".env")
-	// Read envs from the system if file is not present
-	viper.AutomaticEnv()
 
+	var env Env
 	// Read the config file, if present
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Println("No config file found, reading from the system env")
-	}
-
-	var env Env
-	err = viper.Unmarshal(&env)
-	if err != nil {
-		log.Fatal("Error unmarshalling config:", err)
+		// TODO: fetch with viper, add validation
+		env = Env{
+			TelegramChannelID: os.Getenv("TELEGRAM_CHANNEL_ID"),
+			TelegramBotToken:  os.Getenv("TELEGRAM_BOT_TOKEN"),
+			OpenAiToken:       os.Getenv("OPENAI_TOKEN"),
+		}
+	} else {
+		err = viper.Unmarshal(&env)
+		if err != nil {
+			log.Fatal("Error unmarshalling config:", err)
+		}
 	}
 
 	pub, err := NewTelegramPublisher(env.TelegramChannelID, env.TelegramBotToken)

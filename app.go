@@ -28,6 +28,10 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 			return
 		}
 
+		if len(news) == 0 {
+			return
+		}
+
 		formattedNews, err := a.PrepareNews(ctx, news)
 		if err != nil {
 			fmt.Println(err)
@@ -71,6 +75,10 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 			}
 		}
 
+		if len(news) == 0 {
+			return
+		}
+
 		formattedNews, err := a.PrepareNews(ctx, news)
 		if err != nil {
 			fmt.Println(err)
@@ -87,10 +95,6 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 }
 
 func (a *App) PrepareNews(ctx context.Context, news []*News) ([]string, error) {
-	if len(news) == 0 {
-		return nil, fmt.Errorf("no news to prepare")
-	}
-
 	importantNews, err := a.composer.ChooseMostImportantNews(ctx, news)
 	if err != nil {
 		return nil, err
