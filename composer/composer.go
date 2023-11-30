@@ -72,10 +72,10 @@ func (c *Composer) ChooseMostImportantNews(ctx context.Context, news []*journali
 	return filteredNews, nil
 }
 
-func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]*ComposedNews, []error) {
+func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]*ComposedNews, error) {
 	j, err := json.Marshal(news)
 	if err != nil {
-		return nil, []error{err}
+		return nil, err
 	}
 	jsonNews := string(j)
 
@@ -163,7 +163,7 @@ func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]
 		n.MetaData = m[n.NewsID]
 	}
 
-	return r, e
+	return r, errors.Join(e...)
 }
 
 // findNewsMetaData finds tickers, markets and hashtags mentioned in the news.
