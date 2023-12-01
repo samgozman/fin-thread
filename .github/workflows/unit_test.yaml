@@ -27,5 +27,13 @@ jobs:
       working-directory: ./composer
       run: go test -v ./...
 
+    - name: Run publisher unit tests
+      working-directory: ./publisher
+      run: go test -v ./...
+
+    - name: Run archivist unit tests
+      working-directory: ./archivist
+      run: go test -v ./...
+
     - name: Run main unit tests
       run: go test -v ./...
