@@ -64,3 +64,5 @@ func TestNewNews(t *testing.T) {
 		})
 	}
 }
+
+// TODO: Add tests for ToJSON and ToContentJSON

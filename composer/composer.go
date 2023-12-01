@@ -28,12 +28,12 @@ func NewComposer(oaiToken string) *Composer {
 
 func (c *Composer) ChooseMostImportantNews(ctx context.Context, news journalist.NewsList) (journalist.NewsList, error) {
 	// Filter out news that are not from today
-	todayNews := lo.Filter(news, func(n *journalist.News, _ int) bool {
+	var todayNews journalist.NewsList = lo.Filter(news, func(n *journalist.News, _ int) bool {
 		return n.Date.Day() == time.Now().Day()
 	})
 
 	// Convert news to JSON
-	jsonNews, err := json.Marshal(todayNews)
+	jsonNews, err := todayNews.ToJSON()
 	if err != nil {
 		return todayNews, err
 	}
@@ -73,11 +73,10 @@ func (c *Composer) ChooseMostImportantNews(ctx context.Context, news journalist.
 }
 
 func (c *Composer) ComposeNews(ctx context.Context, news journalist.NewsList) ([]*ComposedNews, error) {
-	j, err := json.Marshal(news)
+	jsonNews, err := news.ToContentJSON()
 	if err != nil {
 		return nil, err
 	}
-	jsonNews := string(j)
 
 	composedCh := make(chan []*ComposedNews, 1)
 	metaCh := make(chan map[string]*NewsMeta, 1)

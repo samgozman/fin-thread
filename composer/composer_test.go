@@ -2,7 +2,6 @@ package composer
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/sashabaranov/go-openai"
 	"reflect"
@@ -97,12 +96,12 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 			mockError := errors.New("some error")
 			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{}, mockError)
 		} else {
-			wantNewsJson, _ := json.Marshal(tt.want)
+			wantNewsJson, _ := tt.want.ToJSON()
 			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{
 				Choices: []openai.ChatCompletionChoice{
 					{
 						Message: openai.ChatCompletionMessage{
-							Content: string(wantNewsJson),
+							Content: wantNewsJson,
 						},
 					},
 				},
@@ -148,8 +147,8 @@ func TestComposer_findNewsMetaData(t *testing.T) {
 			Description: "Blah blah blah",
 		},
 	}
-	jsonTt1, _ := json.Marshal(tt1)
-	jsonTt2, _ := json.Marshal(tt2)
+	jsonTt1, _ := tt1.ToContentJSON()
+	jsonTt2, _ := tt2.ToContentJSON()
 
 	type args struct {
 		ctx      context.Context
@@ -166,7 +165,7 @@ func TestComposer_findNewsMetaData(t *testing.T) {
 			name: "Should pass and return correct meta data",
 			args: args{
 				ctx:      context.Background(),
-				jsonNews: string(jsonTt1),
+				jsonNews: jsonTt1,
 			},
 			mockRes: "[{\n  \"id\": \"1234\",\n  \"tickers\": [\"MS\"],\n  \"markets\": [\"SPY\"],\n  \"hashtags\": []\n}]",
 			want: map[string]*NewsMeta{
@@ -182,7 +181,7 @@ func TestComposer_findNewsMetaData(t *testing.T) {
 			name: "Should pass and return empty meta data",
 			args: args{
 				ctx:      context.Background(),
-				jsonNews: string(jsonTt2),
+				jsonNews: jsonTt2,
 			},
 			mockRes: "[{\n  \"id\": \"1\",\n  \"tickers\": [],\n  \"markets\": [],\n  \"hashtags\": []\n}]",
 			want: map[string]*NewsMeta{
@@ -198,7 +197,7 @@ func TestComposer_findNewsMetaData(t *testing.T) {
 			name: "Should return error if OpenAI fails",
 			args: args{
 				ctx:      context.Background(),
-				jsonNews: string(jsonTt2),
+				jsonNews: jsonTt2,
 			},
 			mockRes: "",
 			want:    nil,
@@ -333,7 +332,7 @@ func TestComposer_ComposeNews(t *testing.T) {
 			mockError := errors.New("some error")
 			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{}, mockError)
 		} else {
-			jsonNews, _ := json.Marshal(tt.args.news)
+			jsonNews, _ := tt.args.news.ToContentJSON()
 
 			mockClient.On("CreateChatCompletion", mock.Anything, openai.ChatCompletionRequest{
 				Model: openai.GPT3Dot5Turbo1106,
@@ -344,7 +343,7 @@ func TestComposer_ComposeNews(t *testing.T) {
 					},
 					{
 						Role:    openai.ChatMessageRoleUser,
-						Content: string(jsonNews),
+						Content: jsonNews,
 					},
 				},
 				Temperature:      1,
@@ -370,7 +369,7 @@ func TestComposer_ComposeNews(t *testing.T) {
 					},
 					{
 						Role:    openai.ChatMessageRoleUser,
-						Content: string(jsonNews),
+						Content: jsonNews,
 					},
 				},
 				Temperature:      1,
