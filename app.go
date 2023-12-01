@@ -60,7 +60,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 
 		// Filter news by keywords, if Title do not contain any of the keywords - skip it
 		filterKeywords := []string{"European Union", "United States", "United Kingdom", "China", "Germany", "France", "Japan", "Italy", "India"}
-		var filteredNews []*News
+		var filteredNews NewsList
 		for _, n := range news {
 			c := false
 			// Check if any keyword is present in the title
@@ -94,7 +94,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 	}
 }
 
-func (a *App) PrepareNews(ctx context.Context, news []*News) ([]string, error) {
+func (a *App) PrepareNews(ctx context.Context, news NewsList) ([]string, error) {
 	importantNews, err := a.composer.ChooseMostImportantNews(ctx, news)
 	if err != nil {
 		return nil, err

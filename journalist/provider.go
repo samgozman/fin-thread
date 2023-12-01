@@ -10,7 +10,7 @@ import (
 
 // NewsProvider is the interface for the data fetcher (via RSS, API, etc.)
 type NewsProvider interface {
-	Fetch(ctx context.Context, until time.Time) ([]*News, error)
+	Fetch(ctx context.Context, until time.Time) (NewsList, error)
 }
 
 // RssProvider is the RSS provider implementation
@@ -28,14 +28,14 @@ func NewRssProvider(name, url string) *RssProvider {
 }
 
 // Fetch fetches the news from the RSS feed until the given date
-func (r *RssProvider) Fetch(ctx context.Context, until time.Time) ([]*News, error) {
+func (r *RssProvider) Fetch(ctx context.Context, until time.Time) (NewsList, error) {
 	fp := gofeed.NewParser()
 	feed, err := fp.ParseURLWithContext(r.Url, ctx)
 	if err != nil {
 		return nil, NewProviderErr(r.Name, err.Error())
 	}
 
-	var news []*News
+	var news NewsList
 	for _, item := range feed.Items {
 		newsItem, err := NewNews(item.Title, item.Description, item.Link, item.Published, r.Name)
 		if err != nil {

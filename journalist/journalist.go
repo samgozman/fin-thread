@@ -20,9 +20,9 @@ func NewJournalist(providers []NewsProvider) *Journalist {
 
 // GetLatestNews fetches the latest news (until date) from all providers and merges them into unified list.
 // Errors are collected and returned in array of ProviderErr
-func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) ([]*News, []error) {
+func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsList, []error) {
 	// Create channels to collect results and errors
-	resultCh := make(chan []*News, len(j.providers))
+	resultCh := make(chan NewsList, len(j.providers))
 	errorCh := make(chan error, len(j.providers))
 
 	// Use WaitGroup to wait for all goroutines to finish
@@ -48,7 +48,7 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) ([]*New
 	close(errorCh)
 
 	// Collect results and errors from channels
-	var results []*News
+	var results NewsList
 	var errors []error
 
 	for result := range resultCh {

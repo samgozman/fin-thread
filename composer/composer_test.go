@@ -25,10 +25,10 @@ func (m *MockOpenAiClient) CreateChatCompletion(ctx context.Context, req openai.
 func TestComposer_ChooseMostImportantNews(t *testing.T) {
 	type args struct {
 		ctx  context.Context
-		news []*journalist.News
+		news journalist.NewsList
 	}
 
-	news := []*journalist.News{
+	news := journalist.NewsList{
 		{
 			ID:           "1",
 			Title:        "Ray Dalio says U.S. reaching an inflection point where the debt problem quickly gets even worse",
@@ -58,34 +58,34 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []*journalist.News
+		want    journalist.NewsList
 		wantErr bool
 	}{
 		{
 			name: "Should pass and return 2 jsonNews",
 			args: args{
 				ctx:  context.Background(),
-				news: []*journalist.News{news[0], news[1], news[2]},
+				news: journalist.NewsList{news[0], news[1], news[2]},
 			},
-			want:    []*journalist.News{news[0], news[1]},
+			want:    journalist.NewsList{news[0], news[1]},
 			wantErr: false,
 		},
 		{
 			name: "Should pass and return 0 jsonNews",
 			args: args{
 				ctx:  context.Background(),
-				news: []*journalist.News{news[2]},
+				news: journalist.NewsList{news[2]},
 			},
-			want:    []*journalist.News{},
+			want:    journalist.NewsList{},
 			wantErr: false,
 		},
 		{
 			name: "Should return original jsonNews (except overdue) and error if OpenAI returns fails",
 			args: args{
 				ctx:  context.Background(),
-				news: []*journalist.News{news[0], news[1], news[2]},
+				news: journalist.NewsList{news[0], news[1], news[2]},
 			},
-			want:    []*journalist.News{news[0], news[1]},
+			want:    journalist.NewsList{news[0], news[1]},
 			wantErr: true,
 		},
 	}
@@ -134,14 +134,14 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 }
 
 func TestComposer_findNewsMetaData(t *testing.T) {
-	tt1 := []*journalist.News{
+	tt1 := journalist.NewsList{
 		{
 			ID:          "1234",
 			Title:       "Up 10% In The Last One Month, What's Next For Morgan Stanley Stock?",
 			Description: "Morgan Stanley&amp;rsquo;s stock&amp;nbsp;(NYSE: MS) has lost roughly 6% YTD, as compared to the 18% rise in the S&amp;amp;P500 over the same period. Further, the stock is currently trading at $80 per share, which is 11% below its fair value of $90 &amp;ndash; Trefis&amp;rsquo; estimate for&amp;nbsp;Mor",
 		},
 	}
-	tt2 := []*journalist.News{
+	tt2 := journalist.NewsList{
 		{
 			ID:          "1",
 			Title:       "Blah blah blah",
@@ -243,7 +243,7 @@ func TestComposer_findNewsMetaData(t *testing.T) {
 func TestComposer_ComposeNews(t *testing.T) {
 	type args struct {
 		ctx  context.Context
-		news []*journalist.News
+		news journalist.NewsList
 	}
 	tests := []struct {
 		name     string
@@ -257,7 +257,7 @@ func TestComposer_ComposeNews(t *testing.T) {
 			name: "Should pass and return correct composed jsonNews",
 			args: args{
 				ctx: context.Background(),
-				news: []*journalist.News{
+				news: journalist.NewsList{
 					{
 						ID:          "1234",
 						Title:       "Up 10% In The Last One Month, What's Next For Morgan Stanley Stock?",
@@ -284,7 +284,7 @@ func TestComposer_ComposeNews(t *testing.T) {
 			name: "Should pass and return empty meta data",
 			args: args{
 				ctx: context.Background(),
-				news: []*journalist.News{
+				news: journalist.NewsList{
 					{
 						ID:          "1",
 						Title:       "Blah blah blah",
@@ -311,7 +311,7 @@ func TestComposer_ComposeNews(t *testing.T) {
 			name: "Should return error if OpenAI fails",
 			args: args{
 				ctx: context.Background(),
-				news: []*journalist.News{
+				news: journalist.NewsList{
 					{
 						ID:          "1",
 						Title:       "Blah blah blah",

@@ -26,7 +26,7 @@ func NewComposer(oaiToken string) *Composer {
 	return &Composer{OpenAiClient: openai.NewClient(oaiToken), Config: DefaultConfig()}
 }
 
-func (c *Composer) ChooseMostImportantNews(ctx context.Context, news []*journalist.News) ([]*journalist.News, error) {
+func (c *Composer) ChooseMostImportantNews(ctx context.Context, news journalist.NewsList) (journalist.NewsList, error) {
 	// Filter out news that are not from today
 	todayNews := lo.Filter(news, func(n *journalist.News, _ int) bool {
 		return n.Date.Day() == time.Now().Day()
@@ -63,7 +63,7 @@ func (c *Composer) ChooseMostImportantNews(ctx context.Context, news []*journali
 		return todayNews, err
 	}
 
-	var filteredNews []*journalist.News
+	var filteredNews journalist.NewsList
 	err = json.Unmarshal([]byte(resp.Choices[0].Message.Content), &filteredNews)
 	if err != nil {
 		return todayNews, err
@@ -72,7 +72,7 @@ func (c *Composer) ChooseMostImportantNews(ctx context.Context, news []*journali
 	return filteredNews, nil
 }
 
-func (c *Composer) ComposeNews(ctx context.Context, news []*journalist.News) ([]*ComposedNews, error) {
+func (c *Composer) ComposeNews(ctx context.Context, news journalist.NewsList) ([]*ComposedNews, error) {
 	j, err := json.Marshal(news)
 	if err != nil {
 		return nil, err
