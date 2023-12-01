@@ -131,7 +131,7 @@ func (c *Composer) ComposeNews(ctx context.Context, news journalist.NewsList) ([
 		var composedNews []*ComposedNews
 		err = json.Unmarshal([]byte(resp.Choices[0].Message.Content), &composedNews)
 		if err != nil {
-			errorCh <- errors.New(fmt.Sprintf("[ComposeNews] error in json.Unmarshal: %s", err))
+			errorCh <- errors.New(fmt.Sprintf("[ComposeNews] error in json.Unmarshal: %s for object: %s", err, resp.Choices[0].Message.Content))
 			return
 		}
 
