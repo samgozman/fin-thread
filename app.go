@@ -114,7 +114,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	composedNews, err := a.PrepareNews(ctx, news)
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("[ComposeAndPostNews] [PrepareNews]: %v", err))
 	}
 	if len(composedNews) == 0 {
 		return nil
@@ -126,19 +126,19 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 		f := a.FormatNews(n)
 		id, err := a.publisher.Publish(f)
 		if err != nil {
-			return err
+			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [publisher.Publish]: %v", err))
 		}
 
 		meta, err := json.Marshal(n.MetaData)
 		if err != nil {
-			return err
+			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [json.Marshal(n.MetaData)]: %v", err))
 		}
 
 		// composedNews and news are not the same length because of filtering
 		// so, we need to use the original news by hash
 		originalNews := news.FindById(n.NewsID)
 		if originalNews == nil {
-			return errors.New(fmt.Sprintf("cannot find original news %v", n))
+			return errors.New(fmt.Sprintf("[ComposeAndPostNews] cannot find original news %v", n))
 		}
 
 		dbNews[i] = models.News{
@@ -158,7 +158,7 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	for _, n := range dbNews {
 		err := a.archivist.Entities.News.Create(ctx, &n)
 		if err != nil {
-			return err
+			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [News.Create]: %v", err))
 		}
 	}
 
@@ -173,7 +173,7 @@ func (a *App) RemoveDuplicates(ctx context.Context, news NewsList) (NewsList, er
 
 	exists, err := a.archivist.Entities.News.FindAllByHashes(ctx, hashes)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("[RemoveDuplicates] [News.FindAllByHashes]: %v", err))
 	}
 	existedHashes := make([]string, len(exists))
 	for i, n := range exists {
@@ -192,7 +192,7 @@ func (a *App) RemoveDuplicates(ctx context.Context, news NewsList) (NewsList, er
 func (a *App) PrepareNews(ctx context.Context, news NewsList) ([]*ComposedNews, error) {
 	importantNews, err := a.composer.ChooseMostImportantNews(ctx, news)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("[PrepareNews] [ChooseMostImportantNews]: %v", err))
 	}
 
 	if len(importantNews) == 0 {
@@ -201,7 +201,7 @@ func (a *App) PrepareNews(ctx context.Context, news NewsList) ([]*ComposedNews, 
 
 	composedNews, err := a.composer.ComposeNews(ctx, importantNews)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("[PrepareNews] [ComposeNews]: %v", err))
 	}
 
 	return composedNews, nil
