@@ -2,6 +2,7 @@ package journalist
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 )
@@ -19,9 +20,8 @@ func NewJournalist(providers []NewsProvider) *Journalist {
 }
 
 // GetLatestNews fetches the latest news (until date) from all providers and merges them into unified list.
-// Errors are collected and returned in array of ProviderErr
-func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsList, []error) {
-	// Create channels to collect results and errors
+func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsList, error) {
+	// Create channels to collect results and e
 	resultCh := make(chan NewsList, len(j.providers))
 	errorCh := make(chan error, len(j.providers))
 
@@ -47,18 +47,18 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 	close(resultCh)
 	close(errorCh)
 
-	// Collect results and errors from channels
+	// Collect results and e from channels
 	var results NewsList
-	var errors []error
+	var e []error
 
 	for result := range resultCh {
 		results = append(results, result...)
 	}
 
-	// TODO: join errors into one errors.Join
+	// TODO: join e into one e.Join
 	for err := range errorCh {
-		errors = append(errors, err)
+		e = append(e, err)
 	}
 
-	return results, errors
+	return results, errors.Join(e...)
 }
