@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/samgozman/go-fin-feed/archivist/models"
+	"log"
 	"slices"
 	"strings"
 	"time"
@@ -28,9 +29,12 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
+		l := log.Default()
+		l.SetPrefix("[CreateMarketNewsJob]: ")
+
 		news, e := a.staff.marketJournalist.GetLatestNews(ctx, until)
 		if e != nil {
-			fmt.Println(e)
+			l.Println(e)
 			return
 		}
 
@@ -40,7 +44,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 
 		uniqueNews, err := a.RemoveDuplicates(ctx, news)
 		if err != nil {
-			fmt.Println(err)
+			l.Println(err)
 			return
 		}
 		if len(uniqueNews) == 0 {
@@ -49,7 +53,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 
 		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
-			fmt.Println(err)
+			l.Println(err)
 			return
 		}
 	}
@@ -60,9 +64,12 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
+		l := log.Default()
+		l.SetPrefix("[CreateTradingEconomicsNewsJob]: ")
+
 		news, e := a.staff.teJournalist.GetLatestNews(ctx, until)
 		if e != nil {
-			fmt.Println(e)
+			l.Println(e)
 			return
 		}
 
@@ -89,7 +96,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 
 		uniqueNews, err := a.RemoveDuplicates(ctx, news)
 		if err != nil {
-			fmt.Println(err)
+			l.Println(err)
 			return
 		}
 		if len(uniqueNews) == 0 {
@@ -98,7 +105,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 
 		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
-			fmt.Println(err)
+			l.Println(err)
 			return
 		}
 	}
