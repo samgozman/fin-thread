@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	. "github.com/samgozman/go-fin-feed/archivist"
 	. "github.com/samgozman/go-fin-feed/composer"
 	. "github.com/samgozman/go-fin-feed/journalist"
 	. "github.com/samgozman/go-fin-feed/publisher"
@@ -17,6 +18,7 @@ type Env struct {
 	TelegramChannelID string `mapstructure:"TELEGRAM_CHANNEL_ID"`
 	TelegramBotToken  string `mapstructure:"TELEGRAM_BOT_TOKEN"`
 	OpenAiToken       string `mapstructure:"OPENAI_TOKEN"`
+	PostgresDSN       string `mapstructure:"POSTGRES_DSN"`
 }
 
 func main() {
@@ -34,6 +36,7 @@ func main() {
 			TelegramChannelID: os.Getenv("TELEGRAM_CHANNEL_ID"),
 			TelegramBotToken:  os.Getenv("TELEGRAM_BOT_TOKEN"),
 			OpenAiToken:       os.Getenv("OPENAI_TOKEN"),
+			PostgresDSN:       os.Getenv("POSTGRES_DSN"),
 		}
 	} else {
 		err = viper.Unmarshal(&env)
@@ -44,7 +47,12 @@ func main() {
 
 	pub, err := NewTelegramPublisher(env.TelegramChannelID, env.TelegramBotToken)
 	if err != nil {
-		panic(err)
+		log.Fatal("Error creating Telegram publisher:", err)
+	}
+
+	arch, err := NewArchivist(env.PostgresDSN)
+	if err != nil {
+		log.Fatal("Error creating Archivist:", err)
 	}
 
 	app := &App{
@@ -72,6 +80,7 @@ func main() {
 		},
 		composer:  NewComposer(env.OpenAiToken),
 		publisher: pub,
+		archivist: arch,
 	}
 
 	s := gocron.NewScheduler(time.UTC)
