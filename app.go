@@ -123,7 +123,7 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	dbNews := make([]models.News, len(composedNews))
 
 	for i, n := range composedNews {
-		f := a.FormatNews(n)
+		f := a.FormatNews(*n)
 		id, err := a.publisher.Publish(f)
 		if err != nil {
 			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [publisher.Publish]: %v", err))
@@ -207,7 +207,7 @@ func (a *App) PrepareNews(ctx context.Context, news NewsList) ([]*ComposedNews, 
 	return composedNews, nil
 }
 
-func (a *App) FormatNews(n *ComposedNews) string {
+func (a *App) FormatNews(n ComposedNews) string {
 	return fmt.Sprintf("ID: %s\nHashtags: %s\nTickers: %s\nMarkets: %s\n%s", n.NewsID, n.MetaData.Hashtags, n.MetaData.Tickers, n.MetaData.Markets, n.Text)
 }
 
