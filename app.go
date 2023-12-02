@@ -38,7 +38,16 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 			return
 		}
 
-		err := a.ComposeAndPostNews(ctx, news)
+		uniqueNews, err := a.RemoveDuplicates(ctx, news)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		if len(uniqueNews) == 0 {
+			return
+		}
+
+		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -78,7 +87,16 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 			return
 		}
 
-		err := a.ComposeAndPostNews(ctx, news)
+		uniqueNews, err := a.RemoveDuplicates(ctx, news)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		if len(uniqueNews) == 0 {
+			return
+		}
+
+		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
 			fmt.Println(err)
 			return
