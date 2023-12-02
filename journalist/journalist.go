@@ -55,6 +55,7 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 		results = append(results, result...)
 	}
 
+	// TODO: join errors into one errors.Join
 	for err := range errorCh {
 		errors = append(errors, err)
 	}

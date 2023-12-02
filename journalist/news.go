@@ -69,3 +69,13 @@ func (n NewsList) ToContentJSON() (string, error) {
 	}
 	return string(jsonData), nil
 }
+
+// FindById finds news by its hash id (URL + title + description + date)
+func (n NewsList) FindById(id string) *News {
+	for _, news := range n {
+		if news.ID == id {
+			return news
+		}
+	}
+	return nil
+}

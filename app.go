@@ -91,8 +91,8 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	if err != nil {
 		return err
 	}
-	if len(composedNews) != len(news) {
-		return errors.New("length mismatch")
+	if len(composedNews) == 0 {
+		return nil
 	}
 
 	dbNews := make([]models.News, len(composedNews))
@@ -109,13 +109,20 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 			return err
 		}
 
+		// composedNews and news are not the same length because of filtering
+		// so, we need to use the original news by hash
+		originalNews := news.FindById(n.NewsID)
+		if originalNews == nil {
+			return errors.New(fmt.Sprintf("cannot find original news %v", n))
+		}
+
 		dbNews[i] = models.News{
 			ChannelID:     a.publisher.ChannelID,
 			PublicationID: id,
-			OriginalTitle: news[i].Title,
-			OriginalDesc:  news[i].Description,
-			OriginalDate:  news[i].Date,
-			URL:           news[i].Link,
+			OriginalTitle: originalNews.Title,
+			OriginalDesc:  originalNews.Description,
+			OriginalDate:  originalNews.Date,
+			URL:           originalNews.Link,
 			PublishedAt:   time.Now(),
 			ComposedText:  n.Text,
 			MetaData:      meta,
@@ -161,6 +168,10 @@ func (a *App) PrepareNews(ctx context.Context, news NewsList) ([]*ComposedNews, 
 	importantNews, err := a.composer.ChooseMostImportantNews(ctx, news)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(importantNews) == 0 {
+		return nil, nil
 	}
 
 	composedNews, err := a.composer.ComposeNews(ctx, importantNews)
