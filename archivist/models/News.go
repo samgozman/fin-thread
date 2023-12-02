@@ -111,15 +111,15 @@ func (db *NewsDB) Update(ctx context.Context, n *News) error {
 	return nil
 }
 
-// FindByHash finds news by its hash (URL + title + description + date)
-func (db *NewsDB) FindByHash(ctx context.Context, hash string) (*News, error) {
-	var n News
-	res := db.Conn.WithContext(ctx).Where("hash = ?", hash).First(&n)
+// FindAllByHashes finds news by its hash (URL + title + description + date)
+func (db *NewsDB) FindAllByHashes(ctx context.Context, hashes []string) ([]*News, error) {
+	var n []*News
+	res := db.Conn.WithContext(ctx).Where("hash IN ?", hashes).Find(&n)
 	if res.Error != nil {
 		return nil, res.Error
 	}
 
-	return &n, nil
+	return n, nil
 }
 
 // FindAllUntilDate finds all news until the provided published date

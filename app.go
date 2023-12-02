@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/samgozman/go-fin-feed/archivist/models"
+	"slices"
 	"strings"
 	"time"
 
@@ -34,24 +38,17 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 			return
 		}
 
-		formattedNews, err := a.PrepareNews(ctx, news)
+		err := a.ComposeAndPostNews(ctx, news)
 		if err != nil {
 			fmt.Println(err)
 			return
-		}
-
-		for _, n := range formattedNews {
-			err := a.publisher.Publish(n)
-			if err != nil {
-				fmt.Println(err)
-			}
 		}
 	}
 }
 
 func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
 		news, e := a.staff.teJournalist.GetLatestNews(ctx, until)
@@ -81,22 +78,86 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 			return
 		}
 
-		formattedNews, err := a.PrepareNews(ctx, news)
+		err := a.ComposeAndPostNews(ctx, news)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-
-		for _, n := range formattedNews {
-			err := a.publisher.Publish(n)
-			if err != nil {
-				fmt.Println(err)
-			}
-		}
 	}
 }
 
-func (a *App) PrepareNews(ctx context.Context, news NewsList) ([]string, error) {
+func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
+	composedNews, err := a.PrepareNews(ctx, news)
+	if err != nil {
+		return err
+	}
+	if len(composedNews) != len(news) {
+		return errors.New("length mismatch")
+	}
+
+	dbNews := make([]models.News, len(composedNews))
+
+	for i, n := range composedNews {
+		f := a.FormatNews(n)
+		id, err := a.publisher.Publish(f)
+		if err != nil {
+			return err
+		}
+
+		meta, err := json.Marshal(n.MetaData)
+		if err != nil {
+			return err
+		}
+
+		dbNews[i] = models.News{
+			ChannelID:     a.publisher.ChannelID,
+			PublicationID: id,
+			OriginalTitle: news[i].Title,
+			OriginalDesc:  news[i].Description,
+			OriginalDate:  news[i].Date,
+			URL:           news[i].Link,
+			PublishedAt:   time.Now(),
+			ComposedText:  n.Text,
+			MetaData:      meta,
+		}
+	}
+
+	// TODO: add create many method to archivist with transaction
+	for _, n := range dbNews {
+		err := a.archivist.Entities.News.Create(ctx, &n)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (a *App) RemoveDuplicates(ctx context.Context, news NewsList) (NewsList, error) {
+	hashes := make([]string, len(news))
+	for i, n := range news {
+		hashes[i] = n.ID
+	}
+
+	exists, err := a.archivist.Entities.News.FindAllByHashes(ctx, hashes)
+	if err != nil {
+		return nil, err
+	}
+	existedHashes := make([]string, len(exists))
+	for i, n := range exists {
+		existedHashes[i] = n.Hash
+	}
+
+	var uniqueNews NewsList
+	for _, n := range news {
+		if !slices.Contains(existedHashes, n.ID) {
+			uniqueNews = append(uniqueNews, n)
+		}
+	}
+	return uniqueNews, nil
+}
+
+func (a *App) PrepareNews(ctx context.Context, news NewsList) ([]*ComposedNews, error) {
 	importantNews, err := a.composer.ChooseMostImportantNews(ctx, news)
 	if err != nil {
 		return nil, err
@@ -107,14 +168,11 @@ func (a *App) PrepareNews(ctx context.Context, news NewsList) ([]string, error) 
 		return nil, err
 	}
 
-	// TODO: Add some custom formatting to the news
-	var formattedNews []string
-	for _, n := range composedNews {
-		str := fmt.Sprintf("ID: %s\nHashtags: %s\nTickers: %s\nMarkets: %s\n%s", n.NewsID, n.MetaData.Hashtags, n.MetaData.Tickers, n.MetaData.Markets, n.Text)
-		formattedNews = append(formattedNews, str)
-	}
+	return composedNews, nil
+}
 
-	return formattedNews, nil
+func (a *App) FormatNews(n *ComposedNews) string {
+	return fmt.Sprintf("ID: %s\nHashtags: %s\nTickers: %s\nMarkets: %s\n%s", n.NewsID, n.MetaData.Hashtags, n.MetaData.Tickers, n.MetaData.Markets, n.Text)
 }
 
 // Staff is the structure that holds all the journalists

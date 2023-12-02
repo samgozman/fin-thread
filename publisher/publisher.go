@@ -20,12 +20,12 @@ func NewTelegramPublisher(channelId, token string) (*TelegramPublisher, error) {
 	}, nil
 }
 
-func (t *TelegramPublisher) Publish(msg string) error {
+func (t *TelegramPublisher) Publish(msg string) (pubID string, err error) {
 	tgMsg := tgbotapi.NewMessageToChannel(t.ChannelID, msg)
 
-	_, err := t.BotAPI.Send(tgMsg)
+	s, err := t.BotAPI.Send(tgMsg)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return string(rune(s.MessageID)), nil
 }
