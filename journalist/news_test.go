@@ -30,7 +30,7 @@ func TestNewNews(t *testing.T) {
 				providerName: "provider",
 			},
 			want: &News{
-				ID:           "fe7fba6bc0c72172a7b007cf8ee4adac",
+				ID:           "cbd261a703d9f7f5bf08f8ede0a1e99b",
 				Title:        "title",
 				Description:  "description",
 				Link:         "link",

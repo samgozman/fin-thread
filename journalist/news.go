@@ -8,7 +8,7 @@ import (
 )
 
 type News struct {
-	ID           string    // ID is the md5 hash of link + date
+	ID           string    // ID is the md5 hash of URL + title + description + date
 	Title        string    // Title is the title of the news
 	Description  string    // Description is the description of the news
 	Link         string    // Link is the link to the news
@@ -23,7 +23,7 @@ func NewNews(title, description, link, date, provider string) (*News, error) {
 		return nil, err
 	}
 
-	hash := md5.Sum([]byte(link + dateTime.String()))
+	hash := md5.Sum([]byte(link + title + description + dateTime.String()))
 
 	return &News{
 		ID:           hex.EncodeToString(hash[:]),
