@@ -26,6 +26,9 @@ func main() {
 	viper.AddConfigPath(".")
 	viper.SetConfigFile(".env")
 
+	l := log.Default()
+	l.SetPrefix("[main]: ")
+
 	var env Env
 	// Read the config file, if present
 	err := viper.ReadInConfig()
@@ -41,18 +44,18 @@ func main() {
 	} else {
 		err = viper.Unmarshal(&env)
 		if err != nil {
-			log.Fatal("Error unmarshalling config:", err)
+			l.Fatal("Error unmarshalling config:", err)
 		}
 	}
 
 	pub, err := NewTelegramPublisher(env.TelegramChannelID, env.TelegramBotToken)
 	if err != nil {
-		log.Fatal("Error creating Telegram publisher:", err)
+		l.Fatal("Error creating Telegram publisher:", err)
 	}
 
 	arch, err := NewArchivist(env.PostgresDSN)
 	if err != nil {
-		log.Fatal("Error creating Archivist:", err)
+		l.Fatal("Error creating Archivist:", err)
 	}
 
 	app := &App{
@@ -98,6 +101,6 @@ func main() {
 	defer s.Stop()
 	s.StartAsync()
 
-	log.Println("Started fin-feed successfully")
+	l.Println("Started fin-feed successfully")
 	select {}
 }
