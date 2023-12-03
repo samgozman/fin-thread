@@ -4,6 +4,8 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 )
 
@@ -78,4 +80,24 @@ func (n NewsList) FindById(id string) *News {
 		}
 	}
 	return nil
+}
+
+// FilterByKeywords returns only a list of news that contains at least one of the keywords
+func (n NewsList) FilterByKeywords(keywords []string) NewsList {
+	var filteredNews NewsList
+	for _, n := range n {
+		c := false
+		// Check if any keyword is present in the title & description
+		for _, k := range keywords {
+			if strings.Contains(fmt.Sprintf("%s %s", n.Title, n.Description), k) {
+				c = true
+				break
+			}
+		}
+		if c {
+			filteredNews = append(filteredNews, n)
+		}
+	}
+
+	return filteredNews
 }

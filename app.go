@@ -8,7 +8,6 @@ import (
 	"github.com/samgozman/go-fin-feed/archivist/models"
 	"log"
 	"slices"
-	"strings"
 	"time"
 
 	. "github.com/samgozman/go-fin-feed/archivist"
@@ -74,27 +73,15 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 		}
 
 		// Filter news by keywords, if Title do not contain any of the keywords - skip it
-		filterKeywords := []string{"European Union", "United States", "United Kingdom", "China", "Germany", "France", "Japan", "Italy", "India"}
-		var filteredNews NewsList
-		for _, n := range news {
-			c := false
-			// Check if any keyword is present in the title
-			for _, k := range filterKeywords {
-				if strings.Contains(n.Title, k) {
-					c = true
-					break
-				}
-			}
-			if c {
-				filteredNews = append(filteredNews, n)
-			}
-		}
+		filteredNews := news.FilterByKeywords(
+			[]string{"European Union", "United States", "United Kingdom", "China", "Germany", "France", "Japan", "Italy", "India"},
+		)
 
 		if len(news) == 0 {
 			return
 		}
 
-		uniqueNews, err := a.RemoveDuplicates(ctx, news)
+		uniqueNews, err := a.RemoveDuplicates(ctx, filteredNews)
 		if err != nil {
 			l.Println(err)
 			return
@@ -123,7 +110,7 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	dbNews := make([]models.News, len(composedNews))
 
 	for i, n := range composedNews {
-		f := a.FormatNews(n)
+		f := formatNews(n)
 		id, err := a.publisher.Publish(f)
 		if err != nil {
 			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [publisher.Publish]: %v", err))
@@ -197,7 +184,8 @@ func (a *App) RemoveDuplicates(ctx context.Context, news NewsList) (NewsList, er
 	return uniqueNews, nil
 }
 
-func (a *App) FormatNews(n *ComposedNews) string {
+// formatNews formats the news to be posted to the channel
+func formatNews(n *ComposedNews) string {
 	return fmt.Sprintf("ID: %s\nHashtags: %s\nTickers: %s\nMarkets: %s\n%s", n.ID, n.Hashtags, n.Tickers, n.Markets, n.Text)
 }
 

@@ -66,3 +66,83 @@ func TestNewNews(t *testing.T) {
 }
 
 // TODO: Add tests for ToJSON and ToContentJSON
+
+func TestNewsList_FilterByKeywords(t *testing.T) {
+	type args struct {
+		keywords []string
+	}
+	tests := []struct {
+		name string
+		n    NewsList
+		args args
+		want NewsList
+	}{
+		{
+			name: "filter by one keyword",
+			n: NewsList{
+				{
+					ID:          "id1",
+					Title:       "Some news about Uganda",
+					Description: "Read more about Uganda",
+				},
+				{
+					ID:          "id2",
+					Title:       "Some news about United States",
+					Description: "Read more about United States",
+				},
+			},
+			args: args{
+				keywords: []string{"United States"},
+			},
+			want: NewsList{
+				{
+					ID:          "id2",
+					Title:       "Some news about United States",
+					Description: "Read more about United States",
+				},
+			},
+		},
+		{
+			name: "filter by multiple keywords",
+			n: NewsList{
+				{
+					ID:          "id1",
+					Title:       "Some news about Uganda",
+					Description: "Read more about Uganda",
+				},
+				{
+					ID:          "id2",
+					Title:       "Some news about United States",
+					Description: "Read more about United States",
+				},
+				{
+					ID:          "id3",
+					Title:       "Some news about United Kingdom",
+					Description: "Read more about United Kingdom",
+				},
+			},
+			args: args{
+				keywords: []string{"United States", "United Kingdom"},
+			},
+			want: NewsList{
+				{
+					ID:          "id2",
+					Title:       "Some news about United States",
+					Description: "Read more about United States",
+				},
+				{
+					ID:          "id3",
+					Title:       "Some news about United Kingdom",
+					Description: "Read more about United Kingdom",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.n.FilterByKeywords(tt.args.keywords); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FilterByKeywords() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
