@@ -32,6 +32,8 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
 
 			result, err := j.providers[id].Fetch(ctx, until)
 			if err != nil {
@@ -55,7 +57,6 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 		results = append(results, result...)
 	}
 
-	// TODO: join e into one e.Join
 	for err := range errorCh {
 		e = append(e, err)
 	}

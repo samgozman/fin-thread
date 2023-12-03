@@ -32,13 +32,27 @@ func TestJournalist_GetLatestNews(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "valid rss feed with 3 providers if one of them is invalid",
+			fields: fields{
+				providers: []NewsProvider{
+					NewRssProvider("nasdaq:stocks", "https://www.nasdaq.com/feed/rssoutbound?category=Stocks"),
+					NewRssProvider("nasdaq:markets", "https://www.nasdaq.com/feed/rssoutbound?category=Markets"),
+					NewRssProvider("nasdaq:invalid", "https://httpbin.org/delay/15"),
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			j := &Journalist{
 				providers: tt.fields.providers,
 			}
-			ctx, cancel := context.WithTimeout(tt.args.ctx, 10*time.Second)
+			ctx, cancel := context.WithTimeout(tt.args.ctx, 6*time.Second)
 			defer cancel()
 			got, err := j.GetLatestNews(ctx, time.Now().AddDate(0, 0, -3))
 			if (err != nil) != tt.wantErr {

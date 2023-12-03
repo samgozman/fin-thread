@@ -34,9 +34,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 		news, e := a.staff.marketJournalist.GetLatestNews(ctx, until)
 		if e != nil {
 			l.Println(e)
-			return
 		}
-
 		if len(news) == 0 {
 			return
 		}
@@ -69,6 +67,8 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 		news, e := a.staff.teJournalist.GetLatestNews(ctx, until)
 		if e != nil {
 			l.Println(e)
+		}
+		if len(news) == 0 {
 			return
 		}
 
