@@ -16,7 +16,8 @@ func DefaultConfig() *Config {
 		News context can be also related to some popular topics, we call it 'hashtags'.
 		You only need to choose appropriate hashtag (0-3) only from this list: inflation, interestrates, crisis, unemployment, bankruptcy, dividends, IPO, debt, war, buybacks, fed.
 		It is OK if you don't find find some tickers, markets or hashtags. It's also possible that you will find none.
-		Next you need to combine the title and description into one sentence and rewrite it
-		so it would be more straight to the point and look more original and easy to read.`,
+		Next you need to create an informative, original 'text' based on the title and description.
+		You need to write a 'text' that would be easy to read and understand, 1-2 sentences long.
+`,
 	}
 }
