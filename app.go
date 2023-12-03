@@ -112,9 +112,9 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 }
 
 func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
-	composedNews, err := a.PrepareNews(ctx, news)
+	composedNews, err := a.composer.Compose(ctx, news)
 	if err != nil {
-		return errors.New(fmt.Sprintf("[ComposeAndPostNews] [PrepareNews]: %v", err))
+		return errors.New(fmt.Sprintf("[ComposeAndPostNews] [composer.Compose]: %v", err))
 	}
 	if len(composedNews) == 0 {
 		return nil
@@ -123,20 +123,28 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	dbNews := make([]models.News, len(composedNews))
 
 	for i, n := range composedNews {
-		f := a.FormatNews(*n)
+		f := a.FormatNews(n)
 		id, err := a.publisher.Publish(f)
 		if err != nil {
 			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [publisher.Publish]: %v", err))
 		}
 
-		meta, err := json.Marshal(n.MetaData)
+		meta, err := json.Marshal(struct {
+			Tickers  []string
+			Markets  []string
+			Hashtags []string
+		}{
+			Tickers:  n.Tickers,
+			Markets:  n.Markets,
+			Hashtags: n.Hashtags,
+		})
 		if err != nil {
-			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [json.Marshal(n.MetaData)]: %v", err))
+			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [json.Marshal] meta: %v", err))
 		}
 
 		// composedNews and news are not the same length because of filtering
 		// so, we need to use the original news by hash
-		originalNews := news.FindById(n.NewsID)
+		originalNews := news.FindById(n.ID)
 		if originalNews == nil {
 			return errors.New(fmt.Sprintf("[ComposeAndPostNews] cannot find original news %v", n))
 		}
@@ -189,26 +197,8 @@ func (a *App) RemoveDuplicates(ctx context.Context, news NewsList) (NewsList, er
 	return uniqueNews, nil
 }
 
-func (a *App) PrepareNews(ctx context.Context, news NewsList) ([]*ComposedNews, error) {
-	importantNews, err := a.composer.ChooseMostImportantNews(ctx, news)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[PrepareNews] [ChooseMostImportantNews]: %v", err))
-	}
-
-	if len(importantNews) == 0 {
-		return nil, nil
-	}
-
-	composedNews, err := a.composer.ComposeNews(ctx, importantNews)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[PrepareNews] [ComposeNews]: %v", err))
-	}
-
-	return composedNews, nil
-}
-
-func (a *App) FormatNews(n ComposedNews) string {
-	return fmt.Sprintf("ID: %s\nHashtags: %s\nTickers: %s\nMarkets: %s\n%s", n.NewsID, n.MetaData.Hashtags, n.MetaData.Tickers, n.MetaData.Markets, n.Text)
+func (a *App) FormatNews(n *ComposedNews) string {
+	return fmt.Sprintf("ID: %s\nHashtags: %s\nTickers: %s\nMarkets: %s\n%s", n.ID, n.Hashtags, n.Tickers, n.Markets, n.Text)
 }
 
 // Staff is the structure that holds all the journalists

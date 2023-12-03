@@ -2,6 +2,7 @@ package composer
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/sashabaranov/go-openai"
 	"reflect"
@@ -21,12 +22,7 @@ func (m *MockOpenAiClient) CreateChatCompletion(ctx context.Context, req openai.
 	return args.Get(0).(openai.ChatCompletionResponse), args.Error(1)
 }
 
-func TestComposer_ChooseMostImportantNews(t *testing.T) {
-	type args struct {
-		ctx  context.Context
-		news journalist.NewsList
-	}
-
+func TestComposer_Compose(t *testing.T) {
 	news := journalist.NewsList{
 		{
 			ID:           "1",
@@ -49,317 +45,78 @@ func TestComposer_ChooseMostImportantNews(t *testing.T) {
 			Title:        "Wholesale prices fell 0.5% in October for biggest monthly drop since April 2020",
 			Description:  "Wholesale prices fell 0.5% in October for biggest monthly drop since April 2020",
 			Link:         "https://www.cnbc.com/",
-			Date:         time.Now().Add(-24 * time.Hour * 2).UTC(),
+			Date:         time.Now().Add(-24 * time.Hour * 2).UTC(), // Should be filtered out
 			ProviderName: "cnbc",
 		},
 	}
 
-	tests := []struct {
-		name    string
-		args    args
-		want    journalist.NewsList
-		wantErr bool
-	}{
-		{
-			name: "Should pass and return 2 jsonNews",
-			args: args{
-				ctx:  context.Background(),
-				news: journalist.NewsList{news[0], news[1], news[2]},
-			},
-			want:    journalist.NewsList{news[0], news[1]},
-			wantErr: false,
-		},
-		{
-			name: "Should pass and return 0 jsonNews",
-			args: args{
-				ctx:  context.Background(),
-				news: journalist.NewsList{news[2]},
-			},
-			want:    journalist.NewsList{},
-			wantErr: false,
-		},
-		{
-			name: "Should return original jsonNews (except overdue) and error if OpenAI returns fails",
-			args: args{
-				ctx:  context.Background(),
-				news: journalist.NewsList{news[0], news[1], news[2]},
-			},
-			want:    journalist.NewsList{news[0], news[1]},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		mockClient := new(MockOpenAiClient)
-
-		// Set expectations for the mock client
-		if tt.wantErr {
-			mockError := errors.New("some error")
-			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{}, mockError)
-		} else {
-			wantNewsJson, _ := tt.want.ToJSON()
-			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{
-				Choices: []openai.ChatCompletionChoice{
-					{
-						Message: openai.ChatCompletionMessage{
-							Content: wantNewsJson,
-						},
-					},
-				},
-			}, nil)
-		}
-
-		t.Run(tt.name, func(t *testing.T) {
-			c := &Composer{
-				OpenAiClient: mockClient,
-				Config:       DefaultConfig(),
-			}
-			got, err := c.ChooseMostImportantNews(tt.args.ctx, tt.args.news)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Composer.ChooseMostImportantNews() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			if len(got) != len(tt.want) {
-				t.Errorf("Composer.ChooseMostImportantNews() wrong jsonNews len = %v, want %v", len(got), len(tt.want))
-			}
-
-			for i, n := range got {
-				if !reflect.DeepEqual(n, tt.want[i]) {
-					t.Errorf("Composer.ChooseMostImportantNews() = %v, want %v", n, tt.want[i])
-				}
-			}
-		})
-	}
-}
-
-func TestComposer_findNewsMetaData(t *testing.T) {
-	tt1 := journalist.NewsList{
-		{
-			ID:          "1234",
-			Title:       "Up 10% In The Last One Month, What's Next For Morgan Stanley Stock?",
-			Description: "Morgan Stanley&amp;rsquo;s stock&amp;nbsp;(NYSE: MS) has lost roughly 6% YTD, as compared to the 18% rise in the S&amp;amp;P500 over the same period. Further, the stock is currently trading at $80 per share, which is 11% below its fair value of $90 &amp;ndash; Trefis&amp;rsquo; estimate for&amp;nbsp;Mor",
-		},
-	}
-	tt2 := journalist.NewsList{
-		{
-			ID:          "1",
-			Title:       "Blah blah blah",
-			Description: "Blah blah blah",
-		},
-	}
-	jsonTt1, _ := tt1.ToContentJSON()
-	jsonTt2, _ := tt2.ToContentJSON()
-
-	type args struct {
-		ctx      context.Context
-		jsonNews string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		mockRes string
-		want    map[string]*NewsMeta
-		wantErr bool
-	}{
-		{
-			name: "Should pass and return correct meta data",
-			args: args{
-				ctx:      context.Background(),
-				jsonNews: jsonTt1,
-			},
-			mockRes: "[{\n  \"id\": \"1234\",\n  \"tickers\": [\"MS\"],\n  \"markets\": [\"SPY\"],\n  \"hashtags\": []\n}]",
-			want: map[string]*NewsMeta{
-				"1234": {
-					Tickers:  []string{"MS"},
-					Markets:  []string{"SPY"},
-					Hashtags: []string{},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "Should pass and return empty meta data",
-			args: args{
-				ctx:      context.Background(),
-				jsonNews: jsonTt2,
-			},
-			mockRes: "[{\n  \"id\": \"1\",\n  \"tickers\": [],\n  \"markets\": [],\n  \"hashtags\": []\n}]",
-			want: map[string]*NewsMeta{
-				"1": {
-					Tickers:  []string{},
-					Markets:  []string{},
-					Hashtags: []string{},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "Should return error if OpenAI fails",
-			args: args{
-				ctx:      context.Background(),
-				jsonNews: jsonTt2,
-			},
-			mockRes: "",
-			want:    nil,
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		mockClient := new(MockOpenAiClient)
-
-		if tt.wantErr {
-			mockError := errors.New("some error")
-			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{}, mockError)
-		} else {
-			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{
-				Choices: []openai.ChatCompletionChoice{
-					{
-						Message: openai.ChatCompletionMessage{
-							Content: tt.mockRes,
-						},
-					},
-				},
-			}, nil)
-		}
-
-		t.Run(tt.name, func(t *testing.T) {
-			c := &Composer{
-				OpenAiClient: mockClient,
-				Config:       DefaultConfig(),
-			}
-			got, err := c.findNewsMetaData(tt.args.ctx, tt.args.jsonNews)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("findNewsMetaData() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("findNewsMetaData() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestComposer_ComposeNews(t *testing.T) {
 	type args struct {
 		ctx  context.Context
 		news journalist.NewsList
 	}
 	tests := []struct {
-		name     string
-		args     args
-		mockMeta string
-		mockRes  string
-		want     []*ComposedNews
-		wantErr  bool
+		name                string
+		args                args
+		expectedFiltredNews journalist.NewsList
+		want                []*ComposedNews
+		wantErr             bool
 	}{
 		{
 			name: "Should pass and return correct composed jsonNews",
 			args: args{
-				ctx: context.Background(),
-				news: journalist.NewsList{
-					{
-						ID:          "1234",
-						Title:       "Up 10% In The Last One Month, What's Next For Morgan Stanley Stock?",
-						Description: "Morgan Stanley&amp;rsquo;s stock&amp;nbsp;(NYSE: MS) has lost roughly 6% YTD, as compared to the 18% rise in the S&amp;amp;P500 over the same period. Further, the stock is currently trading at $80 per share, which is 11% below its fair value of $90 &amp;ndash; Trefis&amp;rsquo; estimate for&amp;nbsp;Mor",
-					},
-				},
+				ctx:  context.Background(),
+				news: news,
 			},
-			mockMeta: "[{\n  \"id\": \"1234\",\n  \"tickers\": [\"MS\"],\n  \"markets\": [\"SPY\"],\n  \"hashtags\": []\n}]",
-			mockRes:  "[{\"news_id\":\"1234\", \"text\":\"Morgan Stanley stock has increased by 10% in the last month. Despite a YTD loss of 6% compared to the S&P500's 18% rise, the current trading price of $80 is 11% below its estimated fair value of $90 by Trefis.\"}]",
+			expectedFiltredNews: journalist.NewsList{news[0], news[1]},
 			want: []*ComposedNews{
 				{
-					NewsID: "1234",
-					Text:   "Morgan Stanley stock has increased by 10% in the last month. Despite a YTD loss of 6% compared to the S&P500's 18% rise, the current trading price of $80 is 11% below its estimated fair value of $90 by Trefis.",
-					MetaData: &NewsMeta{
-						Tickers:  []string{"MS"},
-						Markets:  []string{"SPY"},
-						Hashtags: []string{},
-					},
+					ID:       "1",
+					Text:     "Ray Dalio warns about the soaring U.S. government debt reaching a critical inflection point, potentially leading to larger problems.",
+					Tickers:  []string{},
+					Markets:  []string{},
+					Hashtags: []string{"debt"},
+				},
+				{
+					ID:       "2",
+					Text:     "The market anticipates aggressive rate cuts by the Fed, despite the cautious approach of central bank officials. Investors may face disappointment.",
+					Tickers:  []string{},
+					Markets:  []string{},
+					Hashtags: []string{"interestrates"},
 				},
 			},
 			wantErr: false,
 		},
 		{
-			name: "Should pass and return empty meta data",
+			name: "Should pass and return empty array correctly",
 			args: args{
-				ctx: context.Background(),
-				news: journalist.NewsList{
-					{
-						ID:          "1",
-						Title:       "Blah blah blah",
-						Description: "Blah blah blah",
-					},
-				},
+				ctx:  context.Background(),
+				news: journalist.NewsList{},
 			},
-			mockMeta: "[{\n  \"id\": \"1\",\n  \"tickers\": [],\n  \"markets\": [],\n  \"hashtags\": []\n}]",
-			mockRes:  "[{\"news_id\":\"1\", \"text\":\"Blah blah blah\"}]",
-			want: []*ComposedNews{
-				{
-					NewsID: "1",
-					Text:   "Blah blah blah",
-					MetaData: &NewsMeta{
-						Tickers:  []string{},
-						Markets:  []string{},
-						Hashtags: []string{},
-					},
-				},
-			},
+			want:    []*ComposedNews{},
 			wantErr: false,
 		},
 		{
 			name: "Should return error if OpenAI fails",
 			args: args{
-				ctx: context.Background(),
-				news: journalist.NewsList{
-					{
-						ID:          "1",
-						Title:       "Blah blah blah",
-						Description: "Blah blah blah",
-					},
-				},
+				ctx:  context.Background(),
+				news: news,
 			},
-			mockMeta: "",
-			mockRes:  "",
-			want:     nil,
-			wantErr:  true,
+			expectedFiltredNews: journalist.NewsList{news[0], news[1]},
+			want:                nil,
+			wantErr:             true,
 		},
 	}
 	for _, tt := range tests {
 		mockClient := new(MockOpenAiClient)
 		defConf := DefaultConfig()
 
+		// Set expectations for the mock client
 		if tt.wantErr {
 			mockError := errors.New("some error")
 			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{}, mockError)
 		} else {
-			jsonNews, _ := tt.args.news.ToContentJSON()
-
-			mockClient.On("CreateChatCompletion", mock.Anything, openai.ChatCompletionRequest{
-				Model: openai.GPT3Dot5Turbo1106,
-				Messages: []openai.ChatCompletionMessage{
-					{
-						Role:    openai.ChatMessageRoleSystem,
-						Content: defConf.MetaPrompt,
-					},
-					{
-						Role:    openai.ChatMessageRoleUser,
-						Content: jsonNews,
-					},
-				},
-				Temperature:      1,
-				MaxTokens:        2048,
-				TopP:             1,
-				FrequencyPenalty: 0,
-				PresencePenalty:  0,
-			}).Return(openai.ChatCompletionResponse{
-				Choices: []openai.ChatCompletionChoice{
-					{
-						Message: openai.ChatCompletionMessage{
-							Content: tt.mockMeta,
-						},
-					},
-				},
-			}, nil).Once()
+			jsonNews, _ := tt.expectedFiltredNews.ToContentJSON()
+			wantNewsJson, _ := json.Marshal(tt.want)
 			mockClient.On("CreateChatCompletion", mock.Anything, openai.ChatCompletionRequest{
 				Model: openai.GPT3Dot5Turbo1106,
 				Messages: []openai.ChatCompletionMessage{
@@ -381,11 +138,11 @@ func TestComposer_ComposeNews(t *testing.T) {
 				Choices: []openai.ChatCompletionChoice{
 					{
 						Message: openai.ChatCompletionMessage{
-							Content: tt.mockRes,
+							Content: string(wantNewsJson),
 						},
 					},
 				},
-			}, nil).Once()
+			}, nil)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -393,15 +150,20 @@ func TestComposer_ComposeNews(t *testing.T) {
 				OpenAiClient: mockClient,
 				Config:       DefaultConfig(),
 			}
-			got, got1 := c.ComposeNews(tt.args.ctx, tt.args.news)
+			got, err := c.Compose(tt.args.ctx, tt.args.news)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Compose() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if len(got) != len(tt.want) {
+				t.Errorf("Compose() wrong len = %v, want %v", len(got), len(tt.want))
+			}
 
 			for i, n := range got {
 				if !reflect.DeepEqual(n, tt.want[i]) {
-					t.Errorf("ComposeNews() got = %v, want %v", n, tt.want[i])
+					t.Errorf("Compose() = %v, want %v", n, tt.want[i])
 				}
-			}
-			if (got1 != nil) != tt.wantErr {
-				t.Errorf("ComposeNews() got1 = %v, want %v", got1, tt.wantErr)
 			}
 		})
 	}
