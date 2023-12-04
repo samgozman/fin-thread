@@ -25,7 +25,7 @@ type App struct {
 
 func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
 		l := log.Default()
@@ -58,7 +58,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 
 func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
 		l := log.Default()
