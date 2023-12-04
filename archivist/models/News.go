@@ -53,15 +53,15 @@ func (n *News) Validate() error {
 	}
 
 	if len(n.OriginalTitle) > 256 {
-		n.OriginalTitle = n.OriginalTitle[:256]
+		return errors.New("original_title is too long")
 	}
 
 	if len(n.OriginalDesc) > 512 {
-		n.OriginalDesc = n.OriginalDesc[:512]
+		return errors.New("original_desc is too long")
 	}
 
 	if len(n.ComposedText) > 512 {
-		n.ComposedText = n.ComposedText[:512]
+		return errors.New("composed_text is too long")
 	}
 
 	if n.OriginalDate.IsZero() {
