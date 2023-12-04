@@ -26,7 +26,7 @@ type News struct {
 	PublicationID string         `gorm:"size:64" json:"publication_id"`             // ID of the publication (message ID in Telegram)
 	URL           string         `gorm:"size:256" json:"url"`                       // URL of the original news
 	OriginalTitle string         `gorm:"size:256" json:"original_title"`            // Original News title
-	OriginalDesc  string         `gorm:"size:512" json:"original_desc"`             // Original News description
+	OriginalDesc  string         `gorm:"size:1024" json:"original_desc"`            // Original News description
 	ComposedText  string         `gorm:"size:512" json:"composed_text"`             // Composed text
 	MetaData      datatypes.JSON `gorm:"" json:"meta_data"`                         // Meta data (tickers, markets, hashtags, etc.)
 	PublishedAt   time.Time      `gorm:"default:null" json:"published_at"`          // Composed News publication date
@@ -56,7 +56,7 @@ func (n *News) Validate() error {
 		return errors.New("original_title is too long")
 	}
 
-	if len(n.OriginalDesc) > 512 {
+	if len(n.OriginalDesc) > 1024 {
 		return errors.New("original_desc is too long")
 	}
 
@@ -83,6 +83,10 @@ func (n *News) BeforeCreate(tx *gorm.DB) error {
 
 	if len(n.Hash) == 0 {
 		n.GenerateHash()
+	}
+
+	if len(n.OriginalDesc) > 1024 {
+		n.OriginalDesc = n.OriginalDesc[:1024]
 	}
 
 	err := n.Validate()
