@@ -61,11 +61,9 @@ func main() {
 	app := &App{
 		staff: &Staff{
 			marketJournalist: NewJournalist([]NewsProvider{
-				NewRssProvider("bloomberg:markets", "https://feeds.bloomberg.com/markets/news.rss"),
 				NewRssProvider("benzinga:news", "https://www.benzinga.com/news/feed"),
 				NewRssProvider("benzinga:m&a", "https://www.benzinga.com/news/m-a/feed"),
 				NewRssProvider("benzinga:buybacks", "https://www.benzinga.com/news/buybacks/feed"),
-				NewRssProvider("wsj:markets", "https://feeds.a.dj.com/rss/RSSMarketsMain.xml"),
 			}),
 			teJournalist: NewJournalist([]NewsProvider{
 				NewRssProvider("trading-economics:repo-rate", "https://tradingeconomics.com/rss/news.aspx?i=repo+rate"),
