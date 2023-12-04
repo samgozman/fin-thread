@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/microcosm-cc/bluemonday"
 	"strings"
 	"time"
 )
@@ -24,6 +25,11 @@ func NewNews(title, description, link, date, provider string) (*News, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Sanitize title and description, because they may contain HTML tags and styles
+	p := bluemonday.StrictPolicy()
+	title = p.Sanitize(title)
+	description = p.Sanitize(description)
 
 	hash := md5.Sum([]byte(link + title + description + dateTime.String()))
 

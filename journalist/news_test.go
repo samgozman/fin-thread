@@ -40,6 +40,25 @@ func TestNewNews(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "valid news with html tags",
+			args: args{
+				title:        "title <i>bonk</i>",
+				description:  "description <b>bold</b> <i>italic</i> <a href=\"link\">link</a>",
+				link:         "link",
+				date:         "Mon, 02 Jan 2006 15:04:05 MST",
+				providerName: "provider",
+			},
+			want: &News{
+				ID:           "309e1c0cfc773eccc628ba376378eaa1",
+				Title:        "title bonk",
+				Description:  "description bold italic link",
+				Link:         "link",
+				Date:         time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
+				ProviderName: "provider",
+			},
+			wantErr: false,
+		},
+		{
 			name: "invalid date",
 			args: args{
 				title:       "title",
