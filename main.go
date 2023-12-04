@@ -88,13 +88,12 @@ func main() {
 	}
 
 	s := gocron.NewScheduler(time.UTC)
-	// .WaitForSchedule()
-	_, err = s.Every(60).Second().Do(app.CreateMarketNewsJob(time.Now().Add(-60 * time.Second)))
+	_, err = s.Every(60 * time.Second).Do(app.CreateMarketNewsJob(time.Now().Add(-60 * time.Second)))
 	if err != nil {
 		return
 	}
 
-	_, err = s.Every(90).Second().Do(app.CreateTradingEconomicsNewsJob(time.Now().Add(-90 * time.Second)))
+	_, err = s.Every(5 * time.Minute).WaitForSchedule().Do(app.CreateTradingEconomicsNewsJob(time.Now().Add(-5 * time.Minute)))
 	if err != nil {
 		return
 	}
