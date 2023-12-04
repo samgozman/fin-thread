@@ -62,8 +62,9 @@ func main() {
 		staff: &Staff{
 			marketJournalist: NewJournalist([]NewsProvider{
 				NewRssProvider("bloomberg:markets", "https://feeds.bloomberg.com/markets/news.rss"),
-				NewRssProvider("cnbc:finance", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"),
-				NewRssProvider("nasdaq:markets", "https://www.nasdaq.com/feed/rssoutbound?category=Markets"),
+				NewRssProvider("benzinga:news", "https://www.benzinga.com/news/feed"),
+				NewRssProvider("benzinga:m&a", "https://www.benzinga.com/news/m-a/feed"),
+				NewRssProvider("benzinga:buybacks", "https://www.benzinga.com/news/buybacks/feed"),
 				NewRssProvider("wsj:markets", "https://feeds.a.dj.com/rss/RSSMarketsMain.xml"),
 			}),
 			teJournalist: NewJournalist([]NewsProvider{
