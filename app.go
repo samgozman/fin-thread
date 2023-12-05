@@ -110,7 +110,14 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	dbNews := make([]models.News, len(composedNews))
 
 	for i, n := range composedNews {
-		f := formatNews(n)
+		// composedNews and news are not the same length because of filtering
+		// so, we need to use the original news by hash
+		originalNews := news.FindById(n.ID)
+		if originalNews == nil {
+			return errors.New(fmt.Sprintf("[ComposeAndPostNews] cannot find original news %v", n))
+		}
+
+		f := formatNews(n, originalNews.ProviderName)
 		id, err := a.publisher.Publish(f)
 		if err != nil {
 			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [publisher.Publish]: %v", err))
@@ -127,13 +134,6 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 		})
 		if err != nil {
 			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [json.Marshal] meta: %v", err))
-		}
-
-		// composedNews and news are not the same length because of filtering
-		// so, we need to use the original news by hash
-		originalNews := news.FindById(n.ID)
-		if originalNews == nil {
-			return errors.New(fmt.Sprintf("[ComposeAndPostNews] cannot find original news %v", n))
 		}
 
 		dbNews[i] = models.News{
@@ -185,8 +185,11 @@ func (a *App) RemoveDuplicates(ctx context.Context, news NewsList) (NewsList, er
 }
 
 // formatNews formats the news to be posted to the channel
-func formatNews(n *ComposedNews) string {
-	return fmt.Sprintf("ID: %s\nHashtags: %s\nTickers: %s\nMarkets: %s\n%s", n.ID, n.Hashtags, n.Tickers, n.Markets, n.Text)
+func formatNews(n *ComposedNews, provider string) string {
+	return fmt.Sprintf(
+		"ID: %s\nProvider: %s\nHashtags: %s\nTickers: %s\nMarkets: %s\n%s",
+		n.ID, provider, n.Hashtags, n.Tickers, n.Markets, n.Text,
+	)
 }
 
 // Staff is the structure that holds all the journalists
