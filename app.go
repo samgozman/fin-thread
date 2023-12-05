@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/samgozman/go-fin-feed/archivist/models"
+	"github.com/samgozman/fin-thread/archivist/models"
 	"log"
 	"slices"
 	"time"
 
-	. "github.com/samgozman/go-fin-feed/archivist"
-	. "github.com/samgozman/go-fin-feed/composer"
-	. "github.com/samgozman/go-fin-feed/journalist"
-	. "github.com/samgozman/go-fin-feed/publisher"
+	. "github.com/samgozman/fin-thread/archivist"
+	. "github.com/samgozman/fin-thread/composer"
+	. "github.com/samgozman/fin-thread/journalist"
+	. "github.com/samgozman/fin-thread/publisher"
 )
 
 type App struct {

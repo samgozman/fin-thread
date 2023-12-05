@@ -1,7 +1,7 @@
 package archivist
 
 import (
-	"github.com/samgozman/go-fin-feed/archivist/models"
+	"github.com/samgozman/fin-thread/archivist/models"
 	"gorm.io/gorm"
 )
 

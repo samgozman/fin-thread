@@ -7,10 +7,10 @@ import (
 	"os"
 	"time"
 
-	. "github.com/samgozman/go-fin-feed/archivist"
-	. "github.com/samgozman/go-fin-feed/composer"
-	. "github.com/samgozman/go-fin-feed/journalist"
-	. "github.com/samgozman/go-fin-feed/publisher"
+	. "github.com/samgozman/fin-thread/archivist"
+	. "github.com/samgozman/fin-thread/composer"
+	. "github.com/samgozman/fin-thread/journalist"
+	. "github.com/samgozman/fin-thread/publisher"
 )
 
 // Env is a structure that holds all the environment variables that are used in the app

@@ -1,4 +1,4 @@
-module github.com/samgozman/go-fin-feed
+module github.com/samgozman/fin-thread
 
 go 1.21.1
 

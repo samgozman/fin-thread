@@ -1,4 +1,4 @@
-module github.com/samgozman/go-fin-feed/composer
+module github.com/samgozman/fin-thread/composer
 
 go 1.21.1
 

@@ -1,4 +1,4 @@
-module github.com/samgozman/go-fin-feed/publisher
+module github.com/samgozman/fin-thread/publisher
 
 go 1.21.1
 

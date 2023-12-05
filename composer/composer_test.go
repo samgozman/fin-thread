@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/samgozman/go-fin-feed/journalist"
+	"github.com/samgozman/fin-thread/journalist"
 	"github.com/stretchr/testify/mock"
 )
 

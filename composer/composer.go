@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/samber/lo"
-	"github.com/samgozman/go-fin-feed/journalist"
+	"github.com/samgozman/fin-thread/journalist"
 	"github.com/sashabaranov/go-openai"
 )
 
