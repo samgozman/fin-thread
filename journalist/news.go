@@ -108,9 +108,9 @@ func (n NewsList) FilterByKeywords(keywords []string) NewsList {
 	return filteredNews
 }
 
-// RemoveDuplicates duplicates news by ID hash.
+// MapIDs removes duplicates news by creating a map of ID hashes.
 // Since same news can be fetched from multiple feeds, we need to filter them out.
-func (n NewsList) RemoveDuplicates() NewsList {
+func (n NewsList) MapIDs() NewsList {
 	var filteredNews NewsList
 
 	// Create a map of news ID to news

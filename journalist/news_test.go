@@ -166,7 +166,7 @@ func TestNewsList_FilterByKeywords(t *testing.T) {
 	}
 }
 
-func TestNewsList_RemoveDuplicates(t *testing.T) {
+func TestNewsList_MapIDs(t *testing.T) {
 	tests := []struct {
 		name string
 		n    NewsList
@@ -207,8 +207,8 @@ func TestNewsList_RemoveDuplicates(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.n.RemoveDuplicates(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("RemoveDuplicates() = %v, want %v", got, tt.want)
+			if got := tt.n.MapIDs(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("MapIDs() = %v, want %v", got, tt.want)
 			}
 		})
 	}

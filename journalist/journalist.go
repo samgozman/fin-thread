@@ -56,8 +56,8 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 	for result := range resultCh {
 		results = append(results, result...)
 	}
-	
-	results = results.RemoveDuplicates()
+
+	results = results.MapIDs()
 
 	for err := range errorCh {
 		e = append(e, err)
