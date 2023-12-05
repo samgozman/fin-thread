@@ -1,1 +1,1 @@
-# go-fin-feed
+# FinThread
