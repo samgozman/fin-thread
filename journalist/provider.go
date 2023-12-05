@@ -45,7 +45,7 @@ func (r *RssProvider) Fetch(ctx context.Context, until time.Time) (NewsList, err
 	}
 
 	for i, n := range news {
-		// Filter news by date
+		// RemoveDuplicates news by date
 		if n.Date.Before(until) {
 			news = news[:i]
 			break

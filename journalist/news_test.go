@@ -165,3 +165,51 @@ func TestNewsList_FilterByKeywords(t *testing.T) {
 		})
 	}
 }
+
+func TestNewsList_RemoveDuplicates(t *testing.T) {
+	tests := []struct {
+		name string
+		n    NewsList
+		want NewsList
+	}{
+		{
+			name: "filter duplicates",
+			n: NewsList{
+				{
+					ID:          "id1",
+					Title:       "Some news",
+					Description: "Read more",
+				},
+				{
+					ID:          "id2",
+					Title:       "Some news about United States",
+					Description: "Read more about United States",
+				},
+				{
+					ID:          "id1",
+					Title:       "Some news",
+					Description: "Read more",
+				},
+			},
+			want: NewsList{
+				{
+					ID:          "id1",
+					Title:       "Some news",
+					Description: "Read more",
+				},
+				{
+					ID:          "id2",
+					Title:       "Some news about United States",
+					Description: "Read more about United States",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.n.RemoveDuplicates(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("RemoveDuplicates() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

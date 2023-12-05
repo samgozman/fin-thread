@@ -26,7 +26,7 @@ func NewComposer(oaiToken string) *Composer {
 }
 
 func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*ComposedNews, error) {
-	// Filter out news that are not from today
+	// RemoveDuplicates out news that are not from today
 	var todayNews journalist.NewsList = lo.Filter(news, func(n *journalist.News, _ int) bool {
 		return n.Date.Day() == time.Now().Day()
 	})

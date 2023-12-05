@@ -107,3 +107,22 @@ func (n NewsList) FilterByKeywords(keywords []string) NewsList {
 
 	return filteredNews
 }
+
+// RemoveDuplicates duplicates news by ID hash.
+// Since same news can be fetched from multiple feeds, we need to filter them out.
+func (n NewsList) RemoveDuplicates() NewsList {
+	var filteredNews NewsList
+
+	// Create a map of news ID to news
+	newsMap := make(map[string]*News)
+	for _, news := range n {
+		newsMap[news.ID] = news
+	}
+
+	// Create a list of news from the map
+	for _, news := range newsMap {
+		filteredNews = append(filteredNews, news)
+	}
+
+	return filteredNews
+}
