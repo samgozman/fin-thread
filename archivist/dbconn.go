@@ -4,7 +4,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
+	"log/slog"
 	"time"
 )
 
@@ -19,10 +19,10 @@ func connectToPG(dsn string) (*gorm.DB, error) {
 			DSN: dsn,
 		}))
 		if err != nil {
-			log.Println("Postgres not yet ready...")
+			slog.Info("[connectToPG] Postgres not yet ready...")
 			return nil, err
 		}
-		log.Println("Connected to Postgres!")
+		slog.Info("[connectToPG] Connected to Postgres!")
 		return conn, nil
 	}, bf)
 	if err != nil {
