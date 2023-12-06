@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"github.com/samgozman/fin-thread/archivist/models"
 	"log/slog"
 	"slices"
@@ -28,12 +29,23 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
+		defer sentry.Flush(2 * time.Second)
+
+		// Sentry performance monitoring
+		hub := sentry.GetHubFromContext(ctx)
+		if hub == nil {
+			hub = sentry.CurrentHub().Clone()
+			ctx = sentry.SetHubOnContext(ctx, hub)
+		}
+		transaction := sentry.StartTransaction(ctx, "App.CreateMarketNewsJob")
+		defer transaction.Finish()
 
 		l := a.logger.WithGroup("CreateMarketNewsJob").With("[CreateMarketNewsJob]")
 
-		news, e := a.staff.marketJournalist.GetLatestNews(ctx, until)
-		if e != nil {
-			l.Info("[GetLatestNews]", "error", e)
+		news, err := a.staff.marketJournalist.GetLatestNews(ctx, until)
+		if err != nil {
+			l.Info("[GetLatestNews]", "error", err)
+			sentry.CaptureException(err)
 		}
 		if len(news) == 0 {
 			return
@@ -42,6 +54,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 		uniqueNews, err := a.RemoveDuplicates(ctx, news)
 		if err != nil {
 			l.Info("[RemoveDuplicates]", "error", err)
+			sentry.CaptureException(err)
 			return
 		}
 		if len(uniqueNews) == 0 {
@@ -51,6 +64,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
 			l.Warn("[ComposeAndPostNews]", "error", err)
+			sentry.CaptureException(err)
 			return
 		}
 	}
@@ -60,12 +74,23 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
+		defer sentry.Flush(2 * time.Second)
+
+		// Sentry performance monitoring
+		hub := sentry.GetHubFromContext(ctx)
+		if hub == nil {
+			hub = sentry.CurrentHub().Clone()
+			ctx = sentry.SetHubOnContext(ctx, hub)
+		}
+		transaction := sentry.StartTransaction(ctx, "App.CreateTradingEconomicsNewsJob")
+		defer transaction.Finish()
 
 		l := a.logger.WithGroup("CreateTradingEconomicsNewsJob").With("[CreateTradingEconomicsNewsJob]")
 
-		news, e := a.staff.teJournalist.GetLatestNews(ctx, until)
-		if e != nil {
-			l.Info("[GetLatestNews]", "error", e)
+		news, err := a.staff.teJournalist.GetLatestNews(ctx, until)
+		if err != nil {
+			l.Info("[GetLatestNews]", "error", err)
+			sentry.CaptureException(err)
 		}
 		if len(news) == 0 {
 			return
@@ -83,6 +108,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 		uniqueNews, err := a.RemoveDuplicates(ctx, filteredNews)
 		if err != nil {
 			l.Info("[RemoveDuplicates]", "error", err)
+			sentry.CaptureException(err)
 			return
 		}
 		if len(uniqueNews) == 0 {
@@ -92,13 +118,16 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
 			l.Warn("[ComposeAndPostNews]", "error", err)
+			sentry.CaptureException(err)
 			return
 		}
 	}
 }
 
 func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
+	span := sentry.StartSpan(ctx, "Compose")
 	composedNews, err := a.composer.Compose(ctx, news)
+	span.Finish()
 	if err != nil {
 		return errors.New(fmt.Sprintf("[composer.Compose]: %v", err))
 	}
@@ -111,13 +140,17 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	for i, n := range composedNews {
 		// composedNews and news are not the same length because of filtering
 		// so, we need to use the original news by hash
+		span = sentry.StartSpan(ctx, "FindById")
 		originalNews := news.FindById(n.ID)
+		span.Finish()
 		if originalNews == nil {
 			return errors.New(fmt.Sprintf("cannot find original news %v", n))
 		}
 
 		f := formatNews(n, originalNews.ProviderName)
+		span = sentry.StartSpan(ctx, "Publish")
 		id, err := a.publisher.Publish(f)
+		span.Finish()
 		if err != nil {
 			return errors.New(fmt.Sprintf("[publisher.Publish]: %v", err))
 		}
@@ -150,7 +183,9 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 
 	// TODO: add create many method to archivist with transaction
 	for _, n := range dbNews {
+		span = sentry.StartSpan(ctx, "News.Create")
 		err := a.archivist.Entities.News.Create(ctx, &n)
+		span.Finish()
 		if err != nil {
 			return errors.New(fmt.Sprintf("[News.Create]: %v", err))
 		}
@@ -165,7 +200,9 @@ func (a *App) RemoveDuplicates(ctx context.Context, news NewsList) (NewsList, er
 		hashes[i] = n.ID
 	}
 
+	span := sentry.StartSpan(ctx, "FindAllByHashes")
 	exists, err := a.archivist.Entities.News.FindAllByHashes(ctx, hashes)
+	span.Finish()
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("[News.FindAllByHashes]: %v", err))
 	}

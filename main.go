@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/getsentry/sentry-go"
 	"github.com/go-co-op/gocron"
 	"github.com/spf13/viper"
-	"log"
 	"log/slog"
 	"os"
 	"time"
@@ -20,6 +20,7 @@ type Env struct {
 	TelegramBotToken  string `mapstructure:"TELEGRAM_BOT_TOKEN"`
 	OpenAiToken       string `mapstructure:"OPENAI_TOKEN"`
 	PostgresDSN       string `mapstructure:"POSTGRES_DSN"`
+	SentryDSN         string `mapstructure:"SENTRY_DSN"`
 }
 
 func main() {
@@ -33,13 +34,14 @@ func main() {
 	// Read the config file, if present
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Println("No config file found, reading from the system env")
+		l.Info("No config file found, reading from the system env")
 		// TODO: fetch with viper, add validation
 		env = Env{
 			TelegramChannelID: os.Getenv("TELEGRAM_CHANNEL_ID"),
 			TelegramBotToken:  os.Getenv("TELEGRAM_BOT_TOKEN"),
 			OpenAiToken:       os.Getenv("OPENAI_TOKEN"),
 			PostgresDSN:       os.Getenv("POSTGRES_DSN"),
+			SentryDSN:         os.Getenv("SENTRY_DSN"),
 		}
 	} else {
 		err = viper.Unmarshal(&env)
@@ -60,6 +62,17 @@ func main() {
 		l.Error("Error creating Archivist:", err)
 		os.Exit(1)
 	}
+
+	err = sentry.Init(sentry.ClientOptions{
+		Dsn:              env.SentryDSN,
+		EnableTracing:    true,
+		TracesSampleRate: 0.5,
+	})
+	if err != nil {
+		l.Error("Error initializing Sentry:", err)
+		os.Exit(1)
+	}
+	defer sentry.Flush(2 * time.Second)
 
 	app := &App{
 		staff: &Staff{

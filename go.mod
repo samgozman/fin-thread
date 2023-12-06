@@ -4,6 +4,7 @@ go 1.21.1
 
 require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
+	github.com/getsentry/sentry-go v0.25.0 // indirect
 	github.com/go-co-op/gocron v1.36.0 // indirect
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
