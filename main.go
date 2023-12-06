@@ -82,6 +82,10 @@ func main() {
 				NewRssProvider("benzinga:m&a", "https://www.benzinga.com/news/m-a/feed"),
 				NewRssProvider("benzinga:buybacks", "https://www.benzinga.com/news/buybacks/feed"),
 				NewRssProvider("benzinga:global", "https://www.benzinga.com/news/global/feed"),
+				NewRssProvider("benzinga:sec", "https://www.benzinga.com/sec/feed"),
+				NewRssProvider("benzinga:bonds", "https://www.benzinga.com/markets/bonds/feed"),
+				NewRssProvider("benzinga:analyst:upgrades", "https://www.benzinga.com/analyst-ratings/upgrades/feed"),
+				NewRssProvider("benzinga:analyst:downgrades", "https://www.benzinga.com/analyst-ratings/downgrades/feed"),
 			}),
 			teJournalist: NewJournalist([]NewsProvider{
 				NewRssProvider("trading-economics:repo-rate", "https://tradingeconomics.com/rss/news.aspx?i=repo+rate"),
