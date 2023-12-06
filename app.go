@@ -29,7 +29,6 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
-		defer sentry.Flush(2 * time.Second)
 
 		// Sentry performance monitoring
 		hub := sentry.GetHubFromContext(ctx)
@@ -37,13 +36,14 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 			hub = sentry.CurrentHub().Clone()
 			ctx = sentry.SetHubOnContext(ctx, hub)
 		}
+		defer hub.Flush(2 * time.Second)
 		transaction := sentry.StartTransaction(ctx, "App.CreateMarketNewsJob")
 		defer transaction.Finish()
 
 		news, err := a.staff.marketJournalist.GetLatestNews(ctx, until)
 		if err != nil {
 			a.logger.Info("[CreateMarketNewsJob][GetLatestNews]", "error", err)
-			sentry.CaptureException(err)
+			hub.CaptureException(err)
 		}
 		if len(news) == 0 {
 			return
@@ -52,7 +52,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 		uniqueNews, err := a.RemoveDuplicates(ctx, news)
 		if err != nil {
 			a.logger.Info("[CreateMarketNewsJob][RemoveDuplicates]", "error", err)
-			sentry.CaptureException(err)
+			hub.CaptureException(err)
 			return
 		}
 		if len(uniqueNews) == 0 {
@@ -62,7 +62,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
 			a.logger.Warn("[CreateMarketNewsJob][ComposeAndPostNews]", "error", err)
-			sentry.CaptureException(err)
+			hub.CaptureException(err)
 			return
 		}
 	}
@@ -72,7 +72,6 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
-		defer sentry.Flush(2 * time.Second)
 
 		// Sentry performance monitoring
 		hub := sentry.GetHubFromContext(ctx)
@@ -80,13 +79,14 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 			hub = sentry.CurrentHub().Clone()
 			ctx = sentry.SetHubOnContext(ctx, hub)
 		}
+		defer hub.Flush(2 * time.Second)
 		transaction := sentry.StartTransaction(ctx, "App.CreateTradingEconomicsNewsJob")
 		defer transaction.Finish()
 
 		news, err := a.staff.teJournalist.GetLatestNews(ctx, until)
 		if err != nil {
 			a.logger.Info("[CreateTradingEconomicsNewsJob][GetLatestNews]", "error", err)
-			sentry.CaptureException(err)
+			hub.CaptureException(err)
 		}
 		if len(news) == 0 {
 			return
@@ -104,7 +104,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 		uniqueNews, err := a.RemoveDuplicates(ctx, filteredNews)
 		if err != nil {
 			a.logger.Info("[CreateTradingEconomicsNewsJob][RemoveDuplicates]", "error", err)
-			sentry.CaptureException(err)
+			hub.CaptureException(err)
 			return
 		}
 		if len(uniqueNews) == 0 {
@@ -114,7 +114,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
 			a.logger.Warn("[CreateTradingEconomicsNewsJob][ComposeAndPostNews]", "error", err)
-			sentry.CaptureException(err)
+			hub.CaptureException(err)
 			return
 		}
 	}
