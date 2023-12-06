@@ -133,21 +133,13 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 
 	dbNews := make([]models.News, len(composedNews))
 
+	// Create news in the database
 	for i, n := range composedNews {
 		// composedNews and news are not the same length because of filtering
 		// so, we need to use the original news by hash
 		originalNews := news.FindById(n.ID)
 		if originalNews == nil {
 			return errors.New(fmt.Sprintf("cannot find original news %v", n))
-		}
-
-		f := formatNews(n, originalNews.ProviderName)
-		span = sentry.StartSpan(ctx, "Publish", sentry.WithTransactionName("App.ComposeAndPostNews"))
-		span.SetTag("news_hash", n.ID)
-		id, err := a.publisher.Publish(f)
-		span.Finish()
-		if err != nil {
-			return errors.New(fmt.Sprintf("[publisher.Publish]: %v", err))
 		}
 
 		meta, err := json.Marshal(struct {
@@ -164,13 +156,12 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 		}
 
 		dbNews[i] = models.News{
+			Hash:          n.ID,
 			ChannelID:     a.publisher.ChannelID,
-			PublicationID: id,
 			OriginalTitle: originalNews.Title,
 			OriginalDesc:  originalNews.Description,
 			OriginalDate:  originalNews.Date,
 			URL:           originalNews.Link,
-			PublishedAt:   time.Now(),
 			ComposedText:  n.Text,
 			MetaData:      meta,
 		}
@@ -188,6 +179,36 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 		}
 	}
 
+	// Publish news to the channel and update news in the database
+	for _, n := range dbNews {
+		originalNews := news.FindById(n.Hash)
+		if originalNews == nil {
+			return errors.New(fmt.Sprintf("[publisher.Publish]: %v", err))
+		}
+		f := formatNews(&n, originalNews.ProviderName)
+
+		span := sentry.StartSpan(ctx, "Publish", sentry.WithTransactionName("App.ComposeAndPostNews"))
+		span.SetTag("news_hash", n.Hash)
+		id, err := a.publisher.Publish(f)
+		span.Finish()
+		if err != nil {
+			return err
+		}
+
+		// Update news with publication id
+		n.PublicationID = id
+		n.PublishedAt = time.Now()
+
+		// TODO: add update many method to archivist with transaction
+		span = sentry.StartSpan(ctx, "News.Update", sentry.WithTransactionName("App.ComposeAndPostNews"))
+		span.SetTag("news_hash", n.Hash)
+		err = a.archivist.Entities.News.Update(ctx, &n)
+		span.Finish()
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -198,6 +219,7 @@ func (a *App) RemoveDuplicates(ctx context.Context, news NewsList) (NewsList, er
 	}
 
 	span := sentry.StartSpan(ctx, "FindAllByHashes", sentry.WithTransactionName("App.RemoveDuplicates"))
+	// TODO: Replace with ExistsByHashes
 	exists, err := a.archivist.Entities.News.FindAllByHashes(ctx, hashes)
 	span.Finish()
 	if err != nil {
@@ -218,10 +240,10 @@ func (a *App) RemoveDuplicates(ctx context.Context, news NewsList) (NewsList, er
 }
 
 // formatNews formats the news to be posted to the channel
-func formatNews(n *ComposedNews, provider string) string {
+func formatNews(n *models.News, provider string) string {
 	return fmt.Sprintf(
-		"ID: %s\nProvider: %s\nHashtags: %s\nTickers: %s\nMarkets: %s\n%s",
-		n.ID, provider, n.Hashtags, n.Tickers, n.Markets, n.Text,
+		"Hash: %s\nProvider: %s\nMeta: %s\n%s",
+		n.Hash, provider, n.MetaData.String(), n.ComposedText,
 	)
 }
 
