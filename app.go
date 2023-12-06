@@ -137,6 +137,7 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 		// composedNews and news are not the same length because of filtering
 		// so, we need to use the original news by hash
 		span = sentry.StartSpan(ctx, "FindById", sentry.WithTransactionName("App.ComposeAndPostNews"))
+		span.SetTag("news_hash", n.ID)
 		originalNews := news.FindById(n.ID)
 		span.Finish()
 		if originalNews == nil {
@@ -145,6 +146,7 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 
 		f := formatNews(n, originalNews.ProviderName)
 		span = sentry.StartSpan(ctx, "Publish", sentry.WithTransactionName("App.ComposeAndPostNews"))
+		span.SetTag("news_hash", n.ID)
 		id, err := a.publisher.Publish(f)
 		span.Finish()
 		if err != nil {
@@ -181,6 +183,8 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	for _, n := range dbNews {
 		span = sentry.StartSpan(ctx, "News.Create", sentry.WithTransactionName("App.ComposeAndPostNews"))
 		err := a.archivist.Entities.News.Create(ctx, &n)
+		span.SetTag("news_id", n.ID.String())
+		span.SetTag("news_hash", n.Hash)
 		span.Finish()
 		if err != nil {
 			return errors.New(fmt.Sprintf("[News.Create]: %v", err))
