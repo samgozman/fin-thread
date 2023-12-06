@@ -29,7 +29,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
-		l := a.logger.WithGroup("[CreateMarketNewsJob]")
+		l := a.logger.WithGroup("CreateMarketNewsJob").With("[CreateMarketNewsJob]")
 
 		news, e := a.staff.marketJournalist.GetLatestNews(ctx, until)
 		if e != nil {
@@ -61,7 +61,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
-		l := a.logger.WithGroup("[CreateTradingEconomicsNewsJob]")
+		l := a.logger.WithGroup("CreateTradingEconomicsNewsJob").With("[CreateTradingEconomicsNewsJob]")
 
 		news, e := a.staff.teJournalist.GetLatestNews(ctx, until)
 		if e != nil {

@@ -27,7 +27,7 @@ func main() {
 	viper.AddConfigPath(".")
 	viper.SetConfigFile(".env")
 
-	l := slog.Default().WithGroup("[main]")
+	l := slog.Default().WithGroup("main").With("[main]")
 
 	var env Env
 	// Read the config file, if present
