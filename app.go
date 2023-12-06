@@ -40,11 +40,9 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 		transaction := sentry.StartTransaction(ctx, "App.CreateMarketNewsJob")
 		defer transaction.Finish()
 
-		l := a.logger.WithGroup("CreateMarketNewsJob").With("[CreateMarketNewsJob]")
-
 		news, err := a.staff.marketJournalist.GetLatestNews(ctx, until)
 		if err != nil {
-			l.Info("[GetLatestNews]", "error", err)
+			a.logger.Info("[CreateMarketNewsJob][GetLatestNews]", "error", err)
 			sentry.CaptureException(err)
 		}
 		if len(news) == 0 {
@@ -53,7 +51,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 
 		uniqueNews, err := a.RemoveDuplicates(ctx, news)
 		if err != nil {
-			l.Info("[RemoveDuplicates]", "error", err)
+			a.logger.Info("[CreateMarketNewsJob][RemoveDuplicates]", "error", err)
 			sentry.CaptureException(err)
 			return
 		}
@@ -63,7 +61,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 
 		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
-			l.Warn("[ComposeAndPostNews]", "error", err)
+			a.logger.Warn("[CreateMarketNewsJob][ComposeAndPostNews]", "error", err)
 			sentry.CaptureException(err)
 			return
 		}
@@ -85,11 +83,9 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 		transaction := sentry.StartTransaction(ctx, "App.CreateTradingEconomicsNewsJob")
 		defer transaction.Finish()
 
-		l := a.logger.WithGroup("CreateTradingEconomicsNewsJob").With("[CreateTradingEconomicsNewsJob]")
-
 		news, err := a.staff.teJournalist.GetLatestNews(ctx, until)
 		if err != nil {
-			l.Info("[GetLatestNews]", "error", err)
+			a.logger.Info("[CreateTradingEconomicsNewsJob][GetLatestNews]", "error", err)
 			sentry.CaptureException(err)
 		}
 		if len(news) == 0 {
@@ -107,7 +103,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 
 		uniqueNews, err := a.RemoveDuplicates(ctx, filteredNews)
 		if err != nil {
-			l.Info("[RemoveDuplicates]", "error", err)
+			a.logger.Info("[CreateTradingEconomicsNewsJob][RemoveDuplicates]", "error", err)
 			sentry.CaptureException(err)
 			return
 		}
@@ -117,7 +113,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 
 		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
-			l.Warn("[ComposeAndPostNews]", "error", err)
+			a.logger.Warn("[CreateTradingEconomicsNewsJob][ComposeAndPostNews]", "error", err)
 			sentry.CaptureException(err)
 			return
 		}

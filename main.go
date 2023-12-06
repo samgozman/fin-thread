@@ -28,13 +28,13 @@ func main() {
 	viper.AddConfigPath(".")
 	viper.SetConfigFile(".env")
 
-	l := slog.Default().WithGroup("main").With("[main]")
+	l := slog.Default()
 
 	var env Env
 	// Read the config file, if present
 	err := viper.ReadInConfig()
 	if err != nil {
-		l.Info("No config file found, reading from the system env")
+		l.Info("[main] No config file found, reading from the system env")
 		// TODO: fetch with viper, add validation
 		env = Env{
 			TelegramChannelID: os.Getenv("TELEGRAM_CHANNEL_ID"),
@@ -46,20 +46,20 @@ func main() {
 	} else {
 		err = viper.Unmarshal(&env)
 		if err != nil {
-			l.Error("Error unmarshalling config:", err)
+			l.Error("[main] Error unmarshalling config:", err)
 			os.Exit(1)
 		}
 	}
 
 	pub, err := NewTelegramPublisher(env.TelegramChannelID, env.TelegramBotToken)
 	if err != nil {
-		l.Error("Error creating Telegram publisher:", err)
+		l.Error("[main] Error creating Telegram publisher:", err)
 		os.Exit(1)
 	}
 
 	arch, err := NewArchivist(env.PostgresDSN)
 	if err != nil {
-		l.Error("Error creating Archivist:", err)
+		l.Error("[main] Error creating Archivist:", err)
 		os.Exit(1)
 	}
 
@@ -69,7 +69,7 @@ func main() {
 		TracesSampleRate: 0.5,
 	})
 	if err != nil {
-		l.Error("Error initializing Sentry:", err)
+		l.Error("[main] Error initializing Sentry:", err)
 		os.Exit(1)
 	}
 	defer sentry.Flush(2 * time.Second)
@@ -118,6 +118,6 @@ func main() {
 	defer s.Stop()
 	s.StartAsync()
 
-	l.Info("Started fin-thread successfully")
+	l.Info("[main] Started fin-thread successfully")
 	select {}
 }
