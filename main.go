@@ -64,9 +64,10 @@ func main() {
 	}
 
 	err = sentry.Init(sentry.ClientOptions{
-		Dsn:              env.SentryDSN,
-		EnableTracing:    true,
-		TracesSampleRate: 0.5,
+		Dsn:                env.SentryDSN,
+		EnableTracing:      true,
+		TracesSampleRate:   0.5,
+		ProfilesSampleRate: 1.0,
 	})
 	if err != nil {
 		l.Error("[main] Error initializing Sentry:", err)
