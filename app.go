@@ -121,7 +121,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 }
 
 func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
-	span := sentry.StartSpan(ctx, "Compose")
+	span := sentry.StartSpan(ctx, "Compose", sentry.WithTransactionName("App.ComposeAndPostNews"))
 	composedNews, err := a.composer.Compose(ctx, news)
 	span.Finish()
 	if err != nil {
@@ -136,7 +136,7 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	for i, n := range composedNews {
 		// composedNews and news are not the same length because of filtering
 		// so, we need to use the original news by hash
-		span = sentry.StartSpan(ctx, "FindById")
+		span = sentry.StartSpan(ctx, "FindById", sentry.WithTransactionName("App.ComposeAndPostNews"))
 		originalNews := news.FindById(n.ID)
 		span.Finish()
 		if originalNews == nil {
@@ -144,7 +144,7 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 		}
 
 		f := formatNews(n, originalNews.ProviderName)
-		span = sentry.StartSpan(ctx, "Publish")
+		span = sentry.StartSpan(ctx, "Publish", sentry.WithTransactionName("App.ComposeAndPostNews"))
 		id, err := a.publisher.Publish(f)
 		span.Finish()
 		if err != nil {
@@ -179,7 +179,7 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 
 	// TODO: add create many method to archivist with transaction
 	for _, n := range dbNews {
-		span = sentry.StartSpan(ctx, "News.Create")
+		span = sentry.StartSpan(ctx, "News.Create", sentry.WithTransactionName("App.ComposeAndPostNews"))
 		err := a.archivist.Entities.News.Create(ctx, &n)
 		span.Finish()
 		if err != nil {
@@ -196,7 +196,7 @@ func (a *App) RemoveDuplicates(ctx context.Context, news NewsList) (NewsList, er
 		hashes[i] = n.ID
 	}
 
-	span := sentry.StartSpan(ctx, "FindAllByHashes")
+	span := sentry.StartSpan(ctx, "FindAllByHashes", sentry.WithTransactionName("App.RemoveDuplicates"))
 	exists, err := a.archivist.Entities.News.FindAllByHashes(ctx, hashes)
 	span.Finish()
 	if err != nil {
