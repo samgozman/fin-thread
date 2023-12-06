@@ -107,7 +107,7 @@ func (db *NewsDB) Create(ctx context.Context, n *News) error {
 }
 
 func (db *NewsDB) Update(ctx context.Context, n *News) error {
-	res := db.Conn.WithContext(ctx).Where("id = ?", n.ID).Updates(n)
+	res := db.Conn.WithContext(ctx).Where("hash = ?", n.Hash).Updates(n)
 	if res.Error != nil {
 		return res.Error
 	}
