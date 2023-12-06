@@ -77,7 +77,7 @@ func (n *News) GenerateHash() {
 	n.Hash = hex.EncodeToString(h[:])
 }
 
-func (n *News) BeforeCreate(tx *gorm.DB) error {
+func (n *News) BeforeCreate(*gorm.DB) error {
 	// Create UUID ID.
 	n.ID = uuid.New()
 
