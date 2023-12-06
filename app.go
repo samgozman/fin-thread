@@ -136,10 +136,7 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	for i, n := range composedNews {
 		// composedNews and news are not the same length because of filtering
 		// so, we need to use the original news by hash
-		span = sentry.StartSpan(ctx, "FindById", sentry.WithTransactionName("App.ComposeAndPostNews"))
-		span.SetTag("news_hash", n.ID)
 		originalNews := news.FindById(n.ID)
-		span.Finish()
 		if originalNews == nil {
 			return errors.New(fmt.Sprintf("cannot find original news %v", n))
 		}
