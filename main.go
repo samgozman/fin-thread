@@ -86,6 +86,7 @@ func main() {
 				NewRssProvider("benzinga:bonds", "https://www.benzinga.com/markets/bonds/feed"),
 				NewRssProvider("benzinga:analyst:upgrades", "https://www.benzinga.com/analyst-ratings/upgrades/feed"),
 				NewRssProvider("benzinga:analyst:downgrades", "https://www.benzinga.com/analyst-ratings/downgrades/feed"),
+				NewRssProvider("benzinga:etfs", "https://www.benzinga.com/etfs/feed"),
 			}),
 			teJournalist: NewJournalist([]NewsProvider{
 				NewRssProvider("trading-economics:repo-rate", "https://tradingeconomics.com/rss/news.aspx?i=repo+rate"),
