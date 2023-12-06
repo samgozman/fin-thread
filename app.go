@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/samgozman/fin-thread/archivist/models"
-	"log"
+	"log/slog"
 	"slices"
 	"time"
 
@@ -21,6 +21,7 @@ type App struct {
 	composer  *Composer
 	publisher *TelegramPublisher
 	archivist *Archivist
+	logger    *slog.Logger
 }
 
 func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
@@ -28,12 +29,11 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
-		l := log.Default()
-		l.SetPrefix("[CreateMarketNewsJob]: ")
+		l := a.logger.WithGroup("[CreateMarketNewsJob]")
 
 		news, e := a.staff.marketJournalist.GetLatestNews(ctx, until)
 		if e != nil {
-			l.Println(e)
+			l.Info("[GetLatestNews]", "error", e)
 		}
 		if len(news) == 0 {
 			return
@@ -41,7 +41,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 
 		uniqueNews, err := a.RemoveDuplicates(ctx, news)
 		if err != nil {
-			l.Println(err)
+			l.Info("[RemoveDuplicates]", "error", err)
 			return
 		}
 		if len(uniqueNews) == 0 {
@@ -50,7 +50,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 
 		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
-			l.Println(err)
+			l.Warn("[ComposeAndPostNews]", "error", err)
 			return
 		}
 	}
@@ -61,12 +61,11 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
-		l := log.Default()
-		l.SetPrefix("[CreateTradingEconomicsNewsJob]: ")
+		l := a.logger.WithGroup("[CreateTradingEconomicsNewsJob]")
 
 		news, e := a.staff.teJournalist.GetLatestNews(ctx, until)
 		if e != nil {
-			l.Println(e)
+			l.Info("[GetLatestNews]", "error", e)
 		}
 		if len(news) == 0 {
 			return
@@ -83,7 +82,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 
 		uniqueNews, err := a.RemoveDuplicates(ctx, filteredNews)
 		if err != nil {
-			l.Println(err)
+			l.Info("[RemoveDuplicates]", "error", err)
 			return
 		}
 		if len(uniqueNews) == 0 {
@@ -92,7 +91,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 
 		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
-			l.Println(err)
+			l.Warn("[ComposeAndPostNews]", "error", err)
 			return
 		}
 	}
@@ -101,7 +100,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	composedNews, err := a.composer.Compose(ctx, news)
 	if err != nil {
-		return errors.New(fmt.Sprintf("[ComposeAndPostNews] [composer.Compose]: %v", err))
+		return errors.New(fmt.Sprintf("[composer.Compose]: %v", err))
 	}
 	if len(composedNews) == 0 {
 		return nil
@@ -114,13 +113,13 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 		// so, we need to use the original news by hash
 		originalNews := news.FindById(n.ID)
 		if originalNews == nil {
-			return errors.New(fmt.Sprintf("[ComposeAndPostNews] cannot find original news %v", n))
+			return errors.New(fmt.Sprintf("cannot find original news %v", n))
 		}
 
 		f := formatNews(n, originalNews.ProviderName)
 		id, err := a.publisher.Publish(f)
 		if err != nil {
-			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [publisher.Publish]: %v", err))
+			return errors.New(fmt.Sprintf("[publisher.Publish]: %v", err))
 		}
 
 		meta, err := json.Marshal(struct {
@@ -133,7 +132,7 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 			Hashtags: n.Hashtags,
 		})
 		if err != nil {
-			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [json.Marshal] meta: %v", err))
+			return errors.New(fmt.Sprintf("[json.Marshal] meta: %v", err))
 		}
 
 		dbNews[i] = models.News{
@@ -153,7 +152,7 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 	for _, n := range dbNews {
 		err := a.archivist.Entities.News.Create(ctx, &n)
 		if err != nil {
-			return errors.New(fmt.Sprintf("[ComposeAndPostNews] [News.Create]: %v", err))
+			return errors.New(fmt.Sprintf("[News.Create]: %v", err))
 		}
 	}
 
@@ -168,7 +167,7 @@ func (a *App) RemoveDuplicates(ctx context.Context, news NewsList) (NewsList, er
 
 	exists, err := a.archivist.Entities.News.FindAllByHashes(ctx, hashes)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[RemoveDuplicates] [News.FindAllByHashes]: %v", err))
+		return nil, errors.New(fmt.Sprintf("[News.FindAllByHashes]: %v", err))
 	}
 	existedHashes := make([]string, len(exists))
 	for i, n := range exists {

@@ -4,6 +4,7 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/spf13/viper"
 	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -26,8 +27,7 @@ func main() {
 	viper.AddConfigPath(".")
 	viper.SetConfigFile(".env")
 
-	l := log.Default()
-	l.SetPrefix("[main]: ")
+	l := slog.Default().WithGroup("[main]")
 
 	var env Env
 	// Read the config file, if present
@@ -44,18 +44,21 @@ func main() {
 	} else {
 		err = viper.Unmarshal(&env)
 		if err != nil {
-			l.Fatal("Error unmarshalling config:", err)
+			l.Error("Error unmarshalling config:", err)
+			os.Exit(1)
 		}
 	}
 
 	pub, err := NewTelegramPublisher(env.TelegramChannelID, env.TelegramBotToken)
 	if err != nil {
-		l.Fatal("Error creating Telegram publisher:", err)
+		l.Error("Error creating Telegram publisher:", err)
+		os.Exit(1)
 	}
 
 	arch, err := NewArchivist(env.PostgresDSN)
 	if err != nil {
-		l.Fatal("Error creating Archivist:", err)
+		l.Error("Error creating Archivist:", err)
+		os.Exit(1)
 	}
 
 	app := &App{
@@ -85,6 +88,7 @@ func main() {
 		composer:  NewComposer(env.OpenAiToken),
 		publisher: pub,
 		archivist: arch,
+		logger:    slog.Default(),
 	}
 
 	s := gocron.NewScheduler(time.UTC)
@@ -101,6 +105,6 @@ func main() {
 	defer s.Stop()
 	s.StartAsync()
 
-	l.Println("Started fin-feed successfully")
+	l.Info("Started fin-thread successfully")
 	select {}
 }
