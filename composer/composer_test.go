@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/sashabaranov/go-openai"
 	"reflect"
 	"testing"
@@ -116,7 +117,11 @@ func TestComposer_Compose(t *testing.T) {
 			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{}, mockError)
 		} else {
 			jsonNews, _ := tt.expectedFiltredNews.ToContentJSON()
-			wantNewsJson, _ := json.Marshal(tt.want)
+
+			// Break the JSON to test the fix for OpenAI frequent bug (with extra closing bracket and some other stuff)
+			wantNewsJson, _ := json.MarshalIndent(tt.want, "", "  ")
+			wantNewsJson = []byte(fmt.Sprintf("```{%s}```", wantNewsJson))
+
 			mockClient.On("CreateChatCompletion", mock.Anything, openai.ChatCompletionRequest{
 				Model: openai.GPT3Dot5Turbo1106,
 				Messages: []openai.ChatCompletionMessage{
