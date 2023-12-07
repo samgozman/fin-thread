@@ -91,7 +91,6 @@ func main() {
 				NewRssProvider("finpost:news", "https://financialpost.com/feed"),
 			}),
 			teJournalist: NewJournalist([]NewsProvider{
-				NewRssProvider("trading-economics:repo-rate", "https://tradingeconomics.com/rss/news.aspx?i=repo+rate"),
 				NewRssProvider("trading-economics:european-union", "https://tradingeconomics.com/european-union/rss"),
 				NewRssProvider("trading-economics:food-inflation", "https://tradingeconomics.com/rss/news.aspx?i=food+inflation"),
 				NewRssProvider("trading-economics:inflation-rate-mom", "https://tradingeconomics.com/rss/news.aspx?i=inflation+rate+mom"),

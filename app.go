@@ -92,6 +92,7 @@ func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
 			return
 		}
 
+		// TODO: Move to journalist.Filter
 		// RemoveDuplicates news by keywords, if Title do not contain any of the keywords - skip it
 		filteredNews := news.FilterByKeywords(
 			[]string{"European Union", "United States", "United Kingdom", "China", "Germany", "France", "Japan", "Italy", "India"},
