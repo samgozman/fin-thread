@@ -163,6 +163,7 @@ func (a *App) ComposeAndPostNews(ctx context.Context, news NewsList) error {
 			OriginalDesc:  originalNews.Description,
 			OriginalDate:  originalNews.Date,
 			URL:           originalNews.Link,
+			IsSuspicious:  originalNews.IsSuspicious,
 			ComposedText:  n.Text,
 			MetaData:      meta,
 		}
@@ -243,8 +244,8 @@ func (a *App) RemoveDuplicates(ctx context.Context, news NewsList) (NewsList, er
 // formatNews formats the news to be posted to the channel
 func formatNews(n *models.News, provider string) string {
 	return fmt.Sprintf(
-		"Hash: %s\nProvider: %s\nMeta: %s\n%s",
-		n.Hash, provider, n.MetaData.String(), n.ComposedText,
+		"Hash: %s\nProvider: %s\nMeta: %s\nIsSuspicious:%v\n %s",
+		n.Hash, provider, n.MetaData.String(), n.IsSuspicious, n.ComposedText,
 	)
 }
 

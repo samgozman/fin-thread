@@ -17,6 +17,7 @@ type News struct {
 	Link         string    // Link is the link to the news
 	Date         time.Time // Date is the date of the news
 	ProviderName string    // ProviderName is the name of the provider that fetched the news
+	IsSuspicious bool      // IsSuspicious is true if the news contains keywords that should be checked by human before publishing
 	// TODO: Add creator field if possible
 }
 
@@ -106,6 +107,19 @@ func (n NewsList) FilterByKeywords(keywords []string) NewsList {
 	}
 
 	return filteredNews
+}
+
+// FlagByKeywords sets IsSuspicious to true if the news contains at least one of the keywords
+func (n NewsList) FlagByKeywords(keywords []string) {
+	for _, news := range n {
+		for _, k := range keywords {
+			s := strings.ToLower(fmt.Sprintf("%s %s", news.Title, news.Description))
+			if strings.Contains(s, k) {
+				news.IsSuspicious = true
+				break
+			}
+		}
+	}
 }
 
 // MapIDs removes duplicates news by creating a map of ID hashes.

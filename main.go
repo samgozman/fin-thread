@@ -75,6 +75,9 @@ func main() {
 	}
 	defer sentry.Flush(2 * time.Second)
 
+	// TODO: move to config, this is just a test
+	suspiciousKeywords := []string{"sign up", "buy now", "climate change", "activists", "new study", "advice", "covid-19", "study released", "humanitarian", "award"}
+
 	app := &App{
 		staff: &Staff{
 			marketJournalist: NewJournalist([]NewsProvider{
@@ -89,7 +92,7 @@ func main() {
 				NewRssProvider("benzinga:analyst:downgrades", "https://www.benzinga.com/analyst-ratings/downgrades/feed"),
 				NewRssProvider("benzinga:etfs", "https://www.benzinga.com/etfs/feed"),
 				NewRssProvider("finpost:news", "https://financialpost.com/feed"),
-			}),
+			}).FlagByKeys(suspiciousKeywords),
 			teJournalist: NewJournalist([]NewsProvider{
 				NewRssProvider("trading-economics:european-union", "https://tradingeconomics.com/european-union/rss"),
 				NewRssProvider("trading-economics:food-inflation", "https://tradingeconomics.com/rss/news.aspx?i=food+inflation"),
@@ -102,7 +105,7 @@ func main() {
 				NewRssProvider("trading-economics:housing-starts", "https://tradingeconomics.com/rss/news.aspx?i=housing+starts"),
 				NewRssProvider("trading-economics:households-debt-to-gdp", "https://tradingeconomics.com/rss/news.aspx?i=households+debt+to+gdp"),
 				NewRssProvider("trading-economics:government-debt", "https://tradingeconomics.com/rss/news.aspx?i=government+debt"),
-			}),
+			}).FlagByKeys(suspiciousKeywords),
 		},
 		composer:  NewComposer(env.OpenAiToken),
 		publisher: pub,
