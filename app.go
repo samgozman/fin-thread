@@ -18,17 +18,18 @@ import (
 )
 
 type App struct {
-	staff     *Staff
 	composer  *Composer
 	publisher *TelegramPublisher
 	archivist *Archivist
 	logger    *slog.Logger
 }
 
-func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
+func (a *App) FinJob(j *Journalist, until time.Time) JobFunc {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
+
+		jobName := fmt.Sprintf("FinJob.%s", j.Name)
 
 		// Sentry performance monitoring
 		hub := sentry.GetHubFromContext(ctx)
@@ -37,12 +38,12 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 			ctx = sentry.SetHubOnContext(ctx, hub)
 		}
 		defer hub.Flush(2 * time.Second)
-		transaction := sentry.StartTransaction(ctx, "App.CreateMarketNewsJob")
+		transaction := sentry.StartTransaction(ctx, fmt.Sprintf("App.%s", jobName))
 		defer transaction.Finish()
 
-		news, err := a.staff.marketJournalist.GetLatestNews(ctx, until)
+		news, err := j.GetLatestNews(ctx, until)
 		if err != nil {
-			a.logger.Info("[CreateMarketNewsJob][GetLatestNews]", "error", err)
+			a.logger.Info(fmt.Sprintf("[%s][GetLatestNews]", jobName), "error", err)
 			hub.CaptureException(err)
 		}
 		if len(news) == 0 {
@@ -51,7 +52,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 
 		uniqueNews, err := a.RemoveDuplicates(ctx, news)
 		if err != nil {
-			a.logger.Info("[CreateMarketNewsJob][RemoveDuplicates]", "error", err)
+			a.logger.Info(fmt.Sprintf("[%s][RemoveDuplicates]", jobName), "error", err)
 			hub.CaptureException(err)
 			return
 		}
@@ -61,60 +62,7 @@ func (a *App) CreateMarketNewsJob(until time.Time) JobFunc {
 
 		err = a.ComposeAndPostNews(ctx, uniqueNews)
 		if err != nil {
-			a.logger.Warn("[CreateMarketNewsJob][ComposeAndPostNews]", "error", err)
-			hub.CaptureException(err)
-			return
-		}
-	}
-}
-
-func (a *App) CreateTradingEconomicsNewsJob(until time.Time) JobFunc {
-	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cancel()
-
-		// Sentry performance monitoring
-		hub := sentry.GetHubFromContext(ctx)
-		if hub == nil {
-			hub = sentry.CurrentHub().Clone()
-			ctx = sentry.SetHubOnContext(ctx, hub)
-		}
-		defer hub.Flush(2 * time.Second)
-		transaction := sentry.StartTransaction(ctx, "App.CreateTradingEconomicsNewsJob")
-		defer transaction.Finish()
-
-		news, err := a.staff.teJournalist.GetLatestNews(ctx, until)
-		if err != nil {
-			a.logger.Info("[CreateTradingEconomicsNewsJob][GetLatestNews]", "error", err)
-			hub.CaptureException(err)
-		}
-		if len(news) == 0 {
-			return
-		}
-
-		// TODO: Move to journalist.Filter
-		// RemoveDuplicates news by keywords, if Title do not contain any of the keywords - skip it
-		filteredNews := news.FilterByKeywords(
-			[]string{"European Union", "United States", "United Kingdom", "China", "Germany", "France", "Japan", "Italy", "India"},
-		)
-
-		if len(news) == 0 {
-			return
-		}
-
-		uniqueNews, err := a.RemoveDuplicates(ctx, filteredNews)
-		if err != nil {
-			a.logger.Info("[CreateTradingEconomicsNewsJob][RemoveDuplicates]", "error", err)
-			hub.CaptureException(err)
-			return
-		}
-		if len(uniqueNews) == 0 {
-			return
-		}
-
-		err = a.ComposeAndPostNews(ctx, uniqueNews)
-		if err != nil {
-			a.logger.Warn("[CreateTradingEconomicsNewsJob][ComposeAndPostNews]", "error", err)
+			a.logger.Warn(fmt.Sprintf("[%s][ComposeAndPostNews]", jobName), "error", err)
 			hub.CaptureException(err)
 			return
 		}
@@ -247,14 +195,6 @@ func formatNews(n *models.News, provider string) string {
 		"Hash: %s\nProvider: %s\nMeta: %s\nIsSuspicious:%v\n %s",
 		n.Hash, provider, n.MetaData.String(), n.IsSuspicious, n.ComposedText,
 	)
-}
-
-// Staff is the structure that holds all the journalists
-type Staff struct {
-	// Journalist for common market news
-	marketJournalist *Journalist
-	// Specialized journalist for Trading Economics news RSS feed only
-	teJournalist *Journalist
 }
 
 type JobFunc func()

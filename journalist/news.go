@@ -17,7 +17,7 @@ type News struct {
 	Description  string    // Description is the description of the news
 	Link         string    // Link is the link to the news
 	Date         time.Time // Date is the date of the news
-	ProviderName string    // ProviderName is the name of the provider that fetched the news
+	ProviderName string    // ProviderName is the Name of the provider that fetched the news
 	IsSuspicious bool      // IsSuspicious is true if the news contains keywords that should be checked by human before publishing
 	// TODO: Add creator field if possible
 }
@@ -47,6 +47,17 @@ func NewNews(title, description, link, date, provider string) (*News, error) {
 		Date:         dateTime,
 		ProviderName: provider,
 	}, nil
+}
+
+func (n *News) Contains(keywords []string) bool {
+	for _, k := range keywords {
+		s := strings.ToLower(fmt.Sprintf("%s %s", n.Title, n.Description))
+		match, _ := regexp.MatchString(fmt.Sprintf("\\b%s\\b", strings.ToLower(k)), s)
+		if match {
+			return true
+		}
+	}
+	return false
 }
 
 type NewsList []*News
@@ -98,15 +109,7 @@ func (n NewsList) FindById(id string) *News {
 func (n NewsList) FilterByKeywords(keywords []string) NewsList {
 	var filteredNews NewsList
 	for _, n := range n {
-		c := false
-		// Check if any keyword is present in the title & description
-		for _, k := range keywords {
-			if strings.Contains(fmt.Sprintf("%s %s", n.Title, n.Description), k) {
-				c = true
-				break
-			}
-		}
-		if c {
+		if n.Contains(keywords) {
 			filteredNews = append(filteredNews, n)
 		}
 	}
@@ -117,13 +120,8 @@ func (n NewsList) FilterByKeywords(keywords []string) NewsList {
 // FlagByKeywords sets IsSuspicious to true if the news contains at least one of the keywords
 func (n NewsList) FlagByKeywords(keywords []string) {
 	for _, news := range n {
-		for _, k := range keywords {
-			s := strings.ToLower(fmt.Sprintf("%s %s", news.Title, news.Description))
-			match, _ := regexp.MatchString(fmt.Sprintf("\\b%s\\b", k), s)
-			if match {
-				news.IsSuspicious = true
-				break
-			}
+		if news.Contains(keywords) {
+			news.IsSuspicious = true
 		}
 	}
 }

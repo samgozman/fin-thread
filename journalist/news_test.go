@@ -264,3 +264,58 @@ func TestNewsList_FlagByKeywords(t *testing.T) {
 		})
 	}
 }
+
+func TestNews_Contains(t *testing.T) {
+	type fields struct {
+		ID           string
+		Title        string
+		Description  string
+		Link         string
+		Date         time.Time
+		ProviderName string
+		IsSuspicious bool
+	}
+	type args struct {
+		keywords []string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name: "contains one keyword",
+			fields: fields{
+				Title:       "Some news about United States",
+				Description: "Read more about United States",
+			},
+			args: args{
+				keywords: []string{"united States"},
+			},
+			want: true,
+		},
+		{
+			name: "contains none",
+			fields: fields{
+				Title:       "Some news about United States",
+				Description: "Read more about United States",
+			},
+			args: args{
+				keywords: []string{"kek"},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			n := &News{
+				Title:       tt.fields.Title,
+				Description: tt.fields.Description,
+			}
+			if got := n.Contains(tt.args.keywords); got != tt.want {
+				t.Errorf("Contains() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

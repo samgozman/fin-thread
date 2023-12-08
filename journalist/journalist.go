@@ -9,14 +9,17 @@ import (
 
 // Journalist is the main struct that fetches the news from all providers and merges them into unified list
 type Journalist struct {
-	providers []NewsProvider
-	flagKeys  []string // Keys that will "flag" the news as something that should be double-checked by human
-	limitNews int      // Limit the number of news to fetch from each provider
+	Name       string // Name of the journalist (for logging purposes)
+	providers  []NewsProvider
+	flagKeys   []string // Keys that will "flag" the news as something that should be double-checked by human
+	filterKeys []string // Keys that will remove the news from the list if they do not contain them
+	limitNews  int      // Limit the number of news to fetch from each provider
 }
 
 // NewJournalist creates a new Journalist instance
-func NewJournalist(providers []NewsProvider) *Journalist {
+func NewJournalist(name string, providers []NewsProvider) *Journalist {
 	return &Journalist{
+		Name:      name,
 		providers: providers,
 	}
 }
@@ -24,6 +27,12 @@ func NewJournalist(providers []NewsProvider) *Journalist {
 // FlagByKeys sets the keys that will "flag" news that contain them by setting News.IsSuspicious to true
 func (j *Journalist) FlagByKeys(flagKeys []string) *Journalist {
 	j.flagKeys = flagKeys
+	return j
+}
+
+// FilterByKeys sets the keys that will remove news that do not contain them
+func (j *Journalist) FilterByKeys(filterKeys []string) *Journalist {
+	j.filterKeys = filterKeys
 	return j
 }
 
@@ -77,6 +86,10 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 	}
 
 	results = results.MapIDs()
+
+	if len(j.filterKeys) > 0 {
+		results = results.FilterByKeywords(j.filterKeys)
+	}
 
 	if len(j.flagKeys) > 0 {
 		results.FlagByKeywords(j.flagKeys)
