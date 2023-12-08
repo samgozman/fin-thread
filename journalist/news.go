@@ -31,7 +31,7 @@ func NewNews(title, description, link, date, provider string) (*News, error) {
 	// Sanitize title and description, because they may contain HTML tags and styles
 	p := bluemonday.StrictPolicy()
 	title = p.Sanitize(title)
-	description = p.Sanitize(description)
+	description = p.Sanitize(description)[0:1024] // Limit description to 1024 characters
 
 	hash := md5.Sum([]byte(link + title + description + dateTime.String()))
 
