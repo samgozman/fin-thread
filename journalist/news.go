@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/microcosm-cc/bluemonday"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -114,7 +115,8 @@ func (n NewsList) FlagByKeywords(keywords []string) {
 	for _, news := range n {
 		for _, k := range keywords {
 			s := strings.ToLower(fmt.Sprintf("%s %s", news.Title, news.Description))
-			if strings.Contains(s, k) {
+			match, _ := regexp.MatchString(fmt.Sprintf("\\b%s\\b", k), s)
+			if match {
 				news.IsSuspicious = true
 				break
 			}
