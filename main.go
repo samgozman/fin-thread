@@ -81,7 +81,4 @@ func main() {
 	}
 
 	app.start()
-
-	l.Info("[main] Started fin-thread successfully")
-	select {}
 }

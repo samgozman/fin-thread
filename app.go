@@ -93,4 +93,7 @@ func (a *App) start() {
 
 	defer s.Stop()
 	s.StartAsync()
+
+	a.logger.Info("Started fin-thread successfully")
+	select {}
 }
