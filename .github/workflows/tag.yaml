@@ -23,9 +23,9 @@ jobs:
           SENTRY_ORG: samgozman
           SENTRY_PROJECT: fin-thread
         with:
-          environment: production
           version: ${{ steps.tag_version.outputs.new_tag }}
           ignore_empty: true # exit silently if no new commits for a given release have been found
+          ignore_missing: true # will create a release with the default commits count instead of failing if no commits are found
 
 # TODO: Add a step to create a release later
 #      - name: Create a GitHub release
