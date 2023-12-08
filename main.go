@@ -77,6 +77,7 @@ func main() {
 
 	// TODO: move to config, this is just a test
 	suspiciousKeywords := []string{"sign up", "buy now", "climate change", "activists", "advice", "covid-19", "study", "humanitarian", "award", "research"}
+	filterKeys := []string{"European Union", "United States", "United Kingdom", "China", "Germany", "France", "Japan", "Italy", "India"}
 
 	marketJournalist := NewJournalist("MarketNews", []NewsProvider{
 		NewRssProvider("benzinga:large-cap", "https://www.benzinga.com/news/large-cap/feed"),
@@ -107,7 +108,7 @@ func main() {
 		NewRssProvider("trading-economics:housing-starts", "https://tradingeconomics.com/rss/news.aspx?i=housing+starts"),
 		NewRssProvider("trading-economics:households-debt-to-gdp", "https://tradingeconomics.com/rss/news.aspx?i=households+debt+to+gdp"),
 		NewRssProvider("trading-economics:government-debt", "https://tradingeconomics.com/rss/news.aspx?i=government+debt"),
-	}).FlagByKeys(suspiciousKeywords).Limit(1).FilterByKeys([]string{"European Union", "United States", "United Kingdom", "China", "Germany", "France", "Japan", "Italy", "India"})
+	}).FlagByKeys(suspiciousKeywords).Limit(1).FilterByKeys(filterKeys)
 
 	app := &App{
 		composer:  NewComposer(env.OpenAiToken),
