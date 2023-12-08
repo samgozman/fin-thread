@@ -24,6 +24,7 @@ type News struct {
 	Hash          string         `gorm:"size:32;uniqueIndex;not null;" json:"hash"` // MD5 Hash of the news (URL + title + description + date)
 	ChannelID     string         `gorm:"size:64" json:"channel_id"`                 // ID of the channel (chat ID in Telegram)
 	PublicationID string         `gorm:"size:64" json:"publication_id"`             // ID of the publication (message ID in Telegram)
+	ProviderName  string         `gorm:"size:64" json:"provider_name"`              // Name of the provider (e.g. "Reuters")
 	URL           string         `gorm:"size:256" json:"url"`                       // URL of the original news
 	OriginalTitle string         `gorm:"size:256" json:"original_title"`            // Original News title
 	OriginalDesc  string         `gorm:"size:1024" json:"original_desc"`            // Original News description
@@ -47,6 +48,10 @@ func (n *News) Validate() error {
 
 	if len(n.PublicationID) > 64 {
 		return errors.New("publication_id is too long")
+	}
+
+	if len(n.ProviderName) > 64 {
+		return errors.New("provider_name is too long")
 	}
 
 	if len(n.URL) > 256 {
