@@ -213,3 +213,54 @@ func TestNewsList_MapIDs(t *testing.T) {
 		})
 	}
 }
+
+func TestNewsList_FlagByKeywords(t *testing.T) {
+	type args struct {
+		keywords []string
+	}
+	tests := []struct {
+		name           string
+		n              NewsList
+		args           args
+		wantFlaggedLen int
+	}{
+		{
+			name: "flag by one keyword",
+			n: NewsList{
+				{
+					ID:          "id1",
+					Title:       "Some news about United States",
+					Description: "Read more about United States",
+				},
+				{
+					ID:          "id2",
+					Title:       "Some news about kek",
+					Description: "Read more about kek",
+				},
+				{
+					ID:          "id3",
+					Title:       "Some news about keking",
+					Description: "Read more about keking",
+				},
+			},
+			args: args{
+				keywords: []string{"kek"},
+			},
+			wantFlaggedLen: 1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.n.FlagByKeywords(tt.args.keywords)
+			flaggedLen := 0
+			for _, n := range tt.n {
+				if n.IsSuspicious {
+					flaggedLen++
+				}
+			}
+			if flaggedLen != tt.wantFlaggedLen {
+				t.Errorf("FlagByKeywords() = %v, want %v", flaggedLen, tt.wantFlaggedLen)
+			}
+		})
+	}
+}
