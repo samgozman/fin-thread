@@ -11,6 +11,7 @@ import (
 type Journalist struct {
 	providers []NewsProvider
 	flagKeys  []string // Keys that will "flag" the news as something that should be double-checked by human
+	limitNews int      // Limit the number of news to fetch from each provider
 }
 
 // NewJournalist creates a new Journalist instance
@@ -23,6 +24,12 @@ func NewJournalist(providers []NewsProvider) *Journalist {
 // FlagByKeys sets the keys that will "flag" news that contain them by setting News.IsSuspicious to true
 func (j *Journalist) FlagByKeys(flagKeys []string) *Journalist {
 	j.flagKeys = flagKeys
+	return j
+}
+
+// Limit sets the limit of news to fetch from each provider
+func (j *Journalist) Limit(limit int) *Journalist {
+	j.limitNews = limit
 	return j
 }
 
@@ -46,6 +53,11 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 			if err != nil {
 				errorCh <- err
 				return
+			}
+
+			// Limit the number of news to fetch from each provider if limitNews > 0
+			if j.limitNews > 0 && len(result) > j.limitNews {
+				result = result[:j.limitNews]
 			}
 
 			resultCh <- result
