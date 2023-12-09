@@ -309,7 +309,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 			if err != nil {
 				return nil, errors.New(fmt.Sprintf("[Job.publish][json.Unmarshal] meta: %v", err))
 			}
-			if len(meta.Tickers) == 0 && len(meta.Markets) == 0 {
+			if len(meta.Tickers) == 0 && len(meta.Markets) == 0 && len(meta.Hashtags) == 0 {
 				continue
 			}
 		}
