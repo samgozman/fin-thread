@@ -97,6 +97,12 @@ func (job *Job) Run() JobFunc {
 			job.app.logger.Info(fmt.Sprintf("[%s][GetLatestNews]", jobName), "error", err)
 			hub.CaptureException(err)
 		}
+
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "journalist",
+			Message:  fmt.Sprintf("GetLatestNews returned %d news", len(news)),
+			Level:    sentry.LevelInfo,
+		}, nil)
 		if len(news) == 0 {
 			return
 		}
@@ -111,6 +117,11 @@ func (job *Job) Run() JobFunc {
 			hub.CaptureException(err)
 			return
 		}
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "job",
+			Message:  fmt.Sprintf("removeDuplicates returned %d news", len(jobData.News)),
+			Level:    sentry.LevelInfo,
+		}, nil)
 		if len(jobData.News) == 0 {
 			return
 		}
@@ -121,6 +132,11 @@ func (job *Job) Run() JobFunc {
 			hub.CaptureException(err)
 			return
 		}
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "job",
+			Message:  fmt.Sprintf("composeNews returned %d news", len(jobData.ComposedNews)),
+			Level:    sentry.LevelInfo,
+		}, nil)
 
 		jobData.DBNews, err = job.saveNews(ctx, jobData)
 		if err != nil {
@@ -128,6 +144,11 @@ func (job *Job) Run() JobFunc {
 			hub.CaptureException(err)
 			return
 		}
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "job",
+			Message:  fmt.Sprintf("saveNews returned %d news", len(jobData.DBNews)),
+			Level:    sentry.LevelInfo,
+		}, nil)
 
 		jobData.DBNews, err = job.publish(ctx, jobData.DBNews)
 		if err != nil {
@@ -135,6 +156,11 @@ func (job *Job) Run() JobFunc {
 			hub.CaptureException(err)
 			return
 		}
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "job",
+			Message:  fmt.Sprintf("publish returned %d news", len(jobData.DBNews)),
+			Level:    sentry.LevelInfo,
+		}, nil)
 
 		err = job.updateNews(ctx, jobData.DBNews)
 		if err != nil {
@@ -142,6 +168,11 @@ func (job *Job) Run() JobFunc {
 			hub.CaptureException(err)
 			return
 		}
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "job",
+			Message:  "updateNews finished",
+			Level:    sentry.LevelInfo,
+		}, nil)
 	}
 }
 
