@@ -19,7 +19,7 @@ type App struct {
 
 func (a *App) start() {
 	// TODO: move to config, this is just a test
-	suspiciousKeywords := []string{"sign up", "buy now", "climate change", "activists", "advice", "covid-19", "study", "humanitarian", "award", "research"}
+	suspiciousKeywords := []string{"sign up", "buy now", "climate change", "activists", "advice", "covid-19", "study", "humanitarian", "award", "research", "human rights", "united nations"}
 	filterKeys := []string{"European Union", "United States", "United Kingdom", "China", "Germany", "France", "Japan", "Italy", "India"}
 
 	marketJournalist := NewJournalist("MarketNews", []NewsProvider{
