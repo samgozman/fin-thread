@@ -81,19 +81,28 @@ func (job *Job) Run() JobFunc {
 		jobName := fmt.Sprintf("Run.%s", job.journalist.Name)
 
 		// Sentry performance monitoring
-		hub := job.app.skit.GetHub(ctx)
+		hub := sentry.GetHubFromContext(ctx)
+		if hub == nil {
+			hub = sentry.CurrentHub().Clone()
+			ctx = sentry.SetHubOnContext(ctx, hub)
+		}
 		defer hub.Flush(2 * time.Second)
-		transaction := job.app.skit.StartJobTransaction(ctx, jobName)
+		transaction := sentry.StartTransaction(ctx, fmt.Sprintf("Job.%s", jobName))
 		defer transaction.Finish()
 
 		// TODO: add Job struct as tags to the transaction
 
 		news, err := job.journalist.GetLatestNews(ctx, job.until)
 		if err != nil {
-			job.app.skit.CaptureError(hub, fmt.Sprintf("[%s][GetLatestNews]", jobName), err)
+			job.app.logger.Info(fmt.Sprintf("[%s][GetLatestNews]", jobName), "error", err)
+			hub.CaptureException(err)
 		}
 
-		job.app.skit.AddBreadcrumb(hub, "journalist", fmt.Sprintf("GetLatestNews returned %d news", len(news)))
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "journalist",
+			Message:  fmt.Sprintf("GetLatestNews returned %d news", len(news)),
+			Level:    sentry.LevelInfo,
+		}, nil)
 		if len(news) == 0 {
 			return
 		}
@@ -104,41 +113,66 @@ func (job *Job) Run() JobFunc {
 
 		jobData.News, err = job.removeDuplicates(ctx, news)
 		if err != nil {
-			job.app.skit.CaptureError(hub, fmt.Sprintf("[%s][removeDuplicates]", jobName), err)
+			job.app.logger.Info(fmt.Sprintf("[%s][removeDuplicates]", jobName), "error", err)
+			hub.CaptureException(err)
 			return
 		}
-		job.app.skit.AddBreadcrumb(hub, "job", fmt.Sprintf("removeDuplicates returned %d news", len(jobData.News)))
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "job",
+			Message:  fmt.Sprintf("removeDuplicates returned %d news", len(jobData.News)),
+			Level:    sentry.LevelInfo,
+		}, nil)
 		if len(jobData.News) == 0 {
 			return
 		}
 
 		jobData.ComposedNews, err = job.composeNews(ctx, jobData.News)
 		if err != nil {
-			job.app.skit.CaptureError(hub, fmt.Sprintf("[%s][composeNews]", jobName), err)
+			job.app.logger.Warn(fmt.Sprintf("[%s][composeNews]", jobName), "error", err)
+			hub.CaptureException(err)
 			return
 		}
-		job.app.skit.AddBreadcrumb(hub, "job", fmt.Sprintf("composeNews returned %d news", len(jobData.ComposedNews)))
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "job",
+			Message:  fmt.Sprintf("composeNews returned %d news", len(jobData.ComposedNews)),
+			Level:    sentry.LevelInfo,
+		}, nil)
 
 		jobData.DBNews, err = job.saveNews(ctx, jobData)
 		if err != nil {
-			job.app.skit.CaptureError(hub, fmt.Sprintf("[%s][saveNews]", jobName), err)
+			job.app.logger.Warn(fmt.Sprintf("[%s][saveNews]", jobName), "error", err)
+			hub.CaptureException(err)
 			return
 		}
-		job.app.skit.AddBreadcrumb(hub, "job", fmt.Sprintf("saveNews returned %d news", len(jobData.DBNews)))
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "job",
+			Message:  fmt.Sprintf("saveNews returned %d news", len(jobData.DBNews)),
+			Level:    sentry.LevelInfo,
+		}, nil)
 
 		jobData.DBNews, err = job.publish(ctx, jobData.DBNews)
 		if err != nil {
-			job.app.skit.CaptureError(hub, fmt.Sprintf("[%s][publish]", jobName), err)
+			job.app.logger.Warn(fmt.Sprintf("[%s][publish]", jobName), "error", err)
+			hub.CaptureException(err)
 			return
 		}
-		job.app.skit.AddBreadcrumb(hub, "job", fmt.Sprintf("publish returned %d news", len(jobData.DBNews)))
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "job",
+			Message:  fmt.Sprintf("publish returned %d news", len(jobData.DBNews)),
+			Level:    sentry.LevelInfo,
+		}, nil)
 
 		err = job.updateNews(ctx, jobData.DBNews)
 		if err != nil {
-			job.app.skit.CaptureError(hub, fmt.Sprintf("[%s][updateNews]", jobName), err)
+			job.app.logger.Warn(fmt.Sprintf("[%s][updateNews]", jobName), "error", err)
+			hub.CaptureException(err)
 			return
 		}
-		job.app.skit.AddBreadcrumb(hub, "job", "updateNews finished")
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "job",
+			Message:  "updateNews finished",
+			Level:    sentry.LevelInfo,
+		}, nil)
 	}
 }
 
@@ -181,7 +215,7 @@ func (job *Job) composeNews(ctx context.Context, news NewsList) ([]*composer.Com
 	}
 
 	// TODO: Split openai jobs - 1: remove unnecessary news, 2: compose text
-	span := job.app.skit.StartSpan(ctx, "Compose", "Job.composeNews")
+	span := sentry.StartSpan(ctx, "Compose", sentry.WithTransactionName("Job.composeNews"))
 	composedNews, err := job.app.composer.Compose(ctx, news)
 	span.Finish()
 	if err != nil {
@@ -242,7 +276,7 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 
 	// TODO: add create many method to archivist with transaction
 	for _, n := range dbNews {
-		span := job.app.skit.StartSpan(ctx, "News.Create", "Job.saveNews")
+		span := sentry.StartSpan(ctx, "News.Create", sentry.WithTransactionName("Job.saveNews"))
 		err := job.app.archivist.Entities.News.Create(ctx, n)
 		span.SetTag("news_id", n.ID.String())
 		span.SetTag("news_hash", n.Hash)
@@ -291,7 +325,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 			formattedText = n.OriginalTitle + "\n" + n.OriginalDesc
 		}
 
-		span := job.app.skit.StartSpan(ctx, "Publish", "Job.publish")
+		span := sentry.StartSpan(ctx, "Publish", sentry.WithTransactionName("Job.publish"))
 		span.SetTag("news_hash", n.Hash)
 		id, err := job.app.publisher.Publish(formattedText)
 		span.Finish()
@@ -316,7 +350,7 @@ func (job *Job) updateNews(ctx context.Context, dbNews []*models.News) error {
 
 	for _, n := range dbNews {
 		// TODO: add update many method to archivist with transaction
-		span := job.app.skit.StartSpan(ctx, "News.Update", "Job.updateNews")
+		span := sentry.StartSpan(ctx, "News.Update", sentry.WithTransactionName("Job.updateNews"))
 		span.SetTag("news_hash", n.Hash)
 		err := job.app.archivist.Entities.News.Update(ctx, n)
 		span.Finish()
