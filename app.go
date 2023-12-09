@@ -62,7 +62,7 @@ func (a *App) start() {
 		SaveToDB()
 
 	broadJob := NewJob(a, broadNews).
-		FetchUntil(time.Now().Add(-90 * time.Second)).
+		FetchUntil(time.Now().Add(-4 * time.Minute)).
 		OmitSuspicious().
 		OmitEmptyMeta().
 		RemoveClones().
@@ -81,7 +81,7 @@ func (a *App) start() {
 		panic(err)
 	}
 
-	_, err = s.Every(90 * time.Second).Do(broadJob.Run())
+	_, err = s.Every(4 * time.Minute).Do(broadJob.Run())
 	if err != nil {
 		panic(err)
 	}
