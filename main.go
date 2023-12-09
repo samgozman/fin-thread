@@ -77,7 +77,7 @@ func main() {
 		composer:  NewComposer(env.OpenAiToken),
 		publisher: pub,
 		archivist: arch,
-		logger:    slog.Default(),
+		skit:      &SentryKit{log: slog.Default()},
 	}
 
 	app.start()

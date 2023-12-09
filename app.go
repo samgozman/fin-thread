@@ -14,7 +14,7 @@ type App struct {
 	composer  *Composer
 	publisher *TelegramPublisher
 	archivist *Archivist
-	logger    *slog.Logger
+	skit      *SentryKit
 }
 
 func (a *App) start() {
@@ -94,6 +94,6 @@ func (a *App) start() {
 	defer s.Stop()
 	s.StartAsync()
 
-	a.logger.Info("Started fin-thread successfully")
+	slog.Default().Info("Started fin-thread successfully")
 	select {}
 }
