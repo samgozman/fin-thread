@@ -94,7 +94,9 @@ func (job *Job) Run() JobFunc {
 
 		// TODO: add Job struct as tags to the transaction
 
+		span := transaction.StartChild("GetLatestNews")
 		news, err := job.journalist.GetLatestNews(ctx, job.until)
+		span.Finish()
 		if err != nil {
 			job.app.logger.Info(fmt.Sprintf("[%s][GetLatestNews]", jobName), "error", err)
 			hub.CaptureException(err)
@@ -113,7 +115,9 @@ func (job *Job) Run() JobFunc {
 			News: news,
 		}
 
+		span = transaction.StartChild("removeDuplicates")
 		jobData.News, err = job.removeDuplicates(ctx, news)
+		span.Finish()
 		if err != nil {
 			job.app.logger.Info(fmt.Sprintf("[%s][removeDuplicates]", jobName), "error", err)
 			hub.CaptureException(err)
@@ -128,7 +132,9 @@ func (job *Job) Run() JobFunc {
 			return
 		}
 
+		span = transaction.StartChild("composeNews")
 		jobData.ComposedNews, err = job.composeNews(ctx, jobData.News)
+		span.Finish()
 		if err != nil {
 			job.app.logger.Warn(fmt.Sprintf("[%s][composeNews]", jobName), "error", err)
 			hub.CaptureException(err)
@@ -140,7 +146,9 @@ func (job *Job) Run() JobFunc {
 			Level:    sentry.LevelInfo,
 		}, nil)
 
+		span = transaction.StartChild("saveNews")
 		jobData.DBNews, err = job.saveNews(ctx, jobData)
+		span.Finish()
 		if err != nil {
 			job.app.logger.Warn(fmt.Sprintf("[%s][saveNews]", jobName), "error", err)
 			hub.CaptureException(err)
@@ -152,7 +160,9 @@ func (job *Job) Run() JobFunc {
 			Level:    sentry.LevelInfo,
 		}, nil)
 
+		span = transaction.StartChild("publish")
 		jobData.DBNews, err = job.publish(ctx, jobData.DBNews)
+		span.Finish()
 		if err != nil {
 			job.app.logger.Warn(fmt.Sprintf("[%s][publish]", jobName), "error", err)
 			hub.CaptureException(err)
@@ -164,7 +174,9 @@ func (job *Job) Run() JobFunc {
 			Level:    sentry.LevelInfo,
 		}, nil)
 
+		span = transaction.StartChild("updateNews")
 		err = job.updateNews(ctx, jobData.DBNews)
+		span.Finish()
 		if err != nil {
 			job.app.logger.Warn(fmt.Sprintf("[%s][updateNews]", jobName), "error", err)
 			hub.CaptureException(err)
