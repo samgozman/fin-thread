@@ -2,7 +2,6 @@ package journalist
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/mmcdole/gofeed"
@@ -32,20 +31,20 @@ func (r *RssProvider) Fetch(ctx context.Context, until time.Time) (NewsList, err
 	fp := gofeed.NewParser()
 	feed, err := fp.ParseURLWithContext(r.Url, ctx)
 	if err != nil {
-		return nil, NewProviderErr(r.Name, err.Error())
+		return nil, newErrProvider(r.Name, err.Error())
 	}
 
 	var news NewsList
 	for _, item := range feed.Items {
 		newsItem, err := NewNews(item.Title, item.Description, item.Link, item.Published, r.Name)
 		if err != nil {
-			return nil, NewProviderErr(r.Name, err.Error())
+			return nil, newErrProvider(r.Name, err.Error())
 		}
 		news = append(news, newsItem)
 	}
 
 	for i, n := range news {
-		// RemoveDuplicates news by date
+		// Remove duplicated news by date
 		if n.Date.Before(until) {
 			news = news[:i]
 			break
@@ -53,21 +52,4 @@ func (r *RssProvider) Fetch(ctx context.Context, until time.Time) (NewsList, err
 	}
 
 	return news, nil
-}
-
-// ProviderErr is the error type for the NewsProvider
-type ProviderErr struct {
-	Err          string
-	ProviderName string
-}
-
-func (e *ProviderErr) Error() string {
-	return fmt.Sprintf("Provider %s error: %s", e.ProviderName, e.Err)
-}
-
-func NewProviderErr(providerName, err string) *ProviderErr {
-	return &ProviderErr{
-		Err:          err,
-		ProviderName: providerName,
-	}
 }
