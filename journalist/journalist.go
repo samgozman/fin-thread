@@ -3,6 +3,7 @@ package journalist
 import (
 	"context"
 	"errors"
+	"golang.org/x/sync/errgroup"
 	"sync"
 	"time"
 )
@@ -44,24 +45,29 @@ func (j *Journalist) Limit(limit int) *Journalist {
 
 // GetLatestNews fetches the latest news (until date) from all providers and merges them into unified list.
 func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsList, error) {
-	// Create channels to collect results and e
-	resultCh := make(chan NewsList, len(j.providers))
-	errorCh := make(chan error, len(j.providers))
+	// Manage goroutines and errors
+	var eg errgroup.Group
 
-	// Use WaitGroup to wait for all goroutines to finish
-	var wg sync.WaitGroup
+	// Use a mutex to safely access shared data (results and errors)
+	var mu sync.Mutex
+	var results NewsList
+	var e []error
 
 	for i := 0; i < len(j.providers); i++ {
-		wg.Add(1)
-		go func(id int) {
-			defer wg.Done()
+		// Capture loop variable
+		id := i
+
+		eg.Go(func() error {
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 
 			result, err := j.providers[id].Fetch(ctx, until)
 			if err != nil {
-				errorCh <- err
-				return
+				// Use a mutex to safely append errors
+				mu.Lock()
+				defer mu.Unlock()
+				e = append(e, err)
+				return nil // Return nil to continue processing other goroutines
 			}
 
 			// Limit the number of news to fetch from each provider if limitNews > 0
@@ -69,20 +75,17 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 				result = result[:j.limitNews]
 			}
 
-			resultCh <- result
-		}(i)
+			// Use a mutex to safely append results
+			mu.Lock()
+			defer mu.Unlock()
+			results = append(results, result...)
+			return nil
+		})
 	}
 
-	wg.Wait()
-	close(resultCh)
-	close(errorCh)
-
-	// Collect results and e from channels
-	var results NewsList
-	var e []error
-
-	for result := range resultCh {
-		results = append(results, result...)
+	// Wait for all goroutines to finish
+	if err := eg.Wait(); err != nil {
+		return nil, err
 	}
 
 	results = results.MapIDs()
@@ -93,10 +96,6 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 
 	if len(j.flagKeys) > 0 {
 		results.FlagByKeywords(j.flagKeys)
-	}
-
-	for err := range errorCh {
-		e = append(e, err)
 	}
 
 	return results, errors.Join(e...)
