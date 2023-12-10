@@ -1,6 +1,6 @@
 module github.com/samgozman/fin-thread
 
-go 1.21.1
+go 1.21.5
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect

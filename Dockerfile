@@ -1,4 +1,4 @@
-FROM golang:1.21.1-alpine AS builder
+FROM golang:1.21.5-alpine AS builder
 WORKDIR /app
 # TODO: Add a .dockerignore file
 # TODO: Add split build stage for dependencies

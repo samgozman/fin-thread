@@ -1,6 +1,6 @@
 module github.com/samgozman/fin-thread/journalist
 
-go 1.21.1
+go 1.21.5
 
 require github.com/mmcdole/gofeed v1.2.1
 
