@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
-	"errors"
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -39,39 +38,39 @@ type News struct {
 
 func (n *News) Validate() error {
 	if len(n.ChannelID) > 64 {
-		return errors.New("channel_id is too long")
+		return ErrChannelIDTooLong
 	}
 
 	if len(n.Hash) > 32 {
-		return errors.New("hash is too long")
+		return ErrHashTooLong
 	}
 
 	if len(n.PublicationID) > 64 {
-		return errors.New("publication_id is too long")
+		return ErrPubIDTooLong
 	}
 
 	if len(n.ProviderName) > 64 {
-		return errors.New("provider_name is too long")
+		return ErrProviderNameTooLong
 	}
 
 	if len(n.URL) > 256 {
-		return errors.New("url is too long")
+		return ErrURLTooLong
 	}
 
 	if len(n.OriginalTitle) > 256 {
-		return errors.New("original_title is too long")
+		return ErrOriginalTitleTooLong
 	}
 
 	if len(n.OriginalDesc) > 1024 {
-		return errors.New("original_desc is too long")
+		return ErrOriginalDescTooLong
 	}
 
 	if len(n.ComposedText) > 512 {
-		return errors.New("composed_text is too long")
+		return ErrComposedTextTooLong
 	}
 
 	if n.OriginalDate.IsZero() {
-		return errors.New("original_date is empty")
+		return ErrOriginalDateEmpty
 	}
 
 	return nil
