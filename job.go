@@ -104,7 +104,7 @@ func (job *Job) Run() JobFunc {
 		}
 
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "started",
+			Category: "successful",
 			Message:  fmt.Sprintf("GetLatestNews returned %d news", len(news)),
 			Level:    sentry.LevelInfo,
 		}, nil)
@@ -125,7 +125,7 @@ func (job *Job) Run() JobFunc {
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "started",
+			Category: "successful",
 			Message:  fmt.Sprintf("removeDuplicates returned %d news", len(jobData.News)),
 			Level:    sentry.LevelInfo,
 		}, nil)
@@ -142,7 +142,7 @@ func (job *Job) Run() JobFunc {
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "started",
+			Category: "successful",
 			Message:  fmt.Sprintf("composeNews returned %d news", len(jobData.ComposedNews)),
 			Level:    sentry.LevelInfo,
 		}, nil)
@@ -156,7 +156,7 @@ func (job *Job) Run() JobFunc {
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "started",
+			Category: "successful",
 			Message:  fmt.Sprintf("saveNews returned %d news", len(jobData.DBNews)),
 			Level:    sentry.LevelInfo,
 		}, nil)
@@ -170,7 +170,7 @@ func (job *Job) Run() JobFunc {
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "started",
+			Category: "successful",
 			Message:  fmt.Sprintf("publish returned %d news", len(jobData.DBNews)),
 			Level:    sentry.LevelInfo,
 		}, nil)
@@ -184,7 +184,7 @@ func (job *Job) Run() JobFunc {
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "started",
+			Category: "successful",
 			Message:  "updateNews finished",
 			Level:    sentry.LevelInfo,
 		}, nil)
