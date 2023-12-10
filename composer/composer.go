@@ -3,8 +3,6 @@ package composer
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"regexp"
 	"time"
 
@@ -39,7 +37,7 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 	// Convert news to JSON
 	jsonNews, err := todayNews.ToContentJSON()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[Compose] error in NewsList.ToContentJSON: %s", err))
+		return nil, newErrCompose(err, "NewsList.ToContentJSON")
 	}
 
 	// Compose news
@@ -65,22 +63,20 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 		},
 	)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[Compose] error in OpenAiClient.CreateChatCompletion: %s", err))
+		return nil, newErrCompose(err, "OpenAiClient.CreateChatCompletion")
 	}
 
 	// Find first array group. This will fix most weird OpenAI bugs with broken JSON
 	re := regexp.MustCompile(`\[([\S\s]*)\]`)
 	matches := re.FindString(resp.Choices[0].Message.Content)
 	if matches == "" {
-		return nil, errors.New(fmt.Sprintf(
-			"[Compose] FindStringSubmatch wrong matches for: %s", resp.Choices[0].Message.Content),
-		)
+		return nil, newErrCompose(ErrEmptyRegexMatch, "regexp.FindString").WithValue(resp.Choices[0].Message.Content)
 	}
 
 	var fullComposedNews []*ComposedNews
 	err = json.Unmarshal([]byte(matches), &fullComposedNews)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[Compose] error in json.Unmarshal: %s for object: %s", err, matches))
+		return nil, newErrCompose(err, "json.Unmarshal").WithValue(matches)
 	}
 
 	return fullComposedNews, nil
