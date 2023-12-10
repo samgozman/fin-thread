@@ -80,9 +80,8 @@ func (job *Job) Run() JobFunc {
 
 		jobName := fmt.Sprintf("Run.%s", job.journalist.Name)
 
-		transaction := sentry.StartTransaction(ctx, fmt.Sprintf("Job.%s", jobName))
-		transaction.Op = "job"
-		defer transaction.Finish()
+		tx := sentry.StartTransaction(ctx, fmt.Sprintf("Job.%s", jobName))
+		tx.Op = "job"
 
 		// Sentry performance monitoring
 		hub := sentry.GetHubFromContext(ctx)
@@ -90,11 +89,13 @@ func (job *Job) Run() JobFunc {
 			hub = sentry.CurrentHub().Clone()
 			ctx = sentry.SetHubOnContext(ctx, hub)
 		}
-		defer hub.Flush(2 * time.Second)
 
-		// TODO: add Job struct as tags to the transaction
+		defer func() {
+			tx.Finish()
+			hub.Flush(2 * time.Second)
+		}()
 
-		span := transaction.StartChild("GetLatestNews")
+		span := tx.StartChild("GetLatestNews")
 		news, err := job.journalist.GetLatestNews(ctx, job.until)
 		span.Finish()
 		if err != nil {
@@ -115,7 +116,7 @@ func (job *Job) Run() JobFunc {
 			News: news,
 		}
 
-		span = transaction.StartChild("removeDuplicates")
+		span = tx.StartChild("removeDuplicates")
 		jobData.News, err = job.removeDuplicates(ctx, news)
 		span.Finish()
 		if err != nil {
@@ -132,7 +133,7 @@ func (job *Job) Run() JobFunc {
 			return
 		}
 
-		span = transaction.StartChild("composeNews")
+		span = tx.StartChild("composeNews")
 		jobData.ComposedNews, err = job.composeNews(ctx, jobData.News)
 		span.Finish()
 		if err != nil {
@@ -146,7 +147,7 @@ func (job *Job) Run() JobFunc {
 			Level:    sentry.LevelInfo,
 		}, nil)
 
-		span = transaction.StartChild("saveNews")
+		span = tx.StartChild("saveNews")
 		jobData.DBNews, err = job.saveNews(ctx, jobData)
 		span.Finish()
 		if err != nil {
@@ -160,7 +161,7 @@ func (job *Job) Run() JobFunc {
 			Level:    sentry.LevelInfo,
 		}, nil)
 
-		span = transaction.StartChild("publish")
+		span = tx.StartChild("publish")
 		jobData.DBNews, err = job.publish(ctx, jobData.DBNews)
 		span.Finish()
 		if err != nil {
@@ -174,7 +175,7 @@ func (job *Job) Run() JobFunc {
 			Level:    sentry.LevelInfo,
 		}, nil)
 
-		span = transaction.StartChild("updateNews")
+		span = tx.StartChild("updateNews")
 		err = job.updateNews(ctx, jobData.DBNews)
 		span.Finish()
 		if err != nil {
