@@ -80,6 +80,10 @@ func (job *Job) Run() JobFunc {
 
 		jobName := fmt.Sprintf("Run.%s", job.journalist.Name)
 
+		transaction := sentry.StartTransaction(ctx, fmt.Sprintf("Job.%s", jobName))
+		transaction.Op = "job"
+		defer transaction.Finish()
+
 		// Sentry performance monitoring
 		hub := sentry.GetHubFromContext(ctx)
 		if hub == nil {
@@ -87,8 +91,6 @@ func (job *Job) Run() JobFunc {
 			ctx = sentry.SetHubOnContext(ctx, hub)
 		}
 		defer hub.Flush(2 * time.Second)
-		transaction := sentry.StartTransaction(ctx, fmt.Sprintf("Job.%s", jobName))
-		defer transaction.Finish()
 
 		// TODO: add Job struct as tags to the transaction
 
