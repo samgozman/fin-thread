@@ -24,8 +24,8 @@ type News struct {
 	ChannelID     string         `gorm:"size:64" json:"channel_id"`                 // ID of the channel (chat ID in Telegram)
 	PublicationID string         `gorm:"size:64" json:"publication_id"`             // ID of the publication (message ID in Telegram)
 	ProviderName  string         `gorm:"size:64" json:"provider_name"`              // Name of the provider (e.g. "Reuters")
-	URL           string         `gorm:"size:256" json:"url"`                       // URL of the original news
-	OriginalTitle string         `gorm:"size:256" json:"original_title"`            // Original News title
+	URL           string         `gorm:"size:512" json:"url"`                       // URL of the original news
+	OriginalTitle string         `gorm:"size:512" json:"original_title"`            // Original News title
 	OriginalDesc  string         `gorm:"size:1024" json:"original_desc"`            // Original News description
 	ComposedText  string         `gorm:"size:512" json:"composed_text"`             // Composed text
 	MetaData      datatypes.JSON `gorm:"" json:"meta_data"`                         // Meta data (tickers, markets, hashtags, etc.)
@@ -53,11 +53,11 @@ func (n *News) Validate() error {
 		return ErrProviderNameTooLong
 	}
 
-	if len(n.URL) > 256 {
+	if len(n.URL) > 512 {
 		return ErrURLTooLong
 	}
 
-	if len(n.OriginalTitle) > 256 {
+	if len(n.OriginalTitle) > 512 {
 		return ErrOriginalTitleTooLong
 	}
 
