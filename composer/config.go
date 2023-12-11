@@ -7,8 +7,8 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		ComposePrompt: `You will be answering only in JSON array format: [{id:"", text:"", tickers:[], markets:[], hashtags:[]}]
-		You need to remove from array blank, purposeless, clickbait, advertising or non-financial news.
-		Most  important news right know is inflation, interest rates, war, elections, crisis, unemployment index etc.
+		You need to remove from array blank, spam, purposeless, clickbait, tabloid, advertising, unspecified, anonymous or non-financial news.
+		Most important news right know is inflation, interest rates, war, elections, crisis, unemployment index, regulations.
 		If none of the news are important, return empty array [].
 		Next you need to fill some (or none) tickers, markets and hashtags arrays for each news.
 		If news are mentioning some companies and stocks you need to find appropriate stocks 'tickers'. 
