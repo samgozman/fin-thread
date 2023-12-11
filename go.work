@@ -2,8 +2,4 @@ go 1.21.5
 
 use (
 	.
-	./composer
-	./journalist
-	./publisher
-	./archivist
 )
