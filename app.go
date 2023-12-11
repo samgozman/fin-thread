@@ -19,8 +19,38 @@ type App struct {
 
 func (a *App) start() {
 	// TODO: move to config, this is just a test
-	suspiciousKeywords := []string{"sign up", "buy now", "climate", "activists", "advice", "covid-19", "study", "humanitarian", "award", "research", "human rights", "united nations"}
-	filterKeys := []string{"European Union", "United States", "United Kingdom", "China", "Germany", "France", "Japan", "Italy", "India"}
+	suspiciousKeywords := []string{
+		"sign up",
+		"buy now",
+		"climate",
+		"activists",
+		"activism",
+		"advice",
+		"covid-19",
+		"study",
+		"humanitarian",
+		"award",
+		"research",
+		"human rights",
+		"united nations",
+		"adult content",
+		"pornography",
+		"porn",
+		"sexually",
+		"gender",
+		"sexuality",
+	}
+	filterKeys := []string{
+		"European Union",
+		"United States",
+		"United Kingdom",
+		"China",
+		"Germany",
+		"France",
+		"Japan",
+		"Italy",
+		"India",
+	}
 
 	marketJournalist := NewJournalist("MarketNews", []NewsProvider{
 		NewRssProvider("benzinga:large-cap", "https://www.benzinga.com/news/large-cap/feed"),
