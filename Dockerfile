@@ -1,9 +1,9 @@
 FROM golang:1.21.5-alpine AS builder
 WORKDIR /app
-# TODO: Add a .dockerignore file
-# TODO: Add split build stage for dependencies
-COPY . .
+COPY go.mod .
+COPY go.sum .
 RUN go mod download
+COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o finfeed
 
 FROM gcr.io/distroless/static-debian11:latest
