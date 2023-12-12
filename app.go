@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/getsentry/sentry-go"
 	"github.com/go-co-op/gocron"
 	. "github.com/samgozman/fin-thread/archivist"
 	. "github.com/samgozman/fin-thread/composer"
@@ -18,6 +19,7 @@ type App struct {
 }
 
 func (a *App) start() {
+	defer sentry.Flush(2 * time.Second)
 	// TODO: move to config, this is just a test
 	suspiciousKeywords := []string{
 		"sign up",
@@ -110,16 +112,34 @@ func (a *App) start() {
 	s := gocron.NewScheduler(time.UTC)
 	_, err := s.Every(60 * time.Second).Do(marketJob.Run())
 	if err != nil {
+		sentry.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "scheduler",
+			Message:  "Error scheduling job for Market news",
+			Level:    sentry.LevelError,
+		})
+		sentry.CaptureException(err)
 		panic(err)
 	}
 
 	_, err = s.Every(4 * time.Minute).Do(broadJob.Run())
 	if err != nil {
+		sentry.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "scheduler",
+			Message:  "Error scheduling job for Broad news",
+			Level:    sentry.LevelError,
+		})
+		sentry.CaptureException(err)
 		panic(err)
 	}
 
 	_, err = s.Every(5 * time.Minute).WaitForSchedule().Do(teJob.Run())
 	if err != nil {
+		sentry.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "scheduler",
+			Message:  "Error scheduling job for TradingEconomics",
+			Level:    sentry.LevelError,
+		})
+		sentry.CaptureException(err)
 		panic(err)
 	}
 
