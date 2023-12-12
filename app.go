@@ -87,7 +87,7 @@ func (a *App) start() {
 	marketJob := NewJob(a, marketJournalist).
 		FetchUntil(time.Now().Add(-60 * time.Second)).
 		OmitSuspicious().
-		OmitEmptyMeta().
+		OmitIfAllKeysEmpty().
 		RemoveClones().
 		ComposeText().
 		SaveToDB()
@@ -95,13 +95,14 @@ func (a *App) start() {
 	broadJob := NewJob(a, broadNews).
 		FetchUntil(time.Now().Add(-4 * time.Minute)).
 		OmitSuspicious().
-		OmitEmptyMeta().
+		OmitEmptyMeta(MetaTickers).
 		RemoveClones().
 		ComposeText().
 		SaveToDB()
 
 	teJob := NewJob(a, teJournalist).
 		FetchUntil(time.Now().Add(-5 * time.Minute)).
+		OmitEmptyMeta(MetaHashtags).
 		RemoveClones().
 		ComposeText().
 		SaveToDB()

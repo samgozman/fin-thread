@@ -17,14 +17,15 @@ import (
 // TODO: Move job to separate package, find a way to separate it from the App
 
 type Job struct {
-	app                *App        // app with all the dependencies and configuration
-	journalist         *Journalist // journalist that will fetch news
-	until              time.Time   // fetch articles until this date
-	omitSuspicious     bool        // if true, will not publish suspicious articles
-	omitEmptyMeta      bool        // if true, will not publish articles with empty meta. Note: requires composeText to be true
-	shouldComposeText  bool        // if true, will compose text for the article using OpenAI. If false, will use original title and description
-	shouldSaveToDB     bool        // if true, will save all news to the database
-	shouldRemoveClones bool        // if true, will remove duplicated news found in the DB. Note: requires shouldSaveToDB to be true
+	app                *App            // app with all the dependencies and configuration
+	journalist         *Journalist     // journalist that will fetch news
+	until              time.Time       // fetch articles until this date
+	omitSuspicious     bool            // if true, will not publish suspicious articles
+	omitEmptyMetaKeys  *omitKeyOptions // holds keys that will omit news if empty. Note: requires shouldComposeText to be true
+	omitIfAllKeysEmpty bool            // if true, will omit articles with empty meta for all keys. Note: requires shouldComposeText to be set
+	shouldComposeText  bool            // if true, will compose text for the article using OpenAI. If false, will use original title and description
+	shouldSaveToDB     bool            // if true, will save all news to the database
+	shouldRemoveClones bool            // if true, will remove duplicated news found in the DB. Note: requires shouldSaveToDB to be true
 }
 
 // NewJob creates a new Job instance
@@ -47,10 +48,32 @@ func (job *Job) OmitSuspicious() *Job {
 	return job
 }
 
-// OmitEmptyMeta sets the flag that will omit articles with empty meta
+// OmitEmptyMeta will omit news with empty meta for the given key from composer.ComposedMeta
 // Note: requires ComposeText to be set
-func (job *Job) OmitEmptyMeta() *Job {
-	job.omitEmptyMeta = true
+func (job *Job) OmitEmptyMeta(key MetaKey) *Job {
+	if job.omitEmptyMetaKeys == nil {
+		job.omitEmptyMetaKeys = &omitKeyOptions{}
+	}
+	switch key {
+	case MetaTickers:
+		job.omitEmptyMetaKeys.emptyTickers = true
+	case MetaMarkets:
+		job.omitEmptyMetaKeys.emptyMarkets = true
+	case MetaHashtags:
+		job.omitEmptyMetaKeys.emptyHashtags = true
+	default:
+		panic(errors.New(fmt.Sprintf("Unknown meta key: %s", key)))
+	}
+	return job
+}
+
+// OmitIfAllKeysEmpty will omit articles with empty meta for all keys from composer.ComposedMeta
+//
+// Example:
+// "{"Markets": [], "Tickers": [], "Hashtags": []}" will be omitted,
+// but "{"Markets": ["SPY"], "Tickers": [], "Hashtags": []}" will not
+func (job *Job) OmitIfAllKeysEmpty() *Job {
+	job.omitIfAllKeysEmpty = true
 	return job
 }
 
@@ -271,11 +294,7 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 
 		// Save composed text and meta if found in the map
 		if val, ok := composedNewsMap[n.ID]; ok {
-			meta, err := json.Marshal(struct {
-				Tickers  []string
-				Markets  []string
-				Hashtags []string
-			}{
+			meta, err := json.Marshal(composer.ComposedMeta{
 				Tickers:  val.Tickers,
 				Markets:  val.Markets,
 				Hashtags: val.Hashtags,
@@ -312,18 +331,28 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 			continue
 		}
 
+		// TODO: Change Unmarshal with find method among ComposedNews
+		var meta composer.ComposedMeta
+		err := json.Unmarshal(n.MetaData, &meta)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("[Job.publish][json.Unmarshal] meta: %v", err))
+		}
+
 		// Skip news with empty meta if needed
-		if job.omitEmptyMeta {
-			// TODO: Change Unmarshal with find method among ComposedNews
-			var meta struct {
-				Tickers  []string
-				Markets  []string
-				Hashtags []string
+		if job.omitEmptyMetaKeys != nil || job.omitIfAllKeysEmpty {
+			if job.omitEmptyMetaKeys.emptyTickers && len(meta.Tickers) == 0 {
+				continue
 			}
-			err := json.Unmarshal(n.MetaData, &meta)
-			if err != nil {
-				return nil, errors.New(fmt.Sprintf("[Job.publish][json.Unmarshal] meta: %v", err))
+			if job.omitEmptyMetaKeys.emptyMarkets && len(meta.Markets) == 0 {
+				continue
 			}
+			if job.omitEmptyMetaKeys.emptyHashtags && len(meta.Hashtags) == 0 {
+				continue
+			}
+		}
+
+		// Omit if all keys are empty and omitIfAllKeysEmpty is set
+		if job.omitIfAllKeysEmpty {
 			if len(meta.Tickers) == 0 && len(meta.Markets) == 0 && len(meta.Hashtags) == 0 {
 				continue
 			}
@@ -384,4 +413,21 @@ type JobData struct {
 	DBNews       []*models.News           // News entities from/for the database
 }
 
+// JobFunc is a type for job function that will be executed by the scheduler
 type JobFunc func()
+
+// MetaKey is a type for meta keys based on the keys from composer.ComposedMeta struct
+type MetaKey string
+
+// Based on the composer.ComposedMeta struct keys
+const (
+	MetaTickers  = "Tickers"
+	MetaMarkets  = "Markets"
+	MetaHashtags = "Hashtags"
+)
+
+type omitKeyOptions struct {
+	emptyTickers  bool // if true, will omit articles with empty tickers meta from composer.ComposedMeta
+	emptyMarkets  bool // if true, will omit articles with empty markets meta from composer.ComposedMeta
+	emptyHashtags bool // if true, will omit articles with empty hashtags meta from composer.ComposedMeta
+}

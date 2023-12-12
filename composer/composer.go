@@ -89,3 +89,9 @@ type ComposedNews struct {
 	Markets  []string `json:"markets"`  // US/EU/Asia stocks, bonds, commodities, housing, etc.
 	Hashtags []string `json:"hashtags"` // hashtags related to the news (#inflation, #fed, #buybacks, etc.)
 }
+
+type ComposedMeta struct {
+	Tickers  []string `json:"tickers"`
+	Markets  []string `json:"markets"`
+	Hashtags []string `json:"hashtags"`
+}
