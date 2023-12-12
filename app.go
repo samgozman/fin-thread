@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/getsentry/sentry-go"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	. "github.com/samgozman/fin-thread/archivist"
 	. "github.com/samgozman/fin-thread/composer"
 	. "github.com/samgozman/fin-thread/journalist"
@@ -113,8 +113,24 @@ func (a *App) start() {
 	})
 	defer hub.Flush(2 * time.Second)
 
-	s := gocron.NewScheduler(time.UTC)
-	_, err := s.Every(60 * time.Second).Do(marketJob.Run())
+	s, err := gocron.NewScheduler()
+	if err != nil {
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "scheduler",
+			Message:  "Error creating scheduler",
+			Level:    sentry.LevelFatal,
+		}, nil)
+		hub.CaptureException(err)
+		panic(err)
+	}
+
+	_, err = s.NewJob(
+		gocron.DurationJob(60*time.Second),
+		gocron.NewTask(marketJob.Run()),
+		gocron.WithSingletonMode(gocron.LimitModeReschedule), // for often jobs
+		gocron.WithName("scheduler for Market news"),
+	)
+
 	if err != nil {
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "scheduler",
@@ -125,7 +141,11 @@ func (a *App) start() {
 		panic(err)
 	}
 
-	_, err = s.Every(4 * time.Minute).Do(broadJob.Run())
+	_, err = s.NewJob(
+		gocron.DurationJob(4*time.Minute),
+		gocron.NewTask(broadJob.Run()),
+		gocron.WithName("scheduler for Broad market news"),
+	)
 	if err != nil {
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "scheduler",
@@ -136,7 +156,11 @@ func (a *App) start() {
 		panic(err)
 	}
 
-	_, err = s.Every(5 * time.Minute).WaitForSchedule().Do(teJob.Run())
+	_, err = s.NewJob(
+		gocron.DurationJob(5*time.Minute),
+		gocron.NewTask(teJob.Run()),
+		gocron.WithName("scheduler for TradingEconomics news"),
+	)
 	if err != nil {
 		sentry.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "scheduler",
@@ -147,8 +171,13 @@ func (a *App) start() {
 		panic(err)
 	}
 
-	defer s.Stop()
-	s.StartAsync()
+	defer func(s gocron.Scheduler) {
+		err := s.Shutdown()
+		if err != nil {
+
+		}
+	}(s)
+	s.Start()
 
 	a.logger.Info("Started fin-thread successfully")
 	select {}
