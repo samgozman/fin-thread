@@ -19,7 +19,6 @@ type App struct {
 }
 
 func (a *App) start() {
-	defer sentry.Flush(2 * time.Second)
 	// TODO: move to config, this is just a test
 	suspiciousKeywords := []string{
 		"sign up",
@@ -110,13 +109,20 @@ func (a *App) start() {
 		ComposeText().
 		SaveToDB()
 
+	// Sentry hub for fatal errors
+	hub := sentry.CurrentHub().Clone()
+	hub.ConfigureScope(func(scope *sentry.Scope) {
+		scope.SetLevel(sentry.LevelFatal)
+	})
+	defer hub.Flush(2 * time.Second)
+
 	s := gocron.NewScheduler(time.UTC)
 	_, err := s.Every(60 * time.Second).Do(marketJob.Run())
 	if err != nil {
 		sentry.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "scheduler",
 			Message:  "Error scheduling job for Market news",
-			Level:    sentry.LevelError,
+			Level:    sentry.LevelFatal,
 		})
 		sentry.CaptureException(err)
 		panic(err)
@@ -127,7 +133,7 @@ func (a *App) start() {
 		sentry.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "scheduler",
 			Message:  "Error scheduling job for Broad news",
-			Level:    sentry.LevelError,
+			Level:    sentry.LevelFatal,
 		})
 		sentry.CaptureException(err)
 		panic(err)
@@ -138,7 +144,7 @@ func (a *App) start() {
 		sentry.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "scheduler",
 			Message:  "Error scheduling job for TradingEconomics",
-			Level:    sentry.LevelError,
+			Level:    sentry.LevelFatal,
 		})
 		sentry.CaptureException(err)
 		panic(err)
