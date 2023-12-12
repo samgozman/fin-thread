@@ -119,23 +119,23 @@ func (a *App) start() {
 	s := gocron.NewScheduler(time.UTC)
 	_, err := s.Every(60 * time.Second).Do(marketJob.Run())
 	if err != nil {
-		sentry.AddBreadcrumb(&sentry.Breadcrumb{
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "scheduler",
 			Message:  "Error scheduling job for Market news",
 			Level:    sentry.LevelFatal,
-		})
-		sentry.CaptureException(err)
+		}, nil)
+		hub.CaptureException(err)
 		panic(err)
 	}
 
 	_, err = s.Every(4 * time.Minute).Do(broadJob.Run())
 	if err != nil {
-		sentry.AddBreadcrumb(&sentry.Breadcrumb{
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "scheduler",
 			Message:  "Error scheduling job for Broad news",
 			Level:    sentry.LevelFatal,
-		})
-		sentry.CaptureException(err)
+		}, nil)
+		hub.CaptureException(err)
 		panic(err)
 	}
 
@@ -146,7 +146,7 @@ func (a *App) start() {
 			Message:  "Error scheduling job for TradingEconomics",
 			Level:    sentry.LevelFatal,
 		})
-		sentry.CaptureException(err)
+		hub.CaptureException(err)
 		panic(err)
 	}
 
