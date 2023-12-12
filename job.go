@@ -362,8 +362,8 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 		var formattedText string
 		if job.shouldComposeText {
 			formattedText = fmt.Sprintf(
-				"Hash: %s\nProvider: %s\nMeta: %s\nIsSuspicious:%v\n %s",
-				n.Hash, n.ProviderName, n.MetaData.String(), n.IsSuspicious, n.ComposedText,
+				"Hash: %s\nProvider: %s\nMeta: %s\n %s",
+				n.Hash, n.ProviderName, n.MetaData.String(), n.ComposedText,
 			)
 		} else {
 			formattedText = n.OriginalTitle + "\n" + n.OriginalDesc
