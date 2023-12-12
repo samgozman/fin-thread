@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/microcosm-cc/bluemonday"
+	"html"
 	"regexp"
 	"strings"
 	"time"
@@ -22,6 +23,9 @@ type News struct {
 	// TODO: Add creator field if possible
 }
 
+// NewNews creates a new News instance from the given parameters.
+// It sanitizes the title and description from HTML tags and styles.
+// It also generates the ID of the news by hashing the link, title, description and date.
 func NewNews(title, description, link, date, provider string) (*News, error) {
 	dateTime, err := parseDate(date)
 	if err != nil {
@@ -32,6 +36,15 @@ func NewNews(title, description, link, date, provider string) (*News, error) {
 	p := bluemonday.StrictPolicy()
 	title = p.Sanitize(title)
 	description = p.Sanitize(description)
+
+	// Replace code symbols like &#39; with their actual symbols.
+	// This is placed after sanitization, because sanitization may replace some symbols along the way.
+	title = html.UnescapeString(title)
+	description = html.UnescapeString(description)
+
+	// Replace Unicode escape sequences (e.g., \u0026)
+	title = replaceUnicodeSymbols(title)
+	description = replaceUnicodeSymbols(description)
 
 	if len(description) > 1024 {
 		description = description[:1024]

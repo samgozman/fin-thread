@@ -43,15 +43,15 @@ func TestNewNews(t *testing.T) {
 			name: "valid news with html tags",
 			args: args{
 				title:        "title <i>bonk</i>",
-				description:  "description <b>bold</b> <i>italic</i> <a href=\"link\">link</a>",
+				description:  "description <b>bold</b> <i>S\\u0026P 500</i> <a href=\"link\">G&#38;T</a>",
 				link:         "link",
 				date:         "Mon, 02 Jan 2006 15:04:05 MST",
 				providerName: "provider",
 			},
 			want: &News{
-				ID:           "309e1c0cfc773eccc628ba376378eaa1",
+				ID:           "91e9909e2e1a1555d1d0aaca96aede63",
 				Title:        "title bonk",
-				Description:  "description bold italic link",
+				Description:  "description bold S&P 500 G&T",
 				Link:         "link",
 				Date:         time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
 				ProviderName: "provider",
