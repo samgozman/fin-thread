@@ -39,6 +39,7 @@ func (a *App) start() {
 		"sexually",
 		"gender",
 		"sexuality",
+		"class action lawsuit",
 	}
 	filterKeys := []string{
 		"European Union",
