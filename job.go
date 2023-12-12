@@ -339,7 +339,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 		}
 
 		// Skip news with empty meta if needed
-		if job.omitEmptyMetaKeys != nil || job.omitIfAllKeysEmpty {
+		if job.omitEmptyMetaKeys != nil {
 			if job.omitEmptyMetaKeys.emptyTickers && len(meta.Tickers) == 0 {
 				continue
 			}
