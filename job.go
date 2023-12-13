@@ -335,7 +335,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 		var meta composer.ComposedMeta
 		err := json.Unmarshal(n.MetaData, &meta)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("[Job.publish][json.Unmarshal] meta: %v", err))
+			return nil, errors.New(fmt.Sprintf("[Job.publish][json.Unmarshal] meta: %v. Value: %s", err, n.MetaData))
 		}
 
 		// Skip news with empty meta if needed
