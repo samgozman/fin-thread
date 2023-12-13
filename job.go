@@ -6,19 +6,27 @@ import (
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
+	"github.com/samgozman/fin-thread/archivist"
 	"github.com/samgozman/fin-thread/archivist/models"
 	"github.com/samgozman/fin-thread/composer"
+	"github.com/samgozman/fin-thread/journalist"
+	"github.com/samgozman/fin-thread/publisher"
+	"log/slog"
 	"slices"
 	"time"
-
-	. "github.com/samgozman/fin-thread/journalist"
 )
 
-// TODO: Move job to separate package, find a way to separate it from the App
-
+// Job will be executed by the scheduler and will fetch, compose, publish and save news to the database
 type Job struct {
-	app                *App            // app with all the dependencies and configuration
-	journalist         *Journalist     // journalist that will fetch news
+	composer   *composer.Composer           // composer that will compose text for the article using OpenAI
+	publisher  *publisher.TelegramPublisher // publisher that will publish news to the channel
+	archivist  *archivist.Archivist         // archivist that will save news to the database
+	journalist *journalist.Journalist       // journalist that will fetch news
+	logger     *slog.Logger                 // special logger for the job
+	options    *JobOptions                  // job options
+}
+
+type JobOptions struct {
 	until              time.Time       // fetch articles until this date
 	omitSuspicious     bool            // if true, will not publish suspicious articles
 	omitEmptyMetaKeys  *omitKeyOptions // holds keys that will omit news if empty. Note: requires shouldComposeText to be true
@@ -29,38 +37,47 @@ type Job struct {
 }
 
 // NewJob creates a new Job instance
-func NewJob(app *App, journalist *Journalist) *Job {
+func NewJob(
+	composer *composer.Composer,
+	publisher *publisher.TelegramPublisher,
+	archivist *archivist.Archivist,
+	journalist *journalist.Journalist,
+) *Job {
 	return &Job{
-		app:        app,
+		composer:   composer,
+		publisher:  publisher,
+		archivist:  archivist,
 		journalist: journalist,
+		logger:     slog.Default(),
+		options:    &JobOptions{},
 	}
 }
 
 // FetchUntil sets the date until which the articles will be fetched
 func (job *Job) FetchUntil(until time.Time) *Job {
-	job.until = until
+	job.options.until = until
 	return job
 }
 
 // OmitSuspicious sets the flag that will omit suspicious articles
 func (job *Job) OmitSuspicious() *Job {
-	job.omitSuspicious = true
+	job.options.omitSuspicious = true
 	return job
 }
 
 // OmitEmptyMeta will omit news with empty meta for the given key from composer.ComposedMeta
 // Note: requires ComposeText to be set
 func (job *Job) OmitEmptyMeta(key MetaKey) *Job {
-	if job.omitEmptyMetaKeys == nil {
-		job.omitEmptyMetaKeys = &omitKeyOptions{}
+	if job.options.omitEmptyMetaKeys == nil {
+		job.options.omitEmptyMetaKeys = &omitKeyOptions{}
 	}
 	switch key {
 	case MetaTickers:
-		job.omitEmptyMetaKeys.emptyTickers = true
+		job.options.omitEmptyMetaKeys.emptyTickers = true
 	case MetaMarkets:
-		job.omitEmptyMetaKeys.emptyMarkets = true
+		job.options.omitEmptyMetaKeys.emptyMarkets = true
 	case MetaHashtags:
-		job.omitEmptyMetaKeys.emptyHashtags = true
+		job.options.omitEmptyMetaKeys.emptyHashtags = true
 	default:
 		panic(errors.New(fmt.Sprintf("Unknown meta key: %s", key)))
 	}
@@ -73,25 +90,25 @@ func (job *Job) OmitEmptyMeta(key MetaKey) *Job {
 // "{"Markets": [], "Tickers": [], "Hashtags": []}" will be omitted,
 // but "{"Markets": ["SPY"], "Tickers": [], "Hashtags": []}" will not
 func (job *Job) OmitIfAllKeysEmpty() *Job {
-	job.omitIfAllKeysEmpty = true
+	job.options.omitIfAllKeysEmpty = true
 	return job
 }
 
 // ComposeText sets the flag that will compose text for the article using OpenAI
 func (job *Job) ComposeText() *Job {
-	job.shouldComposeText = true
+	job.options.shouldComposeText = true
 	return job
 }
 
 // RemoveClones sets the flag that will remove duplicated news found in the DB
 func (job *Job) RemoveClones() *Job {
-	job.shouldRemoveClones = true
+	job.options.shouldRemoveClones = true
 	return job
 }
 
 // SaveToDB sets the flag that will save all news to the database
 func (job *Job) SaveToDB() *Job {
-	job.shouldSaveToDB = true
+	job.options.shouldSaveToDB = true
 	return job
 }
 
@@ -119,10 +136,10 @@ func (job *Job) Run() JobFunc {
 		}()
 
 		span := tx.StartChild("GetLatestNews")
-		news, err := job.journalist.GetLatestNews(ctx, job.until)
+		news, err := job.journalist.GetLatestNews(ctx, job.options.until)
 		span.Finish()
 		if err != nil {
-			job.app.logger.Info(fmt.Sprintf("[%s][GetLatestNews]", jobName), "error", err)
+			job.logger.Info(fmt.Sprintf("[%s][GetLatestNews]", jobName), "error", err)
 			hub.CaptureException(err)
 		}
 
@@ -143,7 +160,7 @@ func (job *Job) Run() JobFunc {
 		jobData.News, err = job.removeDuplicates(ctx, news)
 		span.Finish()
 		if err != nil {
-			job.app.logger.Info(fmt.Sprintf("[%s][removeDuplicates]", jobName), "error", err)
+			job.logger.Info(fmt.Sprintf("[%s][removeDuplicates]", jobName), "error", err)
 			hub.CaptureException(err)
 			return
 		}
@@ -160,7 +177,7 @@ func (job *Job) Run() JobFunc {
 		jobData.ComposedNews, err = job.composeNews(ctx, jobData.News)
 		span.Finish()
 		if err != nil {
-			job.app.logger.Warn(fmt.Sprintf("[%s][composeNews]", jobName), "error", err)
+			job.logger.Warn(fmt.Sprintf("[%s][composeNews]", jobName), "error", err)
 			hub.CaptureException(err)
 			return
 		}
@@ -174,7 +191,7 @@ func (job *Job) Run() JobFunc {
 		jobData.DBNews, err = job.saveNews(ctx, jobData)
 		span.Finish()
 		if err != nil {
-			job.app.logger.Warn(fmt.Sprintf("[%s][saveNews]", jobName), "error", err)
+			job.logger.Warn(fmt.Sprintf("[%s][saveNews]", jobName), "error", err)
 			hub.CaptureException(err)
 			return
 		}
@@ -188,7 +205,7 @@ func (job *Job) Run() JobFunc {
 		jobData.DBNews, err = job.publish(ctx, jobData.DBNews)
 		span.Finish()
 		if err != nil {
-			job.app.logger.Warn(fmt.Sprintf("[%s][publish]", jobName), "error", err)
+			job.logger.Warn(fmt.Sprintf("[%s][publish]", jobName), "error", err)
 			hub.CaptureException(err)
 			return
 		}
@@ -202,7 +219,7 @@ func (job *Job) Run() JobFunc {
 		err = job.updateNews(ctx, jobData.DBNews)
 		span.Finish()
 		if err != nil {
-			job.app.logger.Warn(fmt.Sprintf("[%s][updateNews]", jobName), "error", err)
+			job.logger.Warn(fmt.Sprintf("[%s][updateNews]", jobName), "error", err)
 			hub.CaptureException(err)
 			return
 		}
@@ -215,8 +232,8 @@ func (job *Job) Run() JobFunc {
 }
 
 // removeDuplicates removes duplicated news found in the DB
-func (job *Job) removeDuplicates(ctx context.Context, news NewsList) (NewsList, error) {
-	if !job.shouldRemoveClones || !job.shouldSaveToDB {
+func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) (journalist.NewsList, error) {
+	if !job.options.shouldRemoveClones || !job.options.shouldSaveToDB {
 		return news, nil
 	}
 
@@ -227,7 +244,7 @@ func (job *Job) removeDuplicates(ctx context.Context, news NewsList) (NewsList, 
 
 	span := sentry.StartSpan(ctx, "FindAllByHashes", sentry.WithTransactionName("Job.removeDuplicates"))
 	// TODO: Replace with ExistsByHashes
-	exists, err := job.app.archivist.Entities.News.FindAllByHashes(ctx, hashes)
+	exists, err := job.archivist.Entities.News.FindAllByHashes(ctx, hashes)
 	span.Finish()
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("[Job.removeDuplicates][News.FindAllByHashes]: %v", err))
@@ -237,7 +254,7 @@ func (job *Job) removeDuplicates(ctx context.Context, news NewsList) (NewsList, 
 		existedHashes[i] = n.Hash
 	}
 
-	var uniqueNews NewsList
+	var uniqueNews journalist.NewsList
 	for _, n := range news {
 		if !slices.Contains(existedHashes, n.ID) {
 			uniqueNews = append(uniqueNews, n)
@@ -247,14 +264,14 @@ func (job *Job) removeDuplicates(ctx context.Context, news NewsList) (NewsList, 
 }
 
 // composeNews composes text for the article using OpenAI and finds meta
-func (job *Job) composeNews(ctx context.Context, news NewsList) ([]*composer.ComposedNews, error) {
-	if !job.shouldComposeText {
+func (job *Job) composeNews(ctx context.Context, news journalist.NewsList) ([]*composer.ComposedNews, error) {
+	if !job.options.shouldComposeText {
 		return nil, nil
 	}
 
 	// TODO: Split openai jobs - 1: remove unnecessary news, 2: compose text
 	span := sentry.StartSpan(ctx, "Compose", sentry.WithTransactionName("Job.composeNews"))
-	composedNews, err := job.app.composer.Compose(ctx, news)
+	composedNews, err := job.composer.Compose(ctx, news)
 	span.Finish()
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("[Job.composeNews][composer.Compose]: %v", err))
@@ -264,7 +281,7 @@ func (job *Job) composeNews(ctx context.Context, news NewsList) ([]*composer.Com
 }
 
 func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, error) {
-	if !job.shouldSaveToDB {
+	if !job.options.shouldSaveToDB {
 		return nil, nil
 	}
 
@@ -283,7 +300,7 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 
 		dbNews[i] = &models.News{
 			Hash:          n.ID,
-			ChannelID:     job.app.publisher.ChannelID,
+			ChannelID:     job.publisher.ChannelID,
 			ProviderName:  n.ProviderName,
 			OriginalTitle: n.Title,
 			OriginalDesc:  n.Description,
@@ -311,7 +328,7 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 	// TODO: add create many method to archivist with transaction
 	for _, n := range dbNews {
 		span := sentry.StartSpan(ctx, "News.Create", sentry.WithTransactionName("Job.saveNews"))
-		err := job.app.archivist.Entities.News.Create(ctx, n)
+		err := job.archivist.Entities.News.Create(ctx, n)
 		span.SetTag("news_id", n.ID.String())
 		span.SetTag("news_hash", n.Hash)
 		span.Finish()
@@ -327,7 +344,7 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.News, error) {
 	for _, n := range dbNews {
 		// Skip suspicious news if needed
-		if n.IsSuspicious && job.omitSuspicious {
+		if n.IsSuspicious && job.options.omitSuspicious {
 			continue
 		}
 
@@ -339,20 +356,20 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 		}
 
 		// Skip news with empty meta if needed
-		if job.omitEmptyMetaKeys != nil {
-			if job.omitEmptyMetaKeys.emptyTickers && len(meta.Tickers) == 0 {
+		if job.options.omitEmptyMetaKeys != nil {
+			if job.options.omitEmptyMetaKeys.emptyTickers && len(meta.Tickers) == 0 {
 				continue
 			}
-			if job.omitEmptyMetaKeys.emptyMarkets && len(meta.Markets) == 0 {
+			if job.options.omitEmptyMetaKeys.emptyMarkets && len(meta.Markets) == 0 {
 				continue
 			}
-			if job.omitEmptyMetaKeys.emptyHashtags && len(meta.Hashtags) == 0 {
+			if job.options.omitEmptyMetaKeys.emptyHashtags && len(meta.Hashtags) == 0 {
 				continue
 			}
 		}
 
 		// Omit if all keys are empty and omitIfAllKeysEmpty is set
-		if job.omitIfAllKeysEmpty {
+		if job.options.omitIfAllKeysEmpty {
 			if len(meta.Tickers) == 0 && len(meta.Markets) == 0 && len(meta.Hashtags) == 0 {
 				continue
 			}
@@ -360,7 +377,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 
 		// Format news
 		var formattedText string
-		if job.shouldComposeText {
+		if job.options.shouldComposeText {
 			formattedText = fmt.Sprintf(
 				"Hash: %s\nProvider: %s\nMeta: %s\n %s",
 				n.Hash, n.ProviderName, n.MetaData.String(), n.ComposedText,
@@ -371,7 +388,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 
 		span := sentry.StartSpan(ctx, "Publish", sentry.WithTransactionName("Job.publish"))
 		span.SetTag("news_hash", n.Hash)
-		id, err := job.app.publisher.Publish(formattedText)
+		id, err := job.publisher.Publish(formattedText)
 		span.Finish()
 
 		if err != nil {
@@ -388,7 +405,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 
 // updateNews updates news in the database
 func (job *Job) updateNews(ctx context.Context, dbNews []*models.News) error {
-	if !job.shouldSaveToDB {
+	if !job.options.shouldSaveToDB {
 		return nil
 	}
 
@@ -396,7 +413,7 @@ func (job *Job) updateNews(ctx context.Context, dbNews []*models.News) error {
 		// TODO: add update many method to archivist with transaction
 		span := sentry.StartSpan(ctx, "News.Update", sentry.WithTransactionName("Job.updateNews"))
 		span.SetTag("news_hash", n.Hash)
-		err := job.app.archivist.Entities.News.Update(ctx, n)
+		err := job.archivist.Entities.News.Update(ctx, n)
 		span.Finish()
 		if err != nil {
 			return errors.New(fmt.Sprintf("[Job.updateNews][News.Update]: %v", err))
@@ -408,7 +425,7 @@ func (job *Job) updateNews(ctx context.Context, dbNews []*models.News) error {
 
 // JobData holds different types of news data passed between the job functions just for convenience
 type JobData struct {
-	News         NewsList                 // Original news fetched from the journalist
+	News         journalist.NewsList      // Original news fetched from the journalist
 	ComposedNews []*composer.ComposedNews // Composed news with custom text and meta
 	DBNews       []*models.News           // News entities from/for the database
 }
@@ -426,6 +443,7 @@ const (
 	MetaHashtags = "Hashtags"
 )
 
+// omitKeyOptions holds keys that will omit news if empty. Note: requires JobOptions.shouldComposeText to be true
 type omitKeyOptions struct {
 	emptyTickers  bool // if true, will omit articles with empty tickers meta from composer.ComposedMeta
 	emptyMarkets  bool // if true, will omit articles with empty markets meta from composer.ComposedMeta

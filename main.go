@@ -6,20 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"time"
-
-	. "github.com/samgozman/fin-thread/archivist"
-	. "github.com/samgozman/fin-thread/composer"
-	. "github.com/samgozman/fin-thread/publisher"
 )
-
-// Env is a structure that holds all the environment variables that are used in the app
-type Env struct {
-	TelegramChannelID string `mapstructure:"TELEGRAM_CHANNEL_ID"`
-	TelegramBotToken  string `mapstructure:"TELEGRAM_BOT_TOKEN"`
-	OpenAiToken       string `mapstructure:"OPENAI_TOKEN"`
-	PostgresDSN       string `mapstructure:"POSTGRES_DSN"`
-	SentryDSN         string `mapstructure:"SENTRY_DSN"`
-}
 
 func main() {
 	// Initialize viper
@@ -49,18 +36,6 @@ func main() {
 		}
 	}
 
-	pub, err := NewTelegramPublisher(env.TelegramChannelID, env.TelegramBotToken)
-	if err != nil {
-		l.Error("[main] Error creating Telegram publisher:", err)
-		os.Exit(1)
-	}
-
-	arch, err := NewArchivist(env.PostgresDSN)
-	if err != nil {
-		l.Error("[main] Error creating Archivist:", err)
-		os.Exit(1)
-	}
-
 	err = sentry.Init(sentry.ClientOptions{
 		Dsn:                env.SentryDSN,
 		EnableTracing:      true,
@@ -74,10 +49,7 @@ func main() {
 	defer sentry.Flush(2 * time.Second)
 
 	app := &App{
-		composer:  NewComposer(env.OpenAiToken),
-		publisher: pub,
-		archivist: arch,
-		logger:    slog.Default(),
+		env: &env,
 	}
 
 	app.start()

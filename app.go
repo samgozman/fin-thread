@@ -12,13 +12,24 @@ import (
 )
 
 type App struct {
-	composer  *Composer
-	publisher *TelegramPublisher
-	archivist *Archivist
-	logger    *slog.Logger
+	env *Env // Holds all the environment variables that are used in the app. TODO: move to config
 }
 
 func (a *App) start() {
+	publisher, err := NewTelegramPublisher(a.env.TelegramChannelID, a.env.TelegramBotToken)
+	if err != nil {
+		slog.Default().Error("[main] Error creating Telegram publisher:", err)
+		panic(err)
+	}
+
+	archivist, err := NewArchivist(a.env.PostgresDSN)
+	if err != nil {
+		slog.Default().Error("[main] Error creating Archivist:", err)
+		panic(err)
+	}
+
+	composer := NewComposer(a.env.OpenAiToken)
+
 	// TODO: move to config, this is just a test
 	suspiciousKeywords := []string{
 		"sign up",
@@ -83,7 +94,7 @@ func (a *App) start() {
 		NewRssProvider("trading-economics:government-debt", "https://tradingeconomics.com/rss/news.aspx?i=government+debt"),
 	}).FlagByKeys(suspiciousKeywords).Limit(1).FilterByKeys(filterKeys)
 
-	marketJob := NewJob(a, marketJournalist).
+	marketJob := NewJob(composer, publisher, archivist, marketJournalist).
 		FetchUntil(time.Now().Add(-60 * time.Second)).
 		OmitSuspicious().
 		OmitIfAllKeysEmpty().
@@ -91,7 +102,7 @@ func (a *App) start() {
 		ComposeText().
 		SaveToDB()
 
-	broadJob := NewJob(a, broadNews).
+	broadJob := NewJob(composer, publisher, archivist, broadNews).
 		FetchUntil(time.Now().Add(-4 * time.Minute)).
 		OmitSuspicious().
 		OmitEmptyMeta(MetaTickers).
@@ -99,7 +110,7 @@ func (a *App) start() {
 		ComposeText().
 		SaveToDB()
 
-	teJob := NewJob(a, teJournalist).
+	teJob := NewJob(composer, publisher, archivist, teJournalist).
 		FetchUntil(time.Now().Add(-5 * time.Minute)).
 		OmitEmptyMeta(MetaHashtags).
 		RemoveClones().
@@ -179,6 +190,6 @@ func (a *App) start() {
 	}(s)
 	s.Start()
 
-	a.logger.Info("Started fin-thread successfully")
+	slog.Default().Info("Started fin-thread successfully")
 	select {}
 }
