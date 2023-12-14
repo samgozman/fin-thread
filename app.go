@@ -12,59 +12,23 @@ import (
 )
 
 type App struct {
-	env *Env // Holds all the environment variables that are used in the app. TODO: move to config
+	cnf *Config // App configuration
 }
 
 func (a *App) start() {
-	publisher, err := NewTelegramPublisher(a.env.TelegramChannelID, a.env.TelegramBotToken)
+	publisher, err := NewTelegramPublisher(a.cnf.env.TelegramChannelID, a.cnf.env.TelegramBotToken)
 	if err != nil {
 		slog.Default().Error("[main] Error creating Telegram publisher:", err)
 		panic(err)
 	}
 
-	archivist, err := NewArchivist(a.env.PostgresDSN)
+	archivist, err := NewArchivist(a.cnf.env.PostgresDSN)
 	if err != nil {
 		slog.Default().Error("[main] Error creating Archivist:", err)
 		panic(err)
 	}
 
-	composer := NewComposer(a.env.OpenAiToken)
-
-	// TODO: move to config, this is just a test
-	suspiciousKeywords := []string{
-		"sign up",
-		"buy now",
-		"climate",
-		"activists",
-		"activism",
-		"advice",
-		"covid-19",
-		"study",
-		"humanitarian",
-		"award",
-		"research",
-		"human rights",
-		"united nations",
-		"adult content",
-		"pornography",
-		"porn",
-		"sexually",
-		"gender",
-		"sexuality",
-		"class action lawsuit",
-		"subscribe",
-	}
-	filterKeys := []string{
-		"European Union",
-		"United States",
-		"United Kingdom",
-		"China",
-		"Germany",
-		"France",
-		"Japan",
-		"Italy",
-		"India",
-	}
+	composer := NewComposer(a.cnf.env.OpenAiToken)
 
 	marketJournalist := NewJournalist("MarketNews", []NewsProvider{
 		NewRssProvider("benzinga:large-cap", "https://www.benzinga.com/news/large-cap/feed"),
@@ -77,11 +41,11 @@ func (a *App) start() {
 		NewRssProvider("benzinga:analyst:upgrades", "https://www.benzinga.com/analyst-ratings/upgrades/feed"),
 		NewRssProvider("benzinga:analyst:downgrades", "https://www.benzinga.com/analyst-ratings/downgrades/feed"),
 		NewRssProvider("benzinga:etfs", "https://www.benzinga.com/etfs/feed"),
-	}).FlagByKeys(suspiciousKeywords).Limit(2)
+	}).FlagByKeys(a.cnf.suspiciousKeywords).Limit(2)
 
 	broadNews := NewJournalist("BroadNews", []NewsProvider{
 		NewRssProvider("finpost:news", "https://financialpost.com/feed"),
-	}).FlagByKeys(suspiciousKeywords).Limit(1)
+	}).FlagByKeys(a.cnf.suspiciousKeywords).Limit(1)
 
 	teJournalist := NewJournalist("TradingEconomics", []NewsProvider{
 		NewRssProvider("trading-economics:european-union", "https://tradingeconomics.com/european-union/rss"),
@@ -92,7 +56,7 @@ func (a *App) start() {
 		NewRssProvider("trading-economics:housing-starts", "https://tradingeconomics.com/rss/news.aspx?i=housing+starts"),
 		NewRssProvider("trading-economics:households-debt-to-gdp", "https://tradingeconomics.com/rss/news.aspx?i=households+debt+to+gdp"),
 		NewRssProvider("trading-economics:government-debt", "https://tradingeconomics.com/rss/news.aspx?i=government+debt"),
-	}).FlagByKeys(suspiciousKeywords).Limit(1).FilterByKeys(filterKeys)
+	}).FlagByKeys(a.cnf.suspiciousKeywords).Limit(1).FilterByKeys(a.cnf.filterKeys)
 
 	marketJob := NewJob(composer, publisher, archivist, marketJournalist).
 		FetchUntil(time.Now().Add(-60 * time.Second)).

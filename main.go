@@ -49,7 +49,7 @@ func main() {
 	defer sentry.Flush(2 * time.Second)
 
 	app := &App{
-		env: &env,
+		cnf: NewConfig(&env),
 	}
 
 	app.start()
