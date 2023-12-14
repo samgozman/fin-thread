@@ -438,9 +438,9 @@ type MetaKey string
 
 // Based on the composer.ComposedMeta struct keys
 const (
-	MetaTickers  = "Tickers"
-	MetaMarkets  = "Markets"
-	MetaHashtags = "Hashtags"
+	MetaTickers  MetaKey = "Tickers"
+	MetaMarkets  MetaKey = "Markets"
+	MetaHashtags MetaKey = "Hashtags"
 )
 
 // omitKeyOptions holds keys that will omit news if empty. Note: requires JobOptions.shouldComposeText to be true
