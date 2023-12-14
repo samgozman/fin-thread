@@ -109,7 +109,7 @@ func TestComposer_Compose(t *testing.T) {
 	}
 	for _, tt := range tests {
 		mockClient := new(MockOpenAiClient)
-		defConf := DefaultConfig()
+		defConf := DefaultPromptConfig()
 
 		// Set expectations for the mock client
 		if tt.wantErr {
@@ -153,7 +153,7 @@ func TestComposer_Compose(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &Composer{
 				OpenAiClient: mockClient,
-				Config:       DefaultConfig(),
+				Config:       DefaultPromptConfig(),
 			}
 			got, err := c.Compose(tt.args.ctx, tt.args.news)
 			if (err != nil) != tt.wantErr {

@@ -17,11 +17,11 @@ type OpenAiClientInterface interface {
 
 type Composer struct {
 	OpenAiClient OpenAiClientInterface
-	Config       *Config
+	Config       *PromptConfig
 }
 
 func NewComposer(oaiToken string) *Composer {
-	return &Composer{OpenAiClient: openai.NewClient(oaiToken), Config: DefaultConfig()}
+	return &Composer{OpenAiClient: openai.NewClient(oaiToken), Config: DefaultPromptConfig()}
 }
 
 func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*ComposedNews, error) {

@@ -1,11 +1,11 @@
 package composer
 
-type Config struct {
+type PromptConfig struct {
 	ComposePrompt string
 }
 
-func DefaultConfig() *Config {
-	return &Config{
+func DefaultPromptConfig() *PromptConfig {
+	return &PromptConfig{
 		ComposePrompt: `You will be answering only in JSON array format: [{id:"", text:"", tickers:[], markets:[], hashtags:[]}]
 		You need to remove from array blank, spam, purposeless, clickbait, tabloid, advertising, unspecified, anonymous or non-financial news.
 		Most important news right know is inflation, interest rates, war, elections, crisis, unemployment index, regulations.
