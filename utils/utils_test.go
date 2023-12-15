@@ -38,8 +38,14 @@ func Test_ParseDate(t *testing.T) {
 			wantErr:    false,
 		},
 		{
-			name:       "Unix milliseconds",
+			name:       "Unix milliseconds as int",
 			dateString: 1702450800000,
+			want:       time.Date(2023, 12, 13, 07, 00, 00, 0, time.UTC),
+			wantErr:    false,
+		},
+		{
+			name:       "Unix milliseconds as int64",
+			dateString: int64(1702450800000),
 			want:       time.Date(2023, 12, 13, 07, 00, 00, 0, time.UTC),
 			wantErr:    false,
 		},

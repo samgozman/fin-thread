@@ -8,16 +8,11 @@ import (
 
 // ParseDate parses a date string into a time.Time object in UTC
 func ParseDate(dateString Datable) (time.Time, error) {
+	var timestamp int64
 	// switch type
 	switch dateString.(type) {
 	case nil:
 		return time.Time{}, nil
-	case int:
-		// If Unix milliseconds - convert to seconds
-		if dateString.(int) > 9999999999 {
-			return time.Unix(int64(dateString.(int)/1000), 0).UTC(), nil
-		}
-		return time.Unix(int64(dateString.(int)), 0).UTC(), nil
 	case string:
 		if dateString.(string) == "" {
 			return time.Time{}, nil
@@ -45,9 +40,22 @@ func ParseDate(dateString Datable) (time.Time, error) {
 		}
 
 		return parsedTime.UTC(), err
+	case int:
+		timestamp = int64(dateString.(int))
+	case int32:
+		timestamp = int64(dateString.(int32))
+	case int64:
+		timestamp = dateString.(int64)
+
 	default:
 		return time.Time{}, errors.New(fmt.Sprintf("unknown type: %T of value %s", dateString, dateString))
 	}
+
+	// If Unix milliseconds - convert to seconds
+	if timestamp > 9999999999 {
+		return time.Unix(timestamp/1000, 0).UTC(), nil
+	}
+	return time.Unix(timestamp, 0).UTC(), nil
 }
 
 // Datable is a type that can be parsed into a date (hopefully)
