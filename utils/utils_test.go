@@ -9,7 +9,7 @@ import (
 func Test_ParseDate(t *testing.T) {
 	tests := []struct {
 		name       string
-		dateString string
+		dateString Datable
 		want       time.Time
 		wantErr    bool
 	}{
@@ -29,6 +29,24 @@ func Test_ParseDate(t *testing.T) {
 			name:       "RFC1123Z",
 			dateString: "Mon, 13 Nov 2023 23:00:00 -0000",
 			want:       time.Date(2023, 11, 13, 23, 00, 00, 0, time.UTC),
+			wantErr:    false,
+		},
+		{
+			name:       "Unix milliseconds",
+			dateString: 1702450800000,
+			want:       time.Date(2023, 12, 13, 07, 00, 00, 0, time.UTC),
+			wantErr:    false,
+		},
+		{
+			name:       "Unix seconds",
+			dateString: 1702450800,
+			want:       time.Date(2023, 12, 13, 07, 00, 00, 0, time.UTC),
+			wantErr:    false,
+		},
+		{
+			name:       "nil",
+			dateString: nil,
+			want:       time.Time{},
 			wantErr:    false,
 		},
 		{
