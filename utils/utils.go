@@ -51,6 +51,10 @@ func ParseDate(dateString Datable) (time.Time, error) {
 		return time.Time{}, errors.New(fmt.Sprintf("unknown type: %T of value %s", dateString, dateString))
 	}
 
+	if timestamp == 0 {
+		return time.Time{}, nil
+	}
+
 	// If Unix milliseconds - convert to seconds
 	if timestamp > 9999999999 {
 		return time.Unix(timestamp/1000, 0).UTC(), nil

@@ -56,6 +56,12 @@ func Test_ParseDate(t *testing.T) {
 			wantErr:    false,
 		},
 		{
+			name:       "if value is 0",
+			dateString: 0,
+			want:       time.Time{},
+			wantErr:    false,
+		},
+		{
 			name:       "nil",
 			dateString: nil,
 			want:       time.Time{},
