@@ -50,6 +50,12 @@ func Test_ParseDate(t *testing.T) {
 			wantErr:    false,
 		},
 		{
+			name:       "empty string",
+			dateString: "",
+			want:       time.Time{},
+			wantErr:    false,
+		},
+		{
 			name:       "errorTest",
 			dateString: "1234567890",
 			want:       time.Time{},

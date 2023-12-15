@@ -19,6 +19,9 @@ func ParseDate(dateString Datable) (time.Time, error) {
 		}
 		return time.Unix(int64(dateString.(int)), 0).UTC(), nil
 	case string:
+		if dateString.(string) == "" {
+			return time.Time{}, nil
+		}
 		// List of potential layouts to try
 		layouts := []string{
 			time.RFC1123,
