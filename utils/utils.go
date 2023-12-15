@@ -27,6 +27,7 @@ func ParseDate(dateString Datable) (time.Time, error) {
 			time.RFC1123,
 			time.RFC1123Z,
 			time.RFC3339,
+			"2006-01-02T15:04:05",
 		}
 
 		var parsedTime time.Time
@@ -37,6 +38,10 @@ func ParseDate(dateString Datable) (time.Time, error) {
 			if err == nil {
 				break
 			}
+		}
+
+		if parsedTime.IsZero() && err != nil {
+			return time.Time{}, errors.New(fmt.Sprintf("error parsing date: %s", dateString.(string)))
 		}
 
 		return parsedTime.UTC(), err

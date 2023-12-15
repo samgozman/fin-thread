@@ -26,6 +26,12 @@ func Test_ParseDate(t *testing.T) {
 			wantErr:    false,
 		},
 		{
+			name:       "RFC3339 without Z",
+			dateString: "2023-11-13T12:58:48",
+			want:       time.Date(2023, 11, 13, 12, 58, 48, 0, time.UTC),
+			wantErr:    false,
+		},
+		{
 			name:       "RFC1123Z",
 			dateString: "Mon, 13 Nov 2023 23:00:00 -0000",
 			want:       time.Date(2023, 11, 13, 23, 00, 00, 0, time.UTC),
