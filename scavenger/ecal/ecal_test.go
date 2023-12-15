@@ -79,14 +79,39 @@ func Test_parseEvent(t *testing.T) {
 }
 
 func TestEconomicCalendar_Fetch(t *testing.T) {
+	type args struct {
+		from time.Time
+		to   time.Time
+	}
 	tests := []struct {
 		name    string
+		args    args
 		wantErr bool
 	}{
 		// Just a stupid test to check if the fetch works and returns something without errors
 		{
-			name:    "fetch",
+			name: "fetch for today",
+			args: args{
+				from: time.Now().Truncate(24 * time.Hour),
+				to:   time.Now().Truncate(24 * time.Hour).Add(24 * time.Hour),
+			},
 			wantErr: false,
+		},
+		{
+			name: "error if from is after to",
+			args: args{
+				from: time.Now().Add(24 * time.Hour),
+				to:   time.Now(),
+			},
+			wantErr: true,
+		},
+		{
+			name: "error if to is more than 7 days after from",
+			args: args{
+				from: time.Now().Add(-24 * time.Hour),
+				to:   time.Now().Add(8 * 24 * time.Hour),
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -95,12 +120,12 @@ func TestEconomicCalendar_Fetch(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
-			got, err := c.Fetch(ctx)
+			got, err := c.Fetch(ctx, tt.args.from, tt.args.to)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Fetch() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if len(got) == 0 {
+			if !tt.wantErr && len(got) == 0 {
 				t.Error("Fetch() got 0 len")
 			}
 		})

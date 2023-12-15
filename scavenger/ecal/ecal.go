@@ -19,11 +19,30 @@ const (
 // EconomicCalendar is the struct for economics calendar fetcher
 type EconomicCalendar struct{}
 
-// Fetch fetches economics events
-func (c *EconomicCalendar) Fetch(ctx context.Context) ([]*EconomicCalendarEvent, error) {
-	// importance=9 - high impact
-	// currencies=65743 - CHF, EUR, GBP, JPY, USD, CNY, INR
-	var data = strings.NewReader(`date_mode=1&from=2023-12-11T00%3A00%3A00&to=2023-12-17T23%3A59%3A59&importance=9&currencies=65743`)
+// Fetch fetches economics events for the specified period
+func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) ([]*EconomicCalendarEvent, error) {
+	if from.IsZero() || to.IsZero() {
+		return nil, errors.New(fmt.Sprintf("invalid date range: from %v, to %v", from, to))
+	}
+
+	if from.After(to) {
+		return nil, errors.New(fmt.Sprintf("invalid date range: from %v, to %v", from, to))
+	}
+
+	if to.Sub(from) > 7*24*time.Hour {
+		return nil, errors.New(fmt.Sprintf("invalid date range (more than 7 days): from %v, to %v", from, to))
+	}
+
+	fmt.Println("Fetching economic calendar events from", from, "to", to)
+
+	// Create request body with the specified date range
+	f := from.Format("2006-01-02T15:04:05")
+	t := to.Format("2006-01-02T15:04:05")
+	var data = strings.NewReader(
+		// importance=9 - high impact
+		// currencies=65743 - CHF, EUR, GBP, JPY, USD, CNY, INR
+		fmt.Sprintf("date_mode=1&from=%s&to=%s&importance=9&currencies=65743", f, t),
+	)
 	req, err := http.NewRequest(http.MethodPost, EconomicCalendarUrl, data)
 	if err != nil {
 		return nil, err
@@ -156,7 +175,7 @@ const (
 	EconomicCalendarINR EconomicCalendarCurrency = "INR" // Indian Rupee
 )
 
-// EconomicCalendarImpact impact of the event on the market
+// EconomicCalendarImpact impact of the event on the market (low, medium, high, holiday, none)
 type EconomicCalendarImpact = string
 
 const (
@@ -167,6 +186,7 @@ const (
 	EconomicCalendarImpactNone    EconomicCalendarImpact = "None"     // No impact event
 )
 
+// EconomicCalendarEvent is the struct for economics calendar event object
 type EconomicCalendarEvent struct {
 	DateTime  time.Time                // Date of the event
 	EventTime time.Time                // Time of the event (if available)
