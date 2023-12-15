@@ -1,4 +1,4 @@
-package fxcalendar
+package ecal
 
 import (
 	"context"
@@ -11,7 +11,7 @@ func Test_parseEvent(t *testing.T) {
 	tests := []struct {
 		name    string
 		event   *mql5Calendar
-		want    *ForexCalendarEvent
+		want    *EconomicCalendarEvent
 		wantErr bool
 	}{
 		{
@@ -26,13 +26,13 @@ func Test_parseEvent(t *testing.T) {
 				FullDate:      "2023-11-13T12:58:48",
 				ReleaseDate:   1702450800000,
 			},
-			want: &ForexCalendarEvent{
+			want: &EconomicCalendarEvent{
 				Actual:    "0.2%",
-				Currency:  ForexCalendarCurrencyUSD,
+				Currency:  EconomicCalendarUSD,
 				DateTime:  time.Date(2023, 11, 13, 12, 58, 48, 0, time.UTC),
 				EventTime: time.Date(2023, 12, 13, 07, 00, 00, 0, time.UTC),
 				Forecast:  "0.2%",
-				Impact:    ForexCalendarImpactHigh,
+				Impact:    EconomicCalendarImpactHigh,
 				Previous:  "0.3%",
 				Title:     "Core CPI m/m",
 			},
@@ -51,13 +51,13 @@ func Test_parseEvent(t *testing.T) {
 				FullDate:      "2023-11-13T12:58:48",
 				ReleaseDate:   0,
 			},
-			want: &ForexCalendarEvent{
+			want: &EconomicCalendarEvent{
 				Actual:    "",
-				Currency:  ForexCalendarCurrencyEUR,
+				Currency:  EconomicCalendarEUR,
 				DateTime:  time.Date(2023, 11, 13, 12, 58, 48, 0, time.UTC),
 				EventTime: time.Time{},
 				Forecast:  "",
-				Impact:    ForexCalendarImpactHoliday,
+				Impact:    EconomicCalendarImpactHoliday,
 				Previous:  "",
 				Title:     "The Day of Flying Spaghetti Monster",
 			},
@@ -78,7 +78,7 @@ func Test_parseEvent(t *testing.T) {
 	}
 }
 
-func TestForexCalendar_Fetch(t *testing.T) {
+func TestEconomicCalendar_Fetch(t *testing.T) {
 	tests := []struct {
 		name    string
 		wantErr bool
@@ -91,7 +91,7 @@ func TestForexCalendar_Fetch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &ForexCalendar{}
+			c := &EconomicCalendar{}
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 

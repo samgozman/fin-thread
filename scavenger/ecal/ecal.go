@@ -1,4 +1,4 @@
-package fxcalendar
+package ecal
 
 import (
 	"context"
@@ -13,19 +13,18 @@ import (
 )
 
 const (
-	ForexCalendarUrl = "https://www.mql5.com/en/economic-calendar/content"
+	EconomicCalendarUrl = "https://www.mql5.com/en/economic-calendar/content"
 )
 
-// ForexCalendar is the struct that fetches the calendar events from the mql5.com website.
-// Calendar page: https://www.mql5.com/en/economic-calendar
-type ForexCalendar struct{}
+// EconomicCalendar is the struct for economics calendar fetcher
+type EconomicCalendar struct{}
 
-// Fetch fetches the calendar events from the mql5.com website.
-func (c *ForexCalendar) Fetch(ctx context.Context) ([]*ForexCalendarEvent, error) {
+// Fetch fetches economics events
+func (c *EconomicCalendar) Fetch(ctx context.Context) ([]*EconomicCalendarEvent, error) {
 	// importance=9 - high impact
 	// currencies=65743 - CHF, EUR, GBP, JPY, USD, CNY, INR
 	var data = strings.NewReader(`date_mode=1&from=2023-12-11T00%3A00%3A00&to=2023-12-17T23%3A59%3A59&importance=9&currencies=65743`)
-	req, err := http.NewRequest(http.MethodPost, ForexCalendarUrl, data)
+	req, err := http.NewRequest(http.MethodPost, EconomicCalendarUrl, data)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +59,7 @@ func (c *ForexCalendar) Fetch(ctx context.Context) ([]*ForexCalendarEvent, error
 		return nil, errors.New(fmt.Sprintf("error unmarshalling response body: %s", err))
 	}
 
-	var events []*ForexCalendarEvent
+	var events []*EconomicCalendarEvent
 	for _, event := range mql5Events {
 		e, err := parseEvent(&event)
 		if err != nil {
@@ -73,46 +72,46 @@ func (c *ForexCalendar) Fetch(ctx context.Context) ([]*ForexCalendarEvent, error
 }
 
 // parseEvent parses a single event from the calendar
-func parseEvent(event *mql5Calendar) (*ForexCalendarEvent, error) {
+func parseEvent(event *mql5Calendar) (*EconomicCalendarEvent, error) {
 	// Parse currency
-	var currency ForexCalendarCurrency
+	var currency EconomicCalendarCurrency
 	switch event.CurrencyCode {
 	case "USD":
-		currency = ForexCalendarCurrencyUSD
+		currency = EconomicCalendarUSD
 	case "EUR":
-		currency = ForexCalendarCurrencyEUR
+		currency = EconomicCalendarEUR
 	case "GBP":
-		currency = ForexCalendarCurrencyGBP
+		currency = EconomicCalendarGBP
 	case "JPY":
-		currency = ForexCalendarCurrencyJPY
+		currency = EconomicCalendarJPY
 	case "CHF":
-		currency = ForexCalendarCurrencyCHF
+		currency = EconomicCalendarCHF
 	case "CNY":
-		currency = ForexCalendarCurrencyCNY
+		currency = EconomicCalendarCNY
 	case "AUD":
-		currency = ForexCalendarCurrencyAUD
+		currency = EconomicCalendarAUD
 	case "NZD":
-		currency = ForexCalendarCurrencyNZD
+		currency = EconomicCalendarNZD
 	case "INR":
-		currency = ForexCalendarCurrencyINR
+		currency = EconomicCalendarINR
 	default:
 		return nil, errors.New(fmt.Sprintf("unknown currency: %s", event.CurrencyCode))
 	}
 
 	// Parse impact
-	var impact ForexCalendarImpact
+	var impact EconomicCalendarImpact
 	switch event.Importance {
 	case "low":
-		impact = ForexCalendarImpactLow
+		impact = EconomicCalendarImpactLow
 	case "medium":
-		impact = ForexCalendarImpactMedium
+		impact = EconomicCalendarImpactMedium
 	case "high":
-		impact = ForexCalendarImpactHigh
+		impact = EconomicCalendarImpactHigh
 	case "none":
 		if event.EventType == 2 {
-			impact = ForexCalendarImpactHoliday
+			impact = EconomicCalendarImpactHoliday
 		} else {
-			impact = ForexCalendarImpactNone
+			impact = EconomicCalendarImpactNone
 		}
 	default:
 		return nil, errors.New(fmt.Sprintf("unknown impact: %s", event.Importance))
@@ -128,7 +127,7 @@ func parseEvent(event *mql5Calendar) (*ForexCalendarEvent, error) {
 		return nil, errors.New(fmt.Sprintf("error parsing date: %s, value %v", err, event.ReleaseDate))
 	}
 
-	e := &ForexCalendarEvent{
+	e := &EconomicCalendarEvent{
 		DateTime:  dt,
 		EventTime: et,
 		Currency:  currency,
@@ -142,41 +141,41 @@ func parseEvent(event *mql5Calendar) (*ForexCalendarEvent, error) {
 	return e, nil
 }
 
-// ForexCalendarCurrency impacted currencies(economic markets) by the event
-type ForexCalendarCurrency = string
+// EconomicCalendarCurrency impacted currencies(economic markets) by the event
+type EconomicCalendarCurrency = string
 
 const (
-	ForexCalendarCurrencyUSD ForexCalendarCurrency = "USD" // US Dollar
-	ForexCalendarCurrencyEUR ForexCalendarCurrency = "EUR" // Euro
-	ForexCalendarCurrencyGBP ForexCalendarCurrency = "GBP" // British Pound
-	ForexCalendarCurrencyJPY ForexCalendarCurrency = "JPY" // Japanese Yen
-	ForexCalendarCurrencyCHF ForexCalendarCurrency = "CHF" // Swiss Franc
-	ForexCalendarCurrencyCNY ForexCalendarCurrency = "CNY" // Chinese Yuan
-	ForexCalendarCurrencyAUD ForexCalendarCurrency = "AUD" // Australian Dollar
-	ForexCalendarCurrencyNZD ForexCalendarCurrency = "NZD" // New Zealand Dollar
-	ForexCalendarCurrencyINR ForexCalendarCurrency = "INR" // Indian Rupee
+	EconomicCalendarUSD EconomicCalendarCurrency = "USD" // US Dollar
+	EconomicCalendarEUR EconomicCalendarCurrency = "EUR" // Euro
+	EconomicCalendarGBP EconomicCalendarCurrency = "GBP" // British Pound
+	EconomicCalendarJPY EconomicCalendarCurrency = "JPY" // Japanese Yen
+	EconomicCalendarCHF EconomicCalendarCurrency = "CHF" // Swiss Franc
+	EconomicCalendarCNY EconomicCalendarCurrency = "CNY" // Chinese Yuan
+	EconomicCalendarAUD EconomicCalendarCurrency = "AUD" // Australian Dollar
+	EconomicCalendarNZD EconomicCalendarCurrency = "NZD" // New Zealand Dollar
+	EconomicCalendarINR EconomicCalendarCurrency = "INR" // Indian Rupee
 )
 
-// ForexCalendarImpact impact of the event on the market
-type ForexCalendarImpact = string
+// EconomicCalendarImpact impact of the event on the market
+type EconomicCalendarImpact = string
 
 const (
-	ForexCalendarImpactLow     ForexCalendarImpact = "Low"      // Low impact event
-	ForexCalendarImpactMedium  ForexCalendarImpact = "Medium"   // Medium impact event
-	ForexCalendarImpactHigh    ForexCalendarImpact = "High"     // High impact event
-	ForexCalendarImpactHoliday ForexCalendarImpact = "Holidays" // Holiday event
-	ForexCalendarImpactNone    ForexCalendarImpact = "None"     // No impact event
+	EconomicCalendarImpactLow     EconomicCalendarImpact = "Low"      // Low impact event
+	EconomicCalendarImpactMedium  EconomicCalendarImpact = "Medium"   // Medium impact event
+	EconomicCalendarImpactHigh    EconomicCalendarImpact = "High"     // High impact event
+	EconomicCalendarImpactHoliday EconomicCalendarImpact = "Holidays" // Holiday event
+	EconomicCalendarImpactNone    EconomicCalendarImpact = "None"     // No impact event
 )
 
-type ForexCalendarEvent struct {
-	DateTime  time.Time             // Date of the event
-	EventTime time.Time             // Time of the event (if available)
-	Currency  ForexCalendarCurrency // Currency impacted by the event
-	Impact    ForexCalendarImpact   // Impact of the event on the market
-	Title     string                // Event title
-	Actual    string                // Actual value of the event (if available)
-	Forecast  string                // Forecasted value of the event (if available)
-	Previous  string                // Previous value of the event (if available)
+type EconomicCalendarEvent struct {
+	DateTime  time.Time                // Date of the event
+	EventTime time.Time                // Time of the event (if available)
+	Currency  EconomicCalendarCurrency // Currency impacted by the event
+	Impact    EconomicCalendarImpact   // Impact of the event on the market
+	Title     string                   // Event title
+	Actual    string                   // Actual value of the event (if available)
+	Forecast  string                   // Forecasted value of the event (if available)
+	Previous  string                   // Previous value of the event (if available)
 }
 
 // MQL5 calendar event object
