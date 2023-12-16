@@ -5,6 +5,7 @@ import (
 	"github.com/go-co-op/gocron/v2"
 	. "github.com/samgozman/fin-thread/archivist"
 	. "github.com/samgozman/fin-thread/composer"
+	. "github.com/samgozman/fin-thread/jobs"
 	. "github.com/samgozman/fin-thread/journalist"
 	. "github.com/samgozman/fin-thread/publisher"
 	"log/slog"

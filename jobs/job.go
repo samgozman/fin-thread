@@ -1,4 +1,4 @@
-package main
+package jobs
 
 import (
 	"context"
@@ -26,6 +26,7 @@ type Job struct {
 	options    *JobOptions                  // job options
 }
 
+// JobOptions holds job options needed for the job execution
 type JobOptions struct {
 	until              time.Time       // fetch articles until this date
 	omitSuspicious     bool            // if true, will not publish suspicious articles
