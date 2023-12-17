@@ -180,6 +180,19 @@ const (
 	EconomicCalendarINR EconomicCalendarCurrency = "INR" // Indian Rupee
 )
 
+// EconomicCalendarCountryEmoji is the map of country code to emoji symbol
+var EconomicCalendarCountryEmoji = map[EconomicCalendarCurrency]string{
+	EconomicCalendarUSD: "🇺🇸",
+	EconomicCalendarEUR: "🇪🇺",
+	EconomicCalendarGBP: "🇬🇧",
+	EconomicCalendarJPY: "🇯🇵",
+	EconomicCalendarCHF: "🇨🇭",
+	EconomicCalendarCNY: "🇨🇳",
+	EconomicCalendarAUD: "🇦🇺",
+	EconomicCalendarNZD: "🇳🇿",
+	EconomicCalendarINR: "🇮🇳",
+}
+
 // EconomicCalendarImpact impact of the event on the market (low, medium, high, holiday, none)
 type EconomicCalendarImpact = string
 
