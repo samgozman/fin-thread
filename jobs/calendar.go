@@ -97,7 +97,7 @@ func formatWeeklyEvents(events []*ecal.EconomicCalendarEvent) string {
 
 	var m string
 	for k, v := range ge {
-		s := fmt.Sprintf("**%s**\n", k)
+		s := fmt.Sprintf("*%s*\n", k)
 		for _, e := range v {
 			country := ecal.EconomicCalendarCountryEmoji[e.Currency]
 			// Print holiday events without time
@@ -123,7 +123,7 @@ func formatWeeklyEvents(events []*ecal.EconomicCalendarEvent) string {
 		return ""
 	}
 
-	header := "📅 Economic calendar for the upcoming week\n"
+	header := "📅 Economic calendar for the upcoming week\n\n"
 	footer := "\n*All times are in UTC*\n#calendar #economy"
 	return header + m + footer
 }

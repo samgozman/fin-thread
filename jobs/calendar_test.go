@@ -75,15 +75,15 @@ func Test_formatWeeklyEvents(t *testing.T) {
 					},
 				},
 			},
-			want: "📅 Economic calendar for the upcoming week\n" +
-				"**2023-04-10**\n" +
+			want: "📅 Economic calendar for the upcoming week\n\n" +
+				"*2023-04-10*\n" +
 				"🇺🇸 12:00 CPI Announcement, forecast: 2.9%, last: 2.8%\n" +
 				"🇺🇸 12:00 Some other event, forecast: 2.9%, last: 2.8%\n" +
 				"🇪🇺 12:00 Some woke event, forecast: 1.3%, last: 1.8%\n" +
-				"**2023-04-11**\n" +
+				"*2023-04-11*\n" +
 				"🇺🇸 12:00 Inflation Announcement, forecast: 6.9%, last: 6.8%\n" +
 				"🇺🇸 12:00 Some other event, forecast: 1.0%\n" +
-				"**2023-04-12**\n" +
+				"*2023-04-12*\n" +
 				"🇺🇸 Some holiday\n" +
 				"*All times are in UTC*\n" +
 				"#calendar #economy",
