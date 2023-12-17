@@ -8,6 +8,7 @@ import (
 	"github.com/samgozman/fin-thread/utils"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 )
@@ -86,6 +87,10 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) ([]*Ec
 		}
 		events = append(events, e)
 	}
+
+	sort.Slice(events, func(i, j int) bool {
+		return events[i].DateTime.After(events[j].DateTime)
+	})
 
 	return events, nil
 }
