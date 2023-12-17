@@ -88,6 +88,13 @@ func Test_formatWeeklyEvents(t *testing.T) {
 				"*All times are in UTC*\n" +
 				"#calendar #economy",
 		},
+		{
+			name: "case none events",
+			args: args{
+				events: []*ecal.EconomicCalendarEvent{},
+			},
+			want: "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
