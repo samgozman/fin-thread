@@ -37,7 +37,7 @@ func NewCalendarJob(
 // It should be run once a week.
 func (j *CalendarJob) RunWeeklyCalendar() JobFunc {
 	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 		j.logger.Info("[calendar] Running weekly plan")
 
@@ -88,42 +88,42 @@ func (j *CalendarJob) RunWeeklyCalendar() JobFunc {
 }
 
 // formatWeeklyEvents formats events to the text for publishing to the telegram channel
-func formatWeeklyEvents(events []*ecal.EconomicCalendarEvent) string {
-	// Group by date
-	ge := make(map[string][]*ecal.EconomicCalendarEvent)
-	for _, e := range events {
-		ge[e.DateTime.Format("2006-01-02")] = append(ge[e.DateTime.Format("2006-01-02")], e)
-	}
-
-	var m string
-	for k, v := range ge {
-		s := fmt.Sprintf("*%s*\n", k)
-		for _, e := range v {
-			country := ecal.EconomicCalendarCountryEmoji[e.Currency]
-			// Print holiday events without time
-			if e.Impact == ecal.EconomicCalendarImpactHoliday {
-				s += fmt.Sprintf("%s %s", country, e.Title)
-				continue
-			}
-			s += fmt.Sprintf("%s %s %s", country, e.DateTime.Format("15:04"), e.Title)
-
-			// Print forecast and previous values if they are not empty
-			if e.Forecast != "" {
-				s += fmt.Sprintf(", forecast: %s", e.Forecast)
-			}
-			if e.Previous != "" {
-				s += fmt.Sprintf(", last: %s", e.Previous)
-			}
-
-			s += "\n"
-		}
-		m += s
-	}
-	if m == "" {
+func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
+	if len(events) == 0 {
 		return ""
 	}
 
+	var m string
+	latestDateStr := ""
+	for _, e := range events {
+		// Add events group date
+		dt := e.DateTime.Format("2006-01-02")
+		if dt != latestDateStr {
+			latestDateStr = dt
+			m += fmt.Sprintf("*%s*\n", dt)
+		}
+
+		// Add event
+		country := ecal.EconomicCalendarCountryEmoji[e.Currency]
+		// Print holiday events without time
+		if e.Impact == ecal.EconomicCalendarImpactHoliday {
+			m += fmt.Sprintf("%s %s\n", country, e.Title)
+			continue
+		}
+		m += fmt.Sprintf("%s %s %s", country, e.DateTime.Format("15:04"), e.Title)
+
+		// Print forecast and previous values if they are not empty
+		if e.Forecast != "" {
+			m += fmt.Sprintf(", forecast: %s", e.Forecast)
+		}
+		if e.Previous != "" {
+			m += fmt.Sprintf(", last: %s", e.Previous)
+		}
+
+		m += "\n"
+	}
+
 	header := "📅 Economic calendar for the upcoming week\n\n"
-	footer := "\n*All times are in UTC*\n#calendar #economy"
+	footer := "*All times are in UTC*\n#calendar #economy"
 	return header + m + footer
 }

@@ -9,7 +9,7 @@ import (
 func Test_formatWeeklyEvents(t *testing.T) {
 	type args struct {
 		// Note: events should be sorted by date in ascending order
-		events []*ecal.EconomicCalendarEvent
+		events ecal.EconomicCalendarEvents
 	}
 	tests := []struct {
 		name string
@@ -19,7 +19,7 @@ func Test_formatWeeklyEvents(t *testing.T) {
 		{
 			name: "case many weekly events",
 			args: args{
-				events: []*ecal.EconomicCalendarEvent{
+				events: ecal.EconomicCalendarEvents{
 					{
 						DateTime:  time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
 						EventTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
@@ -91,7 +91,7 @@ func Test_formatWeeklyEvents(t *testing.T) {
 		{
 			name: "case none events",
 			args: args{
-				events: []*ecal.EconomicCalendarEvent{},
+				events: ecal.EconomicCalendarEvents{},
 			},
 			want: "",
 		},

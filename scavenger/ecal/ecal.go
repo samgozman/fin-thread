@@ -21,7 +21,7 @@ const (
 type EconomicCalendar struct{}
 
 // Fetch fetches economics events for the specified period
-func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) ([]*EconomicCalendarEvent, error) {
+func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (EconomicCalendarEvents, error) {
 	if from.IsZero() || to.IsZero() {
 		return nil, errors.New(fmt.Sprintf("invalid date range: from %v, to %v", from, to))
 	}
@@ -79,7 +79,7 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) ([]*Ec
 		return nil, errors.New(fmt.Sprintf("error unmarshalling response body: %s", err))
 	}
 
-	var events []*EconomicCalendarEvent
+	var events EconomicCalendarEvents
 	for _, event := range mql5Events {
 		e, err := parseEvent(&event)
 		if err != nil {
@@ -88,9 +88,8 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) ([]*Ec
 		events = append(events, e)
 	}
 
-	sort.Slice(events, func(i, j int) bool {
-		return events[i].DateTime.After(events[j].DateTime)
-	})
+	events = events.Distinct()
+	events.SortByDate()
 
 	return events, nil
 }
@@ -237,4 +236,28 @@ type mql5Calendar struct {
 	Country          int         `json:"Country"`
 	CountryName      interface{} `json:"CountryName"`
 	FullDate         string      `json:"FullDate"`
+}
+
+// EconomicCalendarEvents is the slice of economics calendar events
+type EconomicCalendarEvents []*EconomicCalendarEvent
+
+// SortByDate sorts events by date (ascending)
+func (e EconomicCalendarEvents) SortByDate() {
+	sort.Slice(e, func(i, j int) bool {
+		return e[i].DateTime.Before(e[j].DateTime)
+	})
+}
+
+// Distinct removes duplicates from the slice
+func (e EconomicCalendarEvents) Distinct() EconomicCalendarEvents {
+	var distinct EconomicCalendarEvents
+	seen := make(map[string]bool)
+	for _, v := range e {
+		id := fmt.Sprintf("%s%s%s", v.DateTime, v.Title, v.Currency)
+		if _, ok := seen[id]; !ok {
+			seen[id] = true
+			distinct = append(distinct, v)
+		}
+	}
+	return distinct
 }
