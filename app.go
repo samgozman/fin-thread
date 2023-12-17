@@ -8,6 +8,7 @@ import (
 	. "github.com/samgozman/fin-thread/jobs"
 	. "github.com/samgozman/fin-thread/journalist"
 	. "github.com/samgozman/fin-thread/publisher"
+	"github.com/samgozman/fin-thread/scavenger"
 	"log/slog"
 	"time"
 )
@@ -147,10 +148,35 @@ func (a *App) start() {
 		panic(err)
 	}
 
+	// Calendar job
+	scv := scavenger.Scavenger{}
+	calJob := NewCalendarJob(
+		scv.EconomicCalendar,
+		publisher,
+		archivist,
+	)
+	_, err = s.NewJob(
+		gocron.CronJob("0 6 * * 1", false), // every Monday at 6:00
+		gocron.NewTask(calJob.RunWeeklyCalendarJob()),
+		gocron.WithName("scheduler for Calendar"),
+	)
+	if err != nil {
+		sentry.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "scheduler",
+			Message:  "Error scheduling job for Calendar",
+			Level:    sentry.LevelFatal,
+		})
+		hub.CaptureException(err)
+		panic(err)
+	}
+
+	// TODO: Add daily job for fetching calendar events updates for today.
+	// TODO: If there are no events in the database for today, skip the job.
+
 	defer func(s gocron.Scheduler) {
 		err := s.Shutdown()
 		if err != nil {
-
+			panic(err)
 		}
 	}(s)
 	s.Start()

@@ -33,15 +33,15 @@ func NewCalendarJob(
 	}
 }
 
-// RunWeeklyCalendar creates events plan for the upcoming week and publishes them to the channel.
-// It should be run once a week.
-func (j *CalendarJob) RunWeeklyCalendar() JobFunc {
+// RunWeeklyCalendarJob creates events plan for the upcoming week and publishes them to the channel.
+// It should be run once a week on Monday.
+func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 		j.logger.Info("[calendar] Running weekly plan")
 
-		tx := sentry.StartTransaction(ctx, "RunWeeklyCalendar")
+		tx := sentry.StartTransaction(ctx, "RunWeeklyCalendarJob")
 		tx.Op = "job-calendar"
 
 		// Sentry performance monitoring
