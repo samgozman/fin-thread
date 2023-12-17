@@ -23,6 +23,7 @@ func NewTelegramPublisher(channelId, token string) (*TelegramPublisher, error) {
 
 func (t *TelegramPublisher) Publish(msg string) (pubID string, err error) {
 	tgMsg := tgbotapi.NewMessageToChannel(t.ChannelID, msg)
+	tgMsg.ParseMode = tgbotapi.ModeMarkdown
 
 	m, err := t.BotAPI.Send(tgMsg)
 	if err != nil {

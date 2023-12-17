@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/samgozman/fin-thread/utils"
 	"html"
 	"regexp"
 	"strings"
@@ -27,7 +28,7 @@ type News struct {
 // It sanitizes the title and description from HTML tags and styles.
 // It also generates the ID of the news by hashing the link, title, description and date.
 func NewNews(title, description, link, date, provider string) (*News, error) {
-	dateTime, err := parseDate(date)
+	dateTime, err := utils.ParseDate(date)
 	if err != nil {
 		return nil, err
 	}
