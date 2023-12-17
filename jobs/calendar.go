@@ -97,7 +97,7 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	latestDateStr := ""
 	for _, e := range events {
 		// Add events group date
-		dt := e.DateTime.Format("2006-01-02")
+		dt := e.DateTime.Format("Monday, January 02")
 		if dt != latestDateStr {
 			latestDateStr = dt
 			m += fmt.Sprintf("*%s*\n", dt)
