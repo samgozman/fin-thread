@@ -5,7 +5,7 @@ go 1.21.5
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/getsentry/sentry-go v0.25.0
-	github.com/go-co-op/gocron/v2 v2.0.1
+	github.com/go-co-op/gocron/v2 v2.0.3
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/google/uuid v1.5.0
 	github.com/microcosm-cc/bluemonday v1.0.26
