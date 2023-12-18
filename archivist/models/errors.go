@@ -12,4 +12,5 @@ var (
 	ErrOriginalDescTooLong  = errors.New("original_desc is too long")
 	ErrComposedTextTooLong  = errors.New("composed_text is too long")
 	ErrOriginalDateEmpty    = errors.New("original_date is empty")
+	ErrTitleTooLong         = errors.New("title is too long")
 )
