@@ -61,8 +61,9 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 		}()
 
 		// Create events plan for the upcoming week
-		from := time.Now().Truncate(24 * time.Hour)
-		to := from.Add(7 * 24 * time.Hour)
+		// from should be always a Monday of the current week
+		from := time.Now().Truncate(24 * time.Hour).Add(-time.Duration(time.Now().Weekday()-time.Monday) * 24 * time.Hour)
+		to := from.Add(6 * 24 * time.Hour).Add(23 * time.Hour).Add(59 * time.Minute).Add(59 * time.Second)
 		span := tx.StartChild("EconomicCalendar.Fetch")
 		events, err := j.calendarScavenger.Fetch(ctx, from, to)
 		span.Finish()
