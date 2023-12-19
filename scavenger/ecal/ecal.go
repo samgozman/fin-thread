@@ -88,7 +88,9 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 		events = append(events, e)
 	}
 
-	events = events.Distinct()
+	// Need to remove events that are not in the specified date range.
+	// MQL5 API returns events for one extra day for some reason.
+	events = events.Distinct().FilterByDateRange(from, to)
 	events.SortByDate()
 
 	return events, nil
@@ -240,6 +242,17 @@ type mql5Calendar struct {
 
 // EconomicCalendarEvents is the slice of economics calendar events
 type EconomicCalendarEvents []*EconomicCalendarEvent
+
+// FilterByDateRange filters events by date range, returns new slice
+func (e EconomicCalendarEvents) FilterByDateRange(from, to time.Time) EconomicCalendarEvents {
+	var filtered EconomicCalendarEvents
+	for _, v := range e {
+		if v.DateTime.After(from) && v.DateTime.Before(to) {
+			filtered = append(filtered, v)
+		}
+	}
+	return filtered
+}
 
 // SortByDate sorts events by date (ascending)
 func (e EconomicCalendarEvents) SortByDate() {
