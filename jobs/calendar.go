@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/samgozman/fin-thread/archivist"
+	"github.com/samgozman/fin-thread/archivist/models"
 	"github.com/samgozman/fin-thread/publisher"
 	"github.com/samgozman/fin-thread/scavenger/ecal"
 	"log/slog"
@@ -18,18 +19,21 @@ type CalendarJob struct {
 	publisher         *publisher.TelegramPublisher // publisher that will publish news to the channel
 	archivist         *archivist.Archivist         // archivist that will save news to the database
 	logger            *slog.Logger                 // special logger for the job
+	providerName      string                       // name of the job provider
 }
 
 func NewCalendarJob(
 	calendarScavenger *ecal.EconomicCalendar,
 	publisher *publisher.TelegramPublisher,
 	archivist *archivist.Archivist,
+	providerName string,
 ) *CalendarJob {
 	return &CalendarJob{
 		calendarScavenger: calendarScavenger,
 		publisher:         publisher,
 		archivist:         archivist,
 		logger:            slog.Default(),
+		providerName:      providerName,
 	}
 }
 
@@ -83,7 +87,20 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 			return
 		}
 
-		// TODO: save events to the database
+		// TODO: add create many method to archivist with transaction
+		for _, e := range events {
+			ev := mapEventToDB(e, j.publisher.ChannelID, j.providerName)
+
+			span = tx.StartChild("Archivist.CreateEvent")
+			err := j.archivist.Entities.Events.Create(ctx, ev)
+			span.Finish()
+			if err != nil {
+				e := errors.New(fmt.Sprintf("[job-calendar] Error saving event: %v", err))
+				j.logger.Error(e.Error())
+				hub.CaptureException(e)
+				return
+			}
+		}
 	}
 }
 
@@ -126,4 +143,27 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	header := "📅 Economic calendar for the upcoming week\n\n"
 	footer := "*All times are in UTC*\n#calendar #economy"
 	return header + m + footer
+}
+
+// mapEventToDB maps calendar event to the database event instance.
+// One crucial thing is that we use actual date if event time is available.
+// There is no need to store 2 event dates in the database.
+func mapEventToDB(e *ecal.EconomicCalendarEvent, channelID, providerName string) *models.Event {
+	// use actual date if event time is available
+	var dt time.Time
+	if e.EventTime.After(e.DateTime) {
+		dt = e.EventTime
+	} else {
+		dt = e.DateTime
+	}
+	return &models.Event{
+		ChannelID:    channelID,
+		ProviderName: providerName,
+		DateTime:     dt,
+		Currency:     e.Currency,
+		Impact:       e.Impact,
+		Title:        e.Title,
+		Forecast:     e.Forecast,
+		Previous:     e.Previous,
+	}
 }
