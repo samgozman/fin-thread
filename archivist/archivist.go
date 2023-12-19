@@ -28,7 +28,7 @@ func NewArchivist(dsn string) (*Archivist, error) {
 
 	// Migrate the schema automatically for now.
 	// TODO: Add migration tool later.
-	err = conn.AutoMigrate(&models.News{})
+	err = conn.AutoMigrate(&models.News{}, &models.Event{})
 	if err != nil {
 		return nil, err
 	}
