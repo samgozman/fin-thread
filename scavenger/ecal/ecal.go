@@ -158,9 +158,9 @@ func parseEvent(event *mql5Calendar) (*EconomicCalendarEvent, error) {
 		Currency:  currency,
 		Impact:    impact,
 		Title:     event.EventName,
-		Actual:    event.ActualValue,
-		Forecast:  event.ForecastValue,
-		Previous:  event.PreviousValue,
+		Actual:    strings.ReplaceAll(strings.ToLower(event.ActualValue), "\u00a0", ""), // Remove nbsp symbol, convert to lowercase
+		Forecast:  strings.ReplaceAll(strings.ToLower(event.ForecastValue), "\u00a0", ""),
+		Previous:  strings.ReplaceAll(strings.ToLower(event.PreviousValue), "\u00a0", ""),
 	}
 
 	return e, nil

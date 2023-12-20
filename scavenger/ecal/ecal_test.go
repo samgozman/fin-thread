@@ -19,9 +19,9 @@ func Test_parseEvent(t *testing.T) {
 			event: &mql5Calendar{
 				ActualValue:   "0.2%",
 				CurrencyCode:  "USD",
-				ForecastValue: "0.2%",
+				ForecastValue: "0.2\u00A0%",
 				Importance:    "high",
-				PreviousValue: "0.3%",
+				PreviousValue: "0.3\u00A0%",
 				EventName:     "Core CPI m/m",
 				FullDate:      "2023-11-13T12:58:48",
 				ReleaseDate:   1702450800000,
