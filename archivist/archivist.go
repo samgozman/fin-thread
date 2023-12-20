@@ -7,7 +7,8 @@ import (
 
 // Entities is a struct that contains all the entities that Archivist is responsible for.
 type Entities struct {
-	News *models.NewsDB
+	News   *models.NewsDB
+	Events *models.EventsDB
 }
 
 // Archivist is responsible for storing and retrieving data from the database.
@@ -27,7 +28,7 @@ func NewArchivist(dsn string) (*Archivist, error) {
 
 	// Migrate the schema automatically for now.
 	// TODO: Add migration tool later.
-	err = conn.AutoMigrate(&models.News{})
+	err = conn.AutoMigrate(&models.News{}, &models.Event{})
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +36,8 @@ func NewArchivist(dsn string) (*Archivist, error) {
 	return &Archivist{
 		db: conn,
 		Entities: &Entities{
-			News: models.NewNewsDB(conn),
+			News:   models.NewNewsDB(conn),
+			Events: models.NewEventsDB(conn),
 		},
 	}, nil
 }

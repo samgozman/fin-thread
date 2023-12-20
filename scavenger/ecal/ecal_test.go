@@ -19,9 +19,9 @@ func Test_parseEvent(t *testing.T) {
 			event: &mql5Calendar{
 				ActualValue:   "0.2%",
 				CurrencyCode:  "USD",
-				ForecastValue: "0.2%",
+				ForecastValue: "0.2\u00A0%",
 				Importance:    "high",
-				PreviousValue: "0.3%",
+				PreviousValue: "0.3\u00A0%",
 				EventName:     "Core CPI m/m",
 				FullDate:      "2023-11-13T12:58:48",
 				ReleaseDate:   1702450800000,
@@ -131,8 +131,9 @@ func TestEconomicCalendar_Fetch(t *testing.T) {
 			// TODO: Should split the actual fetch in future to test thing properly
 			if !tt.wantErr && len(got) > 1 {
 				// check that first event if before the last one
-				if got[0].DateTime.Before(got[len(got)-1].DateTime) {
-					t.Error("Fetch() got invalid events order")
+				i := len(got) - 1
+				if got[0].DateTime != got[i].DateTime && got[0].DateTime.After(got[i].DateTime) {
+					t.Errorf("Fetch() got invalid events order. First %s, Last %s", got[0].DateTime, got[i].DateTime)
 				}
 			}
 		})

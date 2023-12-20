@@ -39,7 +39,7 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 	// Create request body with the specified date range
 	f := from.Format("2006-01-02T15:04:05")
 	t := to.Format("2006-01-02T15:04:05")
-	var data = strings.NewReader(
+	data := strings.NewReader(
 		// importance=9 - high impact
 		// currencies=65743 - CHF, EUR, GBP, JPY, USD, CNY, INR
 		fmt.Sprintf("date_mode=1&from=%s&to=%s&importance=9&currencies=65743", f, t),
@@ -88,7 +88,9 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 		events = append(events, e)
 	}
 
-	events = events.Distinct()
+	// Need to remove events that are not in the specified date range.
+	// MQL5 API returns events for one extra day for some reason.
+	events = events.Distinct().FilterByDateRange(from, to)
 	events.SortByDate()
 
 	return events, nil
@@ -156,9 +158,9 @@ func parseEvent(event *mql5Calendar) (*EconomicCalendarEvent, error) {
 		Currency:  currency,
 		Impact:    impact,
 		Title:     event.EventName,
-		Actual:    event.ActualValue,
-		Forecast:  event.ForecastValue,
-		Previous:  event.PreviousValue,
+		Actual:    strings.ReplaceAll(strings.ToLower(event.ActualValue), "\u00a0", ""), // Remove nbsp symbol, convert to lowercase
+		Forecast:  strings.ReplaceAll(strings.ToLower(event.ForecastValue), "\u00a0", ""),
+		Previous:  strings.ReplaceAll(strings.ToLower(event.PreviousValue), "\u00a0", ""),
 	}
 
 	return e, nil
@@ -240,6 +242,17 @@ type mql5Calendar struct {
 
 // EconomicCalendarEvents is the slice of economics calendar events
 type EconomicCalendarEvents []*EconomicCalendarEvent
+
+// FilterByDateRange filters events by date range, returns new slice
+func (e EconomicCalendarEvents) FilterByDateRange(from, to time.Time) EconomicCalendarEvents {
+	var filtered EconomicCalendarEvents
+	for _, v := range e {
+		if v.DateTime.After(from) && v.DateTime.Before(to) {
+			filtered = append(filtered, v)
+		}
+	}
+	return filtered
+}
 
 // SortByDate sorts events by date (ascending)
 func (e EconomicCalendarEvents) SortByDate() {

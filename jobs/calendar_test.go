@@ -1,7 +1,9 @@
 package jobs
 
 import (
+	"github.com/samgozman/fin-thread/archivist/models"
 	"github.com/samgozman/fin-thread/scavenger/ecal"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -101,6 +103,79 @@ func Test_formatWeeklyEvents(t *testing.T) {
 			got := formatWeeklyEvents(tt.args.events)
 			if got != tt.want {
 				t.Errorf("formatWeeklyEvents() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_mapEventToDB(t *testing.T) {
+	type args struct {
+		e            *ecal.EconomicCalendarEvent
+		channelID    string
+		providerName string
+	}
+	tests := []struct {
+		name string
+		args args
+		want *models.Event
+	}{
+		{
+			name: "case 1 - event time is after event date",
+			args: args{
+				e: &ecal.EconomicCalendarEvent{
+					DateTime:  time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+					EventTime: time.Date(2023, time.April, 10, 13, 0, 0, 0, time.UTC),
+					Currency:  ecal.EconomicCalendarUSD,
+					Impact:    ecal.EconomicCalendarImpactHigh,
+					Title:     "CPI Announcement",
+					Forecast:  "2.9%",
+					Previous:  "2.8%",
+				},
+				channelID:    "channel-id",
+				providerName: "provider-name",
+			},
+			want: &models.Event{
+				ChannelID:    "channel-id",
+				ProviderName: "provider-name",
+				DateTime:     time.Date(2023, time.April, 10, 13, 0, 0, 0, time.UTC),
+				Currency:     ecal.EconomicCalendarUSD,
+				Impact:       ecal.EconomicCalendarImpactHigh,
+				Title:        "CPI Announcement",
+				Forecast:     "2.9%",
+				Previous:     "2.8%",
+			},
+		},
+		{
+			name: "case 2 - event time is before event date",
+			args: args{
+				e: &ecal.EconomicCalendarEvent{
+					DateTime:  time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+					EventTime: time.Date(2023, time.April, 10, 11, 0, 0, 0, time.UTC),
+					Currency:  ecal.EconomicCalendarUSD,
+					Impact:    ecal.EconomicCalendarImpactHigh,
+					Title:     "CPI Announcement",
+					Forecast:  "2.9%",
+					Previous:  "2.8%",
+				},
+				channelID:    "channel-id",
+				providerName: "provider-name",
+			},
+			want: &models.Event{
+				ChannelID:    "channel-id",
+				ProviderName: "provider-name",
+				DateTime:     time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+				Currency:     ecal.EconomicCalendarUSD,
+				Impact:       ecal.EconomicCalendarImpactHigh,
+				Title:        "CPI Announcement",
+				Forecast:     "2.9%",
+				Previous:     "2.8%",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := mapEventToDB(tt.args.e, tt.args.channelID, tt.args.providerName); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("mapEventToDB() = %v, want %v", got, tt.want)
 			}
 		})
 	}

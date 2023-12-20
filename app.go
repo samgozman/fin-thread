@@ -154,6 +154,7 @@ func (a *App) start() {
 		scv.EconomicCalendar,
 		publisher,
 		archivist,
+		"mql5-calendar",
 	)
 	_, err = s.NewJob(
 		gocron.CronJob("0 6 * * 1", false), // every Monday at 6:00
