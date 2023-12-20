@@ -131,8 +131,9 @@ func TestEconomicCalendar_Fetch(t *testing.T) {
 			// TODO: Should split the actual fetch in future to test thing properly
 			if !tt.wantErr && len(got) > 1 {
 				// check that first event if before the last one
-				if got[0].DateTime.Before(got[len(got)-1].DateTime) {
-					t.Error("Fetch() got invalid events order")
+				i := len(got) - 1
+				if got[0].DateTime != got[i].DateTime && got[0].DateTime.After(got[i].DateTime) {
+					t.Errorf("Fetch() got invalid events order. First %s, Last %s", got[0].DateTime, got[i].DateTime)
 				}
 			}
 		})
