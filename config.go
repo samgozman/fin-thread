@@ -48,6 +48,8 @@ func DefaultConfig() *Config {
 			"sexuality",
 			"class action lawsuit",
 			"subscribe",
+			"ark invest",
+			"cathie wood",
 		},
 		filterKeys: []string{
 			"European Union",
