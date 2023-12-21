@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -64,3 +65,12 @@ func ParseDate(dateString Datable) (time.Time, error) {
 
 // Datable is a type that can be parsed into a date (hopefully)
 type Datable interface{}
+
+func StrValueToFloat(value string) float64 {
+	var result float64
+	_, err := fmt.Sscanf(strings.ReplaceAll(value, ",", "."), "%f", &result)
+	if err != nil {
+		return 0
+	}
+	return result
+}

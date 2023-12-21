@@ -194,6 +194,18 @@ var EconomicCalendarCountryEmoji = map[EconomicCalendarCurrency]string{
 	EconomicCalendarINR: "🇮🇳",
 }
 
+var EconomicCalendarCountryHashtag = map[EconomicCalendarCurrency]string{
+	EconomicCalendarUSD: "usa",
+	EconomicCalendarEUR: "europe",
+	EconomicCalendarGBP: "unitedkingdom",
+	EconomicCalendarJPY: "japan",
+	EconomicCalendarCHF: "switzerland",
+	EconomicCalendarCNY: "china",
+	EconomicCalendarAUD: "australia",
+	EconomicCalendarNZD: "newzealand",
+	EconomicCalendarINR: "india",
+}
+
 // EconomicCalendarImpact impact of the event on the market (low, medium, high, holiday, none)
 type EconomicCalendarImpact = string
 

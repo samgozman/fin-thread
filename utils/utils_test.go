@@ -93,3 +93,57 @@ func Test_ParseDate(t *testing.T) {
 		})
 	}
 }
+
+func TestStrValueToFloat(t *testing.T) {
+	type args struct {
+		value string
+	}
+	tests := []struct {
+		name string
+		args args
+		want float64
+	}{
+		{
+			name: "percent",
+			args: args{
+				value: "1.23%",
+			},
+			want: 1.23,
+		},
+		{
+			name: "percent with plus",
+			args: args{
+				value: "+1.23%",
+			},
+			want: 1.23,
+		},
+		{
+			name: "with multiplier",
+			args: args{
+				value: "1.23M",
+			},
+			want: 1.23,
+		},
+		{
+			name: "with multiplier and space",
+			args: args{
+				value: "1.23 M",
+			},
+			want: 1.23,
+		},
+		{
+			name: "with multiplier and comma",
+			args: args{
+				value: "1,23 M",
+			},
+			want: 1.23,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := StrValueToFloat(tt.args.value); got != tt.want {
+				t.Errorf("StrValueToFloat() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

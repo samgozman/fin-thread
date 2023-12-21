@@ -9,6 +9,7 @@ import (
 	"github.com/samgozman/fin-thread/archivist/models"
 	"github.com/samgozman/fin-thread/publisher"
 	"github.com/samgozman/fin-thread/scavenger/ecal"
+	"github.com/samgozman/fin-thread/utils"
 	"log/slog"
 	"time"
 )
@@ -152,6 +153,40 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	header := "📅 Economic calendar for the upcoming week\n\n"
 	footer := "*All times are in UTC*\n#calendar #economy"
 	return header + m + footer
+}
+
+func formatEventUpdate(event *models.Event) string {
+	if event == nil {
+		return ""
+	}
+
+	var m string
+	actualNumber := utils.StrValueToFloat(event.Actual)
+	if event.Previous != "" {
+		previousNumber := utils.StrValueToFloat(event.Previous)
+		if actualNumber != previousNumber {
+			m += "🔥"
+		}
+	} else if event.Forecast != "" {
+		forecastNumber := utils.StrValueToFloat(event.Forecast)
+		if actualNumber != forecastNumber {
+			m += "🔥"
+		}
+	}
+
+	country := ecal.EconomicCalendarCountryEmoji[event.Currency]
+	countryHashtag := ecal.EconomicCalendarCountryHashtag[event.Currency]
+	m += fmt.Sprintf("%s #%s\n", country, countryHashtag)
+	m += fmt.Sprintf("%s - *%s*", event.Title, event.Actual)
+
+	// Print forecast and previous values if they are not empty
+	if event.Forecast != "" {
+		m += fmt.Sprintf(", forecast: %s", event.Forecast)
+	}
+	if event.Previous != "" {
+		m += fmt.Sprintf(", last: %s", event.Previous)
+	}
+	return m
 }
 
 // mapEventToDB maps calendar event to the database event instance.
