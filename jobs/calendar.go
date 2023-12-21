@@ -73,6 +73,14 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 			hub.CaptureException(e)
 			return
 		}
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "successful",
+			Message:  fmt.Sprintf("EconomicCalendar.Fetch returned %d events", len(events)),
+			Level:    sentry.LevelInfo,
+		}, nil)
+		if len(events) == 0 {
+			return
+		}
 
 		// Format events to the text
 		m := formatWeeklyEvents(events)
