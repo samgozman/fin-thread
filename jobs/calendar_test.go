@@ -180,3 +180,50 @@ func Test_mapEventToDB(t *testing.T) {
 		})
 	}
 }
+
+func Test_formatEventUpdate(t *testing.T) {
+	type args struct {
+		event *models.Event
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "case 1 - event with previous value",
+			args: args{
+				event: &models.Event{
+					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+					Currency: ecal.EconomicCalendarUSD,
+					Impact:   ecal.EconomicCalendarImpactHigh,
+					Title:    "CPI Announcement",
+					Actual:   "2.9%",
+					Forecast: "2.9%",
+					Previous: "2.8%",
+				},
+			},
+			want: "🔥🇺🇸 #usa\nCPI Announcement - *2.9%*, forecast: 2.9%, last: 2.8%",
+		},
+		{
+			name: "case 2 - event without previous value or forecast",
+			args: args{
+				event: &models.Event{
+					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+					Currency: ecal.EconomicCalendarEUR,
+					Impact:   ecal.EconomicCalendarImpactHigh,
+					Title:    "EU is strongly concerned score",
+					Actual:   "1.3%",
+				},
+			},
+			want: "🇪🇺 #europe\nEU is strongly concerned score - *1.3%*",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := formatEventUpdate(tt.args.event); got != tt.want {
+				t.Errorf("formatEventUpdate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

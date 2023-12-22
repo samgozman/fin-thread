@@ -34,8 +34,6 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 		return nil, errors.New(fmt.Sprintf("invalid date range (more than 7 days): from %v, to %v", from, to))
 	}
 
-	fmt.Println("Fetching economic calendar events from", from, "to", to)
-
 	// Create request body with the specified date range
 	f := from.Format("2006-01-02T15:04:05")
 	t := to.Format("2006-01-02T15:04:05")
@@ -194,6 +192,18 @@ var EconomicCalendarCountryEmoji = map[EconomicCalendarCurrency]string{
 	EconomicCalendarINR: "🇮🇳",
 }
 
+var EconomicCalendarCountryHashtag = map[EconomicCalendarCurrency]string{
+	EconomicCalendarUSD: "usa",
+	EconomicCalendarEUR: "europe",
+	EconomicCalendarGBP: "unitedkingdom",
+	EconomicCalendarJPY: "japan",
+	EconomicCalendarCHF: "switzerland",
+	EconomicCalendarCNY: "china",
+	EconomicCalendarAUD: "australia",
+	EconomicCalendarNZD: "newzealand",
+	EconomicCalendarINR: "india",
+}
+
 // EconomicCalendarImpact impact of the event on the market (low, medium, high, holiday, none)
 type EconomicCalendarImpact = string
 
@@ -273,4 +283,14 @@ func (e EconomicCalendarEvents) Distinct() EconomicCalendarEvents {
 		}
 	}
 	return distinct
+}
+
+// HasActualEvents checks if there are any events with EconomicCalendarEvent.Actual values
+func (e EconomicCalendarEvents) HasActualEvents() bool {
+	for _, v := range e {
+		if v.Actual != "" {
+			return true
+		}
+	}
+	return false
 }
