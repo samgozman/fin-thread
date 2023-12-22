@@ -188,7 +188,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		for _, e := range eventsDB {
 			for _, ce := range calendarEvents {
 				if e.Currency != ce.Currency || e.Title != ce.Title || ce.Actual == "" {
-					break
+					continue
 				}
 				ev := &models.Event{
 					ID:           e.ID,
