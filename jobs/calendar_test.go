@@ -203,7 +203,7 @@ func Test_formatEventUpdate(t *testing.T) {
 					Previous: "2.8%",
 				},
 			},
-			want: "🔥🇺🇸 #usa\nCPI Announcement - *2.9%*, forecast: 2.9%, last: 2.8%",
+			want: "🔥🇺🇸 #usa\nCPI Announcement: *2.9%*, forecast: 2.9%, last: 2.8%",
 		},
 		{
 			name: "case 2 - event without previous value or forecast",
@@ -216,7 +216,7 @@ func Test_formatEventUpdate(t *testing.T) {
 					Actual:   "1.3%",
 				},
 			},
-			want: "🇪🇺 #europe\nEU is strongly concerned score - *1.3%*",
+			want: "🇪🇺 #europe\nEU is strongly concerned score: *1.3%*",
 		},
 	}
 	for _, tt := range tests {

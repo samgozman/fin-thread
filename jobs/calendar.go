@@ -304,7 +304,7 @@ func formatEventUpdate(event *models.Event) string {
 	country := ecal.EconomicCalendarCountryEmoji[event.Currency]
 	countryHashtag := ecal.EconomicCalendarCountryHashtag[event.Currency]
 	m += fmt.Sprintf("%s #%s\n", country, countryHashtag)
-	m += fmt.Sprintf("%s - *%s*", event.Title, event.Actual)
+	m += fmt.Sprintf("%s: *%s*", event.Title, event.Actual)
 
 	// Print forecast and previous values if they are not empty
 	if event.Forecast != "" {
