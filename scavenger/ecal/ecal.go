@@ -121,6 +121,57 @@ func parseEvent(event *mql5Calendar) (*EconomicCalendarEvent, error) {
 		return nil, errors.New(fmt.Sprintf("unknown currency: %s", event.CurrencyCode))
 	}
 
+	// Parse country
+	var country EconomicCalendarCountry
+	switch event.Country {
+	case 36:
+		country = EconomicCalendarAustralia
+	case 76:
+		country = EconomicCalendarBrazil
+	case 124:
+		country = EconomicCalendarCanada
+	case 156:
+		country = EconomicCalendarChina
+	case 999, 918:
+		country = EconomicCalendarEuropeanUnion
+	case 250:
+		country = EconomicCalendarFrance
+	case 276:
+		country = EconomicCalendarGermany
+	case 344:
+		country = EconomicCalendarHongKong
+	case 356:
+		country = EconomicCalendarIndia
+	case 380:
+		country = EconomicCalendarItaly
+	case 392:
+		country = EconomicCalendarJapan
+	case 484:
+		country = EconomicCalendarMexico
+	case 554:
+		country = EconomicCalendarNewZealand
+	case 578:
+		country = EconomicCalendarNorway
+	case 702:
+		country = EconomicCalendarSingapore
+	case 710:
+		country = EconomicCalendarSouthAfrica
+	case 410:
+		country = EconomicCalendarSouthKorea
+	case 724:
+		country = EconomicCalendarSpain
+	case 752:
+		country = EconomicCalendarSweden
+	case 756:
+		country = EconomicCalendarSwitzerland
+	case 826:
+		country = EconomicCalendarUnitedKingdom
+	case 840:
+		country = EconomicCalendarUnitedStates
+	default:
+		country = ""
+	}
+
 	// Parse impact
 	var impact EconomicCalendarImpact
 	switch event.Importance {
@@ -153,6 +204,7 @@ func parseEvent(event *mql5Calendar) (*EconomicCalendarEvent, error) {
 	e := &EconomicCalendarEvent{
 		DateTime:  dt,
 		EventTime: et,
+		Country:   country,
 		Currency:  currency,
 		Impact:    impact,
 		Title:     event.EventName,
@@ -179,29 +231,82 @@ const (
 	EconomicCalendarINR EconomicCalendarCurrency = "INR" // Indian Rupee
 )
 
-// EconomicCalendarCountryEmoji is the map of country code to emoji symbol
-var EconomicCalendarCountryEmoji = map[EconomicCalendarCurrency]string{
-	EconomicCalendarUSD: "🇺🇸",
-	EconomicCalendarEUR: "🇪🇺",
-	EconomicCalendarGBP: "🇬🇧",
-	EconomicCalendarJPY: "🇯🇵",
-	EconomicCalendarCHF: "🇨🇭",
-	EconomicCalendarCNY: "🇨🇳",
-	EconomicCalendarAUD: "🇦🇺",
-	EconomicCalendarNZD: "🇳🇿",
-	EconomicCalendarINR: "🇮🇳",
+type EconomicCalendarCountry = string
+
+const (
+	EconomicCalendarAustralia     EconomicCalendarCountry = "Australia"
+	EconomicCalendarBrazil        EconomicCalendarCountry = "Brazil"
+	EconomicCalendarCanada        EconomicCalendarCountry = "Canada"
+	EconomicCalendarChina         EconomicCalendarCountry = "China"
+	EconomicCalendarEuropeanUnion EconomicCalendarCountry = "European Union"
+	EconomicCalendarFrance        EconomicCalendarCountry = "France"
+	EconomicCalendarGermany       EconomicCalendarCountry = "Germany"
+	EconomicCalendarHongKong      EconomicCalendarCountry = "Hong Kong"
+	EconomicCalendarIndia         EconomicCalendarCountry = "India"
+	EconomicCalendarItaly         EconomicCalendarCountry = "Italy"
+	EconomicCalendarJapan         EconomicCalendarCountry = "Japan"
+	EconomicCalendarMexico        EconomicCalendarCountry = "Mexico"
+	EconomicCalendarNewZealand    EconomicCalendarCountry = "New Zealand"
+	EconomicCalendarNorway        EconomicCalendarCountry = "Norway"
+	EconomicCalendarSingapore     EconomicCalendarCountry = "Singapore"
+	EconomicCalendarSouthAfrica   EconomicCalendarCountry = "South Africa"
+	EconomicCalendarSouthKorea    EconomicCalendarCountry = "South Korea"
+	EconomicCalendarSpain         EconomicCalendarCountry = "Spain"
+	EconomicCalendarSweden        EconomicCalendarCountry = "Sweden"
+	EconomicCalendarSwitzerland   EconomicCalendarCountry = "Switzerland"
+	EconomicCalendarUnitedKingdom EconomicCalendarCountry = "United Kingdom"
+	EconomicCalendarUnitedStates  EconomicCalendarCountry = "United States"
+)
+
+var EconomicCalendarCountryHashtag = map[EconomicCalendarCountry]string{
+	EconomicCalendarAustralia:     "australia",
+	EconomicCalendarBrazil:        "brazil",
+	EconomicCalendarCanada:        "canada",
+	EconomicCalendarChina:         "china",
+	EconomicCalendarEuropeanUnion: "europe",
+	EconomicCalendarFrance:        "france",
+	EconomicCalendarGermany:       "germany",
+	EconomicCalendarHongKong:      "hongkong",
+	EconomicCalendarIndia:         "india",
+	EconomicCalendarItaly:         "italy",
+	EconomicCalendarJapan:         "japan",
+	EconomicCalendarMexico:        "mexico",
+	EconomicCalendarNewZealand:    "newzealand",
+	EconomicCalendarNorway:        "norway",
+	EconomicCalendarSingapore:     "singapore",
+	EconomicCalendarSouthAfrica:   "southafrica",
+	EconomicCalendarSouthKorea:    "southkorea",
+	EconomicCalendarSpain:         "spain",
+	EconomicCalendarSweden:        "sweden",
+	EconomicCalendarSwitzerland:   "switzerland",
+	EconomicCalendarUnitedKingdom: "uk",
+	EconomicCalendarUnitedStates:  "usa",
 }
 
-var EconomicCalendarCountryHashtag = map[EconomicCalendarCurrency]string{
-	EconomicCalendarUSD: "usa",
-	EconomicCalendarEUR: "europe",
-	EconomicCalendarGBP: "unitedkingdom",
-	EconomicCalendarJPY: "japan",
-	EconomicCalendarCHF: "switzerland",
-	EconomicCalendarCNY: "china",
-	EconomicCalendarAUD: "australia",
-	EconomicCalendarNZD: "newzealand",
-	EconomicCalendarINR: "india",
+// EconomicCalendarCountryEmoji is the map of country code to emoji symbol
+var EconomicCalendarCountryEmoji = map[EconomicCalendarCountry]string{
+	EconomicCalendarAustralia:     "🇦🇺",
+	EconomicCalendarBrazil:        "🇧🇷",
+	EconomicCalendarCanada:        "🇨🇦",
+	EconomicCalendarChina:         "🇨🇳",
+	EconomicCalendarEuropeanUnion: "🇪🇺",
+	EconomicCalendarFrance:        "🇫🇷",
+	EconomicCalendarGermany:       "🇩🇪",
+	EconomicCalendarHongKong:      "🇭🇰",
+	EconomicCalendarIndia:         "🇮🇳",
+	EconomicCalendarItaly:         "🇮🇹",
+	EconomicCalendarJapan:         "🇯🇵",
+	EconomicCalendarMexico:        "🇲🇽",
+	EconomicCalendarNewZealand:    "🇳🇿",
+	EconomicCalendarNorway:        "🇳🇴",
+	EconomicCalendarSingapore:     "🇸🇬",
+	EconomicCalendarSouthAfrica:   "🇿🇦",
+	EconomicCalendarSouthKorea:    "🇰🇷",
+	EconomicCalendarSpain:         "🇪🇸",
+	EconomicCalendarSweden:        "🇸🇪",
+	EconomicCalendarSwitzerland:   "🇨🇭",
+	EconomicCalendarUnitedKingdom: "🇬🇧",
+	EconomicCalendarUnitedStates:  "🇺🇸",
 }
 
 // EconomicCalendarImpact impact of the event on the market (low, medium, high, holiday, none)
@@ -219,6 +324,7 @@ const (
 type EconomicCalendarEvent struct {
 	DateTime  time.Time                // Date of the event
 	EventTime time.Time                // Time of the event (if available)
+	Country   EconomicCalendarCountry  // Country of the event
 	Currency  EconomicCalendarCurrency // Currency impacted by the event
 	Impact    EconomicCalendarImpact   // Impact of the event on the market
 	Title     string                   // Event title

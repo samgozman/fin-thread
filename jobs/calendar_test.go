@@ -25,6 +25,7 @@ func Test_formatWeeklyEvents(t *testing.T) {
 					{
 						DateTime:  time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
 						EventTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+						Country:   ecal.EconomicCalendarUnitedStates,
 						Currency:  ecal.EconomicCalendarUSD,
 						Impact:    ecal.EconomicCalendarImpactHigh,
 						Title:     "CPI Announcement",
@@ -34,6 +35,7 @@ func Test_formatWeeklyEvents(t *testing.T) {
 					{
 						DateTime:  time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
 						EventTime: time.Date(2023, time.April, 10, 13, 0, 0, 0, time.UTC),
+						Country:   ecal.EconomicCalendarUnitedStates,
 						Currency:  ecal.EconomicCalendarUSD,
 						Impact:    ecal.EconomicCalendarImpactHigh,
 						Title:     "Some other event",
@@ -43,6 +45,7 @@ func Test_formatWeeklyEvents(t *testing.T) {
 					{
 						DateTime:  time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
 						EventTime: time.Date(2023, time.April, 10, 14, 0, 0, 0, time.UTC),
+						Country:   ecal.EconomicCalendarEuropeanUnion,
 						Currency:  ecal.EconomicCalendarEUR,
 						Impact:    ecal.EconomicCalendarImpactHigh,
 						Title:     "Some woke event",
@@ -52,6 +55,7 @@ func Test_formatWeeklyEvents(t *testing.T) {
 					{
 						DateTime:  time.Date(2023, time.April, 11, 12, 0, 0, 0, time.UTC),
 						EventTime: time.Date(2023, time.April, 11, 12, 0, 0, 0, time.UTC),
+						Country:   ecal.EconomicCalendarUnitedStates,
 						Currency:  ecal.EconomicCalendarUSD,
 						Impact:    ecal.EconomicCalendarImpactHigh,
 						Title:     "Inflation Announcement",
@@ -61,6 +65,7 @@ func Test_formatWeeklyEvents(t *testing.T) {
 					{
 						DateTime:  time.Date(2023, time.April, 11, 12, 0, 0, 0, time.UTC),
 						EventTime: time.Date(2023, time.April, 11, 13, 0, 0, 0, time.UTC),
+						Country:   ecal.EconomicCalendarUnitedStates,
 						Currency:  ecal.EconomicCalendarUSD,
 						Impact:    ecal.EconomicCalendarImpactHigh,
 						Title:     "Some other event",
@@ -69,6 +74,7 @@ func Test_formatWeeklyEvents(t *testing.T) {
 					{
 						DateTime:  time.Date(2023, time.April, 12, 00, 0, 0, 0, time.UTC),
 						EventTime: time.Date(2023, time.April, 12, 23, 59, 0, 0, time.UTC),
+						Country:   ecal.EconomicCalendarUnitedStates,
 						Currency:  ecal.EconomicCalendarUSD,
 						Impact:    ecal.EconomicCalendarImpactHoliday,
 						Title:     "Some holiday",
@@ -195,6 +201,7 @@ func Test_formatEventUpdate(t *testing.T) {
 			args: args{
 				event: &models.Event{
 					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+					Country:  ecal.EconomicCalendarUnitedStates,
 					Currency: ecal.EconomicCalendarUSD,
 					Impact:   ecal.EconomicCalendarImpactHigh,
 					Title:    "CPI Announcement",
@@ -210,6 +217,7 @@ func Test_formatEventUpdate(t *testing.T) {
 			args: args{
 				event: &models.Event{
 					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+					Country:  ecal.EconomicCalendarEuropeanUnion,
 					Currency: ecal.EconomicCalendarEUR,
 					Impact:   ecal.EconomicCalendarImpactHigh,
 					Title:    "EU is strongly concerned score",

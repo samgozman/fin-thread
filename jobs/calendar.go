@@ -187,7 +187,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		var updatedEventsDB []*models.Event
 		for _, e := range eventsDB {
 			for _, ce := range calendarEvents {
-				if e.Currency != ce.Currency || e.Title != ce.Title || ce.Actual == "" {
+				if e.Country != ce.Country || e.Currency != ce.Currency || e.Title != ce.Title || ce.Actual == "" {
 					continue
 				}
 				ev := &models.Event{
@@ -195,6 +195,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 					ChannelID:    e.ChannelID,
 					ProviderName: e.ProviderName,
 					DateTime:     e.DateTime,
+					Country:      e.Country,
 					Currency:     e.Currency,
 					Impact:       e.Impact,
 					Title:        e.Title,
@@ -258,7 +259,7 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 		}
 
 		// Add event
-		country := ecal.EconomicCalendarCountryEmoji[e.Currency]
+		country := ecal.EconomicCalendarCountryEmoji[e.Country]
 		// Print holiday events without time
 		if e.Impact == ecal.EconomicCalendarImpactHoliday {
 			m += fmt.Sprintf("%s %s\n", country, e.Title)
@@ -301,8 +302,8 @@ func formatEventUpdate(event *models.Event) string {
 		}
 	}
 
-	country := ecal.EconomicCalendarCountryEmoji[event.Currency]
-	countryHashtag := ecal.EconomicCalendarCountryHashtag[event.Currency]
+	country := ecal.EconomicCalendarCountryEmoji[event.Country]
+	countryHashtag := ecal.EconomicCalendarCountryHashtag[event.Country]
 	m += fmt.Sprintf("%s #%s\n", country, countryHashtag)
 	m += fmt.Sprintf("%s: *%s*", event.Title, event.Actual)
 
@@ -331,6 +332,7 @@ func mapEventToDB(e *ecal.EconomicCalendarEvent, channelID, providerName string)
 		ChannelID:    channelID,
 		ProviderName: providerName,
 		DateTime:     dt,
+		Country:      e.Country,
 		Currency:     e.Currency,
 		Impact:       e.Impact,
 		Title:        e.Title,

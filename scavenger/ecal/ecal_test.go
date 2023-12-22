@@ -19,6 +19,7 @@ func Test_parseEvent(t *testing.T) {
 			event: &mql5Calendar{
 				ActualValue:   "0.2%",
 				CurrencyCode:  "USD",
+				Country:       840,
 				ForecastValue: "0.2\u00A0%",
 				Importance:    "high",
 				PreviousValue: "0.3\u00A0%",
@@ -29,6 +30,7 @@ func Test_parseEvent(t *testing.T) {
 			want: &EconomicCalendarEvent{
 				Actual:    "0.2%",
 				Currency:  EconomicCalendarUSD,
+				Country:   EconomicCalendarUnitedStates,
 				DateTime:  time.Date(2023, 11, 13, 12, 58, 48, 0, time.UTC),
 				EventTime: time.Date(2023, 12, 13, 07, 00, 00, 0, time.UTC),
 				Forecast:  "0.2%",
@@ -43,6 +45,7 @@ func Test_parseEvent(t *testing.T) {
 			event: &mql5Calendar{
 				ActualValue:   "",
 				CurrencyCode:  "EUR",
+				Country:       999,
 				ForecastValue: "",
 				Importance:    "none",
 				EventType:     2,
@@ -54,6 +57,7 @@ func Test_parseEvent(t *testing.T) {
 			want: &EconomicCalendarEvent{
 				Actual:    "",
 				Currency:  EconomicCalendarEUR,
+				Country:   EconomicCalendarEuropeanUnion,
 				DateTime:  time.Date(2023, 11, 13, 12, 58, 48, 0, time.UTC),
 				EventTime: time.Time{},
 				Forecast:  "",

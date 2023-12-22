@@ -24,6 +24,7 @@ type Event struct {
 	ProviderName string                        `gorm:"size:64" json:"provider_name"`             // Name of the provider (e.g. "mql5")
 	Title        string                        `gorm:"size:256" json:"title"`                    // Event title
 	DateTime     time.Time                     `gorm:"not null" json:"date_time"`                // Event date and time
+	Country      ecal.EconomicCalendarCountry  `gorm:"size:32" json:"country"`                   // Country of the event
 	Currency     ecal.EconomicCalendarCurrency `gorm:"size:10" json:"currency"`                  // Currency impacted by the event
 	Impact       ecal.EconomicCalendarImpact   `gorm:"size:10" json:"impact"`                    // Impact of the event on the market
 	Actual       string                        `gorm:"size:64" json:"actual"`                    // Actual value of the event (if available)
