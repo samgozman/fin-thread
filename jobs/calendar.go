@@ -114,6 +114,121 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 	}
 }
 
+// RunCalendarUpdatesJob fetches "Actual" values for today's events and publishes updates to the channel.
+func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
+	return func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		tx := sentry.StartTransaction(ctx, "RunCalendarUpdatesJob")
+		tx.Op = "job-calendar-updates"
+
+		// Sentry performance monitoring
+		hub := sentry.GetHubFromContext(ctx)
+		if hub == nil {
+			hub = sentry.CurrentHub().Clone()
+			ctx = sentry.SetHubOnContext(ctx, hub)
+		}
+
+		defer func() {
+			tx.Finish()
+			hub.Flush(2 * time.Second)
+		}()
+
+		// Fetch events for today from the database
+		span := tx.StartChild("Archivist.FindRecentEventsWithoutValue")
+		events, err := j.archivist.Entities.Events.FindRecentEventsWithoutValue(ctx)
+		span.Finish()
+		if err != nil {
+			e := errors.New(fmt.Sprintf("[job-calendar-updates] Error fetching events: %v", err))
+			j.logger.Error(e.Error())
+			hub.CaptureException(e)
+			return
+		}
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "successful",
+			Message:  fmt.Sprintf("Archivist.FindRecentEventsWithoutValue returned %d events", len(events)),
+			Level:    sentry.LevelInfo,
+		}, nil)
+		if len(events) == 0 {
+			return
+		}
+
+		// Fetch events for today from the calendar
+		span = tx.StartChild("EconomicCalendar.Fetch")
+		from := time.Now().Truncate(24 * time.Hour)
+		to := from.Add(23 * time.Hour).Add(59 * time.Minute).Add(59 * time.Second)
+		calendarEvents, err := j.calendarScavenger.Fetch(ctx, from, to)
+		span.Finish()
+		if err != nil {
+			e := errors.New(fmt.Sprintf("[job-calendar-updates] Error fetching events: %v", err))
+			j.logger.Error(e.Error())
+			hub.CaptureException(e)
+			return
+		}
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "successful",
+			Message:  fmt.Sprintf("EconomicCalendar.Fetch returned %d events", len(calendarEvents)),
+			Level:    sentry.LevelInfo,
+		}, nil)
+		if len(calendarEvents) == 0 {
+			return
+		}
+		if len(calendarEvents) != len(events) {
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "debug",
+				Message:  fmt.Sprintf("EconomicCalendar.Fetch returned %d events, but Archivist.FindRecentEventsWithoutValue returned %d events", len(calendarEvents), len(events)),
+				Level:    sentry.LevelDebug,
+			}, nil)
+			// No return here because we still can update some events, just log it for now
+		}
+
+		// Update events with actual values
+		for _, e := range events {
+			for _, ce := range calendarEvents {
+				if e.Currency != ce.Currency || e.Title != ce.Title || ce.Actual == "" {
+					break
+				}
+				e.Forecast = ce.Forecast
+				e.Previous = ce.Previous
+				e.Actual = ce.Actual
+				e.UpdatedAt = time.Now()
+			}
+		}
+
+		// TODO: add update many method to archivist with transaction
+		for _, e := range events {
+			span = tx.StartChild("Archivist.UpdateEvent")
+			err := j.archivist.Entities.Events.Update(ctx, e)
+			span.Finish()
+			if err != nil {
+				e := errors.New(fmt.Sprintf("[job-calendar-updates] Error updating event: %v", err))
+				j.logger.Error(e.Error())
+				hub.CaptureException(e)
+				return
+			}
+		}
+
+		// Publish events to the channel
+		for _, e := range events {
+			m := formatEventUpdate(e)
+			if m == "" {
+				continue
+			}
+
+			span = tx.StartChild("TelegramPublisher.Publish")
+			_, err := j.publisher.Publish(m)
+			span.Finish()
+			if err != nil {
+				e := errors.New(fmt.Sprintf("[job-calendar-updates] Error publishing event: %v", err))
+				j.logger.Error(e.Error())
+				hub.CaptureException(e)
+				return
+			}
+		}
+	}
+}
+
 // formatWeeklyEvents formats events to the text for publishing to the telegram channel
 func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	if len(events) == 0 {

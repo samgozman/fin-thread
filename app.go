@@ -171,8 +171,20 @@ func (a *App) start() {
 		panic(err)
 	}
 
-	// TODO: Add daily job for fetching calendar events updates for today.
-	// TODO: If there are no events in the database for today, skip the job.
+	_, err = s.NewJob(
+		gocron.DurationJob(90*time.Second),
+		gocron.NewTask(calJob.RunCalendarUpdatesJob()),
+		gocron.WithName("scheduler for Calendar updates"),
+	)
+	if err != nil {
+		sentry.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "scheduler",
+			Message:  "Error scheduling job for Calendar updates",
+			Level:    sentry.LevelFatal,
+		})
+		hub.CaptureException(err)
+		panic(err)
+	}
 
 	defer func(s gocron.Scheduler) {
 		err := s.Shutdown()
