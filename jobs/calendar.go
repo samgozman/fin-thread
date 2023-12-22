@@ -135,69 +135,89 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 			hub.Flush(2 * time.Second)
 		}()
 
-		// Fetch events for today from the database
+		// Fetch eventsDB for today from the database
 		span := tx.StartChild("Archivist.FindRecentEventsWithoutValue")
-		events, err := j.archivist.Entities.Events.FindRecentEventsWithoutValue(ctx)
+		eventsDB, err := j.archivist.Entities.Events.FindRecentEventsWithoutValue(ctx)
 		span.Finish()
 		if err != nil {
-			e := errors.New(fmt.Sprintf("[job-calendar-updates] Error fetching events: %v", err))
+			e := errors.New(fmt.Sprintf("[job-calendar-updates] Error fetching eventsDB: %v", err))
 			j.logger.Error(e.Error())
 			hub.CaptureException(e)
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "successful",
-			Message:  fmt.Sprintf("Archivist.FindRecentEventsWithoutValue returned %d events", len(events)),
+			Message:  fmt.Sprintf("Archivist.FindRecentEventsWithoutValue returned %d eventsDB", len(eventsDB)),
 			Level:    sentry.LevelInfo,
 		}, nil)
-		if len(events) == 0 {
+		if len(eventsDB) == 0 {
 			return
 		}
 
-		// Fetch events for today from the calendar
+		// Fetch eventsDB for today from the calendar
 		span = tx.StartChild("EconomicCalendar.Fetch")
 		from := time.Now().Truncate(24 * time.Hour)
 		to := from.Add(23 * time.Hour).Add(59 * time.Minute).Add(59 * time.Second)
 		calendarEvents, err := j.calendarScavenger.Fetch(ctx, from, to)
 		span.Finish()
 		if err != nil {
-			e := errors.New(fmt.Sprintf("[job-calendar-updates] Error fetching events: %v", err))
+			e := errors.New(fmt.Sprintf("[job-calendar-updates] Error fetching eventsDB: %v", err))
 			j.logger.Error(e.Error())
 			hub.CaptureException(e)
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "successful",
-			Message:  fmt.Sprintf("EconomicCalendar.Fetch returned %d events", len(calendarEvents)),
+			Message:  fmt.Sprintf("EconomicCalendar.Fetch returned %d eventsDB", len(calendarEvents)),
 			Level:    sentry.LevelInfo,
 		}, nil)
 		if len(calendarEvents) == 0 {
 			return
 		}
-		if len(calendarEvents) != len(events) {
+		if len(calendarEvents) != len(eventsDB) {
 			hub.AddBreadcrumb(&sentry.Breadcrumb{
 				Category: "debug",
-				Message:  fmt.Sprintf("EconomicCalendar.Fetch returned %d events, but Archivist.FindRecentEventsWithoutValue returned %d events", len(calendarEvents), len(events)),
+				Message:  fmt.Sprintf("EconomicCalendar.Fetch returned %d eventsDB, but Archivist.FindRecentEventsWithoutValue returned %d eventsDB", len(calendarEvents), len(eventsDB)),
 				Level:    sentry.LevelDebug,
 			}, nil)
-			// No return here because we still can update some events, just log it for now
+			// No return here because we still can update some eventsDB, just log it for now
+		}
+		if !calendarEvents.HasActualEvents() {
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "debug",
+				Message:  "EconomicCalendar.Fetch returned eventsDB without actual values",
+				Level:    sentry.LevelDebug,
+			}, nil)
+			return
 		}
 
-		// Update events with actual values
-		for _, e := range events {
+		// Update eventsDB with actual values
+		var updatedEventsDB []*models.Event
+		for _, e := range eventsDB {
 			for _, ce := range calendarEvents {
 				if e.Currency != ce.Currency || e.Title != ce.Title || ce.Actual == "" {
 					break
 				}
-				e.Forecast = ce.Forecast
-				e.Previous = ce.Previous
-				e.Actual = ce.Actual
-				e.UpdatedAt = time.Now()
+				ev := &models.Event{
+					ID:           e.ID,
+					ChannelID:    e.ChannelID,
+					ProviderName: e.ProviderName,
+					DateTime:     e.DateTime,
+					Currency:     e.Currency,
+					Impact:       e.Impact,
+					Title:        e.Title,
+					Forecast:     ce.Forecast,
+					Previous:     ce.Previous,
+					Actual:       ce.Actual,
+					UpdatedAt:    time.Now(),
+				}
+
+				updatedEventsDB = append(updatedEventsDB, ev)
 			}
 		}
 
 		// TODO: add update many method to archivist with transaction
-		for _, e := range events {
+		for _, e := range updatedEventsDB {
 			span = tx.StartChild("Archivist.UpdateEvent")
 			err := j.archivist.Entities.Events.Update(ctx, e)
 			span.Finish()
@@ -209,8 +229,8 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 			}
 		}
 
-		// Publish events to the channel
-		for _, e := range events {
+		// Publish eventsDB to the channel
+		for _, e := range updatedEventsDB {
 			m := formatEventUpdate(e)
 			if m == "" {
 				continue
