@@ -174,14 +174,6 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		if len(calendarEvents) == 0 {
 			return
 		}
-		if len(calendarEvents) != len(eventsDB) {
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "debug",
-				Message:  fmt.Sprintf("EconomicCalendar.Fetch returned %d eventsDB, but Archivist.FindRecentEventsWithoutValue returned %d eventsDB", len(calendarEvents), len(eventsDB)),
-				Level:    sentry.LevelDebug,
-			}, nil)
-			// No return here because we still can update some eventsDB, just log it for now
-		}
 		if !calendarEvents.HasActualEvents() {
 			hub.AddBreadcrumb(&sentry.Breadcrumb{
 				Category: "debug",
