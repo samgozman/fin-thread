@@ -11,6 +11,8 @@ import (
 	"github.com/samgozman/fin-thread/scavenger/ecal"
 	"github.com/samgozman/fin-thread/utils"
 	"log/slog"
+	"math"
+	"strings"
 	"time"
 )
 
@@ -306,6 +308,22 @@ func formatEventUpdate(event *models.Event) string {
 	countryHashtag := ecal.EconomicCalendarCountryHashtag[event.Country]
 	m += fmt.Sprintf("%s #%s\n", country, countryHashtag)
 	m += fmt.Sprintf("%s: *%s*", event.Title, event.Actual)
+
+	// For each non-percentage event, add percentage change from previous value
+	if event.Previous != "" && !strings.Contains(event.Previous, "%") {
+		// calculate up/down percentage
+		previousNumber := utils.StrValueToFloat(event.Previous)
+		p := ((actualNumber / previousNumber) - 1) * 100 // percentage change
+
+		// omit infinite values
+		if p != math.Inf(1) && p != math.Inf(-1) {
+			if p > 0 {
+				m += fmt.Sprintf(" (+%.2f%%)", p)
+			} else {
+				m += fmt.Sprintf(" (%.2f%%)", p)
+			}
+		}
+	}
 
 	// Print forecast and previous values if they are not empty
 	if event.Forecast != "" {

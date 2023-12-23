@@ -226,6 +226,54 @@ func Test_formatEventUpdate(t *testing.T) {
 			},
 			want: "🇪🇺 #europe\nEU is strongly concerned score: *1.3%*",
 		},
+		{
+			name: "case 3 - with multiplier",
+			args: args{
+				event: &models.Event{
+					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+					Country:  ecal.EconomicCalendarUnitedStates,
+					Currency: ecal.EconomicCalendarUSD,
+					Impact:   ecal.EconomicCalendarImpactHigh,
+					Title:    "Home sales",
+					Actual:   "4.5 M",
+					Forecast: "4.25 M",
+					Previous: "4.0 M",
+				},
+			},
+			want: "🔥🇺🇸 #usa\nHome sales: *4.5 M* (+12.50%), forecast: 4.25 M, last: 4.0 M",
+		},
+		{
+			name: "case 4 - with multiplier and negative value",
+			args: args{
+				event: &models.Event{
+					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+					Country:  ecal.EconomicCalendarUnitedStates,
+					Currency: ecal.EconomicCalendarUSD,
+					Impact:   ecal.EconomicCalendarImpactHigh,
+					Title:    "Home sales",
+					Actual:   "4.0 M",
+					Forecast: "4.25 M",
+					Previous: "4.5 M",
+				},
+			},
+			want: "🔥🇺🇸 #usa\nHome sales: *4.0 M* (-11.11%), forecast: 4.25 M, last: 4.5 M",
+		},
+		{
+			name: "case 5 - with zero values",
+			args: args{
+				event: &models.Event{
+					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+					Country:  ecal.EconomicCalendarUnitedStates,
+					Currency: ecal.EconomicCalendarUSD,
+					Impact:   ecal.EconomicCalendarImpactHigh,
+					Title:    "Home sales",
+					Actual:   "2 M",
+					Forecast: "1 M",
+					Previous: "0 M",
+				},
+			},
+			want: "🔥🇺🇸 #usa\nHome sales: *2 M*, forecast: 1 M, last: 0 M",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
