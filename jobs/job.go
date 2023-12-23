@@ -153,6 +153,7 @@ func (job *Job) Run() JobFunc {
 			return
 		}
 
+		// TODO: Get rid of JobData structure
 		jobData := &JobData{
 			News: news,
 		}
@@ -187,6 +188,9 @@ func (job *Job) Run() JobFunc {
 			Message:  fmt.Sprintf("composeNews returned %d news", len(jobData.ComposedNews)),
 			Level:    sentry.LevelInfo,
 		}, nil)
+		if len(jobData.ComposedNews) == 0 {
+			return
+		}
 
 		span = tx.StartChild("saveNews")
 		jobData.DBNews, err = job.saveNews(ctx, jobData)
