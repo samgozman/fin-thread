@@ -246,43 +246,51 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 
 // formatWeeklyEvents formats events to the text for publishing to the telegram channel
 func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
+	// Handle empty events case
 	if len(events) == 0 {
 		return ""
 	}
 
-	var m string
+	var m strings.Builder
 	latestDateStr := ""
+
+	// Build header
+	m.WriteString("📅 Economic calendar for the upcoming week\n\n")
+
+	// Iterate through events
 	for _, e := range events {
 		// Add events group date
 		dt := e.DateTime.Format("Monday, January 02")
 		if dt != latestDateStr {
 			latestDateStr = dt
-			m += fmt.Sprintf("*%s*\n", dt)
+			m.WriteString(fmt.Sprintf("*%s*\n", dt))
 		}
 
 		// Add event
 		country := ecal.EconomicCalendarCountryEmoji[e.Country]
+
 		// Print holiday events without time
 		if e.Impact == ecal.EconomicCalendarImpactHoliday {
-			m += fmt.Sprintf("%s %s\n", country, e.Title)
-			continue
-		}
-		m += fmt.Sprintf("%s %s %s", country, e.DateTime.Format("15:04"), e.Title)
+			m.WriteString(fmt.Sprintf("%s %s\n", country, e.Title))
+		} else {
+			m.WriteString(fmt.Sprintf("%s %s %s", country, e.DateTime.Format("15:04"), e.Title))
 
-		// Print forecast and previous values if they are not empty
-		if e.Forecast != "" {
-			m += fmt.Sprintf(", forecast: %s", e.Forecast)
-		}
-		if e.Previous != "" {
-			m += fmt.Sprintf(", last: %s", e.Previous)
-		}
+			// Print forecast and previous values if they are not empty
+			if e.Forecast != "" {
+				m.WriteString(fmt.Sprintf(", forecast: %s", e.Forecast))
+			}
+			if e.Previous != "" {
+				m.WriteString(fmt.Sprintf(", last: %s", e.Previous))
+			}
 
-		m += "\n"
+			m.WriteString("\n")
+		}
 	}
 
-	header := "📅 Economic calendar for the upcoming week\n\n"
-	footer := "*All times are in UTC*\n#calendar #economy"
-	return header + m + footer
+	// Build footer
+	m.WriteString("*All times are in UTC*\n#calendar #economy")
+
+	return m.String()
 }
 
 func formatEventUpdate(event *models.Event) string {
