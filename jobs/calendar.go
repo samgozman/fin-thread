@@ -286,53 +286,61 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 }
 
 func formatEventUpdate(event *models.Event) string {
+	// Handle nil event case
 	if event == nil {
 		return ""
 	}
 
-	var m string
-	actualNumber := utils.StrValueToFloat(event.Actual)
-	if event.Previous != "" {
+	// Initialize message string
+	var m strings.Builder
+
+	// Check if the event has a previous value or a forecast value
+	if event.Previous != "" || event.Forecast != "" {
+		actualNumber := utils.StrValueToFloat(event.Actual)
+
+		// Check for a change in actual value compared to previous value or forecast value
 		previousNumber := utils.StrValueToFloat(event.Previous)
-		if actualNumber != previousNumber {
-			m += "🔥"
-		}
-	} else if event.Forecast != "" {
 		forecastNumber := utils.StrValueToFloat(event.Forecast)
-		if actualNumber != forecastNumber {
-			m += "🔥"
+
+		if event.Previous != "" && actualNumber != previousNumber {
+			m.WriteString("🔥")
+		} else if event.Forecast != "" && actualNumber != forecastNumber {
+			m.WriteString("🔥")
 		}
 	}
 
+	// Add country emoji and hashtag
 	country := ecal.EconomicCalendarCountryEmoji[event.Country]
 	countryHashtag := ecal.EconomicCalendarCountryHashtag[event.Country]
-	m += fmt.Sprintf("%s #%s\n", country, countryHashtag)
-	m += fmt.Sprintf("%s: *%s*", event.Title, event.Actual)
+	m.WriteString(fmt.Sprintf("%s #%s\n", country, countryHashtag))
 
-	// For each non-percentage event, add percentage change from previous value
+	// Add event title and actual value in bold
+	m.WriteString(fmt.Sprintf("%s: *%s*", event.Title, event.Actual))
+
+	// For non-percentage events, add percentage change from previous value
 	if event.Previous != "" && !strings.Contains(event.Previous, "%") {
-		// calculate up/down percentage
+		actualNumber := utils.StrValueToFloat(event.Actual)
 		previousNumber := utils.StrValueToFloat(event.Previous)
-		p := ((actualNumber / previousNumber) - 1) * 100 // percentage change
+		p := ((actualNumber / previousNumber) - 1) * 100
 
-		// omit infinite values
 		if p != math.Inf(1) && p != math.Inf(-1) {
 			if p > 0 {
-				m += fmt.Sprintf(" (+%.2f%%)", p)
+				m.WriteString(fmt.Sprintf(" (+%.2f%%)", p))
 			} else {
-				m += fmt.Sprintf(" (%.2f%%)", p)
+				m.WriteString(fmt.Sprintf(" (%.2f%%)", p))
 			}
 		}
 	}
 
 	// Print forecast and previous values if they are not empty
 	if event.Forecast != "" {
-		m += fmt.Sprintf(", forecast: %s", event.Forecast)
+		m.WriteString(fmt.Sprintf(", forecast: %s", event.Forecast))
 	}
 	if event.Previous != "" {
-		m += fmt.Sprintf(", last: %s", event.Previous)
+		m.WriteString(fmt.Sprintf(", last: %s", event.Previous))
 	}
-	return m
+
+	return m.String()
 }
 
 // mapEventToDB maps calendar event to the database event instance.
