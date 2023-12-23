@@ -252,11 +252,11 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	}
 
 	var m strings.Builder
-	latestDateStr := ""
 
 	// Build header
 	m.WriteString("📅 Economic calendar for the upcoming week\n\n")
 
+	latestDateStr := ""
 	// Iterate through events
 	for _, e := range events {
 		// Add events group date
