@@ -3,7 +3,8 @@ package composer
 import (
 	"context"
 	"encoding/json"
-	"regexp"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/samber/lo"
@@ -37,7 +38,7 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 	// Convert news to JSON
 	jsonNews, err := todayNews.ToContentJSON()
 	if err != nil {
-		return nil, newErrCompose(err, "NewsList.ToContentJSON")
+		return nil, newErr(err, "Compose", "NewsList.ToContentJSON")
 	}
 
 	// Compose news
@@ -63,23 +64,101 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 		},
 	)
 	if err != nil {
-		return nil, newErrCompose(err, "OpenAiClient.CreateChatCompletion")
+		return nil, newErr(err, "Compose", "OpenAiClient.CreateChatCompletion")
 	}
 
-	// Find first array group. This will fix most weird OpenAI bugs with broken JSON
-	re := regexp.MustCompile(`\[([\S\s]*)\]`)
-	matches := re.FindString(resp.Choices[0].Message.Content)
-	if matches == "" {
-		return nil, newErrCompose(ErrEmptyRegexMatch, "regexp.FindString").WithValue(resp.Choices[0].Message.Content)
+	matches, err := openaiJSONStringFixer(resp.Choices[0].Message.Content)
+	if err != nil {
+		return nil, newErr(err, "Compose", "openaiJSONStringFixer")
 	}
 
 	var fullComposedNews []*ComposedNews
 	err = json.Unmarshal([]byte(matches), &fullComposedNews)
 	if err != nil {
-		return nil, newErrCompose(err, "json.Unmarshal").WithValue(matches)
+		return nil, newErr(err, "Compose", "json.Unmarshal").WithValue(matches)
 	}
 
 	return fullComposedNews, nil
+}
+
+// Summarise create a short AI summary for the Headline array of any kind.
+// It will also add Markdown links in summary.
+//
+// `headlinesLimit` is used to tell AI to use only top N Headlines from the batch for summary (AI will decide).
+//
+// `maxTokens` is used to limit summary size in tokens. It is the hard limit for AI and also used
+// for dynamically decide how many sentences AI should produce.
+func (c *Composer) Summarise(ctx context.Context, headlines []Headline, headlinesLimit, maxTokens int) ([]SummarisedHeadline, error) {
+	if len(headlines) == 0 {
+		return nil, nil
+	}
+
+	if maxTokens == 0 {
+		return nil, errors.New("maxTokens can't be 0")
+	}
+
+	if headlinesLimit == 0 {
+		return nil, errors.New("headlinesLimit can't be 0")
+	}
+
+	jsonHeadlines, err := json.Marshal(headlines)
+	if err != nil {
+		return nil, newErr(err, "Summarise", "json.Marshal headlines").WithValue(fmt.Sprintf("%+v", headlines))
+	}
+
+	resp, err := c.OpenAiClient.CreateChatCompletion(
+		ctx,
+		openai.ChatCompletionRequest{
+			Model: openai.GPT3Dot5Turbo1106,
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role:    openai.ChatMessageRoleSystem,
+					Content: c.Config.SummarisePrompt(headlinesLimit),
+				},
+				{
+					Role:    openai.ChatMessageRoleUser,
+					Content: string(jsonHeadlines),
+				},
+			},
+			Temperature:      1,
+			MaxTokens:        maxTokens,
+			TopP:             0.7,
+			FrequencyPenalty: 0,
+			PresencePenalty:  0,
+		},
+	)
+	if err != nil {
+		return nil, newErr(err, "Summarise", "OpenAiClient.CreateChatCompletion")
+	}
+
+	matches, err := openaiJSONStringFixer(resp.Choices[0].Message.Content)
+	if err != nil {
+		return nil, newErr(err, "Compose", "openaiJSONStringFixer")
+	}
+
+	var summarisedHeadlines []SummarisedHeadline
+	err = json.Unmarshal([]byte(matches), &summarisedHeadlines)
+	if err != nil {
+		return nil, newErr(err, "Summarise", "json.Unmarshal").WithValue(resp.Choices[0].Message.Content)
+	}
+
+	// TODO: find first verb by using NLP and add link to it in Markdown format. OpenAI can't do it right.
+
+	return summarisedHeadlines, nil
+}
+
+// SummarisedHeadline is the base data structure for the data to summarise
+type SummarisedHeadline struct {
+	ID      string `json:"id"`
+	Summary string `json:"summary"`
+	Link    string `json:"link"`
+}
+
+// Headline is the base data structure for the data to summarise
+type Headline struct {
+	ID   string // ID of the news or event
+	Text string // Text of the news or event to be used in summary
+	Link string // Link to the publication to use in string Markdown
 }
 
 type ComposedNews struct {
