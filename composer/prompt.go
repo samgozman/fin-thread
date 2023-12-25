@@ -30,8 +30,9 @@ func DefaultPromptConfig() *PromptConfig {
 			return fmt.Sprintf(`You will receive a JSON array of news with IDs.
 You need to create a short (%v words max) summary for the %v most important financial, 
 economical, stock market news what happened from the start of the day.
+Find the main verb in the string and put it into the result JSON.
 Response in JSON array format:
-[{summary:"", id:"", link:""}]`,
+[{summary:"", verb:"", id:"", link:""}]`,
 				MaxWordsPerSentence,
 				headlinesLimit,
 			)

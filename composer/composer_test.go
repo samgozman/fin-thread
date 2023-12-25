@@ -201,11 +201,13 @@ func TestComposer_Summarise(t *testing.T) {
 						ID:   "1",
 						Text: "Ray Dalio warns about the soaring U.S. government debt reaching a critical inflection point, potentially leading to larger problems.",
 						Link: "https://t.me/fin_thread/1",
+						Verb: "warns",
 					},
 					{
 						ID:   "2",
 						Text: "The market anticipates aggressive rate cuts by the Fed, despite the cautious approach of central bank officials. Investors may face disappointment.",
 						Link: "https://t.me/fin_thread/2",
+						Verb: "anticipates",
 					},
 				},
 				headlinesLimit: 2,

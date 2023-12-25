@@ -142,8 +142,6 @@ func (c *Composer) Summarise(ctx context.Context, headlines []Headline, headline
 		return nil, newErr(err, "Summarise", "json.Unmarshal").WithValue(resp.Choices[0].Message.Content)
 	}
 
-	// TODO: find first verb by using NLP and add link to it in Markdown format. OpenAI can't do it right.
-
 	return summarisedHeadlines, nil
 }
 
@@ -155,8 +153,11 @@ type SummarisedHeadline struct {
 }
 
 // Headline is the base data structure for the data to summarise
+//
+// OpenAI fails to apply markdown on selected verbs, but it's good at finding them.
 type Headline struct {
 	ID   string // ID of the news or event
+	Verb string // Main verb of the news or event to be marked in summary
 	Text string // Text of the news or event to be used in summary
 	Link string // Link to the publication to use in string Markdown
 }
