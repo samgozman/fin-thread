@@ -5,7 +5,7 @@ go 1.21.5
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/getsentry/sentry-go v0.25.0
-	github.com/go-co-op/gocron/v2 v2.0.1
+	github.com/go-co-op/gocron/v2 v2.1.1
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/google/uuid v1.5.0
 	github.com/microcosm-cc/bluemonday v1.0.26
@@ -56,7 +56,7 @@ require (
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.16.0 // indirect
-	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb // indirect
+	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848 // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
