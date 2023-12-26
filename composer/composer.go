@@ -81,14 +81,14 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 	return fullComposedNews, nil
 }
 
-// Summarise create a short AI summary for the Headline array of any kind.
+// Summarise create a short AI summary for the SummarisedHeadline array of any kind.
 // It will also add Markdown links in summary.
 //
 // `headlinesLimit` is used to tell AI to use only top N Headlines from the batch for summary (AI will decide).
 //
 // `maxTokens` is used to limit summary size in tokens. It is the hard limit for AI and also used
 // for dynamically decide how many sentences AI should produce.
-func (c *Composer) Summarise(ctx context.Context, headlines []Headline, headlinesLimit, maxTokens int) ([]SummarisedHeadline, error) {
+func (c *Composer) Summarise(ctx context.Context, headlines []SummarisedHeadline, headlinesLimit, maxTokens int) ([]Headline, error) {
 	if len(headlines) == 0 {
 		return nil, nil
 	}
@@ -136,26 +136,26 @@ func (c *Composer) Summarise(ctx context.Context, headlines []Headline, headline
 		return nil, newErr(err, "Summarise", "openaiJSONStringFixer")
 	}
 
-	var summarisedHeadlines []SummarisedHeadline
-	err = json.Unmarshal([]byte(matches), &summarisedHeadlines)
+	var h []Headline
+	err = json.Unmarshal([]byte(matches), &h)
 	if err != nil {
 		return nil, newErr(err, "Summarise", "json.Unmarshal").WithValue(resp.Choices[0].Message.Content)
 	}
 
-	return summarisedHeadlines, nil
+	return h, nil
 }
 
-// SummarisedHeadline is the base data structure for the data to summarise
-type SummarisedHeadline struct {
+// Headline is the base data structure for the data to summarise
+type Headline struct {
 	ID      string `json:"id"`
 	Summary string `json:"summary"`
 	Link    string `json:"link"`
 }
 
-// Headline is the base data structure for the data to summarise
+// SummarisedHeadline is the base data structure of summarised news or events.
 //
 // OpenAI fails to apply markdown on selected verbs, but it's good at finding them.
-type Headline struct {
+type SummarisedHeadline struct {
 	ID   string // ID of the news or event
 	Verb string // Main verb of the news or event to be marked in summary
 	Text string // Text of the news or event to be used in summary
