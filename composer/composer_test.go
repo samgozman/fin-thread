@@ -181,7 +181,7 @@ func TestComposer_Summarise(t *testing.T) {
 	}
 	type args struct {
 		ctx            context.Context
-		headlines      []SummarisedHeadline
+		headlines      []Headline
 		headlinesLimit int
 		maxTokens      int
 	}
@@ -189,40 +189,40 @@ func TestComposer_Summarise(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    []Headline
+		want    []SummarisedHeadline
 		wantErr bool
 	}{
 		{
 			name: "Should pass and return correct composed jsonNews",
 			args: args{
 				ctx: context.Background(),
-				headlines: []SummarisedHeadline{
+				headlines: []Headline{
 					{
 						ID:   "1",
 						Text: "Ray Dalio warns about the soaring U.S. government debt reaching a critical inflection point, potentially leading to larger problems.",
 						Link: "https://t.me/fin_thread/1",
-						Verb: "warns",
 					},
 					{
 						ID:   "2",
 						Text: "The market anticipates aggressive rate cuts by the Fed, despite the cautious approach of central bank officials. Investors may face disappointment.",
 						Link: "https://t.me/fin_thread/2",
-						Verb: "anticipates",
 					},
 				},
 				headlinesLimit: 2,
 				maxTokens:      512,
 			},
-			want: []Headline{
+			want: []SummarisedHeadline{
 				{
 					ID:      "1",
-					Summary: "Some summary",
+					Summary: "Some warns summary",
 					Link:    "https://t.me/fin_thread/1",
+					Verb:    "warns",
 				},
 				{
 					ID:      "2",
-					Summary: "Some summary",
+					Summary: "Some anticipates summary",
 					Link:    "https://t.me/fin_thread/2",
+					Verb:    "anticipates",
 				},
 			},
 			wantErr: false,
