@@ -133,7 +133,7 @@ func (c *Composer) Summarise(ctx context.Context, headlines []Headline, headline
 
 	matches, err := openaiJSONStringFixer(resp.Choices[0].Message.Content)
 	if err != nil {
-		return nil, newErr(err, "Compose", "openaiJSONStringFixer")
+		return nil, newErr(err, "Summarise", "openaiJSONStringFixer")
 	}
 
 	var summarisedHeadlines []SummarisedHeadline
