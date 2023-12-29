@@ -83,8 +83,8 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 			return
 		}
 
-		if len(events) == 0 && len(news) == 0 {
-			j.logger.Info("No news and events to process")
+		if len(events)+len(news) < 5 {
+			j.logger.Info("No news or events to process (or total < 5)")
 			return
 		}
 
