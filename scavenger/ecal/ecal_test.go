@@ -129,9 +129,7 @@ func TestEconomicCalendar_Fetch(t *testing.T) {
 				t.Errorf("Fetch() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !tt.wantErr && len(got) == 0 {
-				t.Error("Fetch() got 0 len")
-			}
+			// NOTE: len can be 0 if there are no events for the day with the current filter
 			// TODO: Should split the actual fetch in future to test thing properly
 			if !tt.wantErr && len(got) > 1 {
 				// check that first event if before the last one
