@@ -156,7 +156,7 @@ func formatSummary(headlines []*composer.SummarisedHeadline, from time.Time) str
 
 	hours := int(time.Since(from).Hours())
 
-	message := fmt.Sprintf("#summary\nWhat happened in the last %d hours:\n", hours)
+	message := fmt.Sprintf("📓 #summary\nWhat happened in the last %d hours:\n", hours)
 
 	for _, h := range headlines {
 		m := fmt.Sprintf("- %s\n", h.Summary)

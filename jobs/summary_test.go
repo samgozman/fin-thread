@@ -39,7 +39,7 @@ func Test_formatSummary(t *testing.T) {
 				},
 				from: time.Now().Add(-7 * time.Hour),
 			},
-			want: "#summary\n" +
+			want: "📓 #summary\n" +
 				"What happened in the last 7 hours:\n" +
 				"- Someone [warns](https://t.me/fin_thread/1) text\n" +
 				"- Someone else warns text\n" +
