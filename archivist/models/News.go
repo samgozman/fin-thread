@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"github.com/google/uuid"
+	"github.com/samgozman/fin-thread/composer"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"time"
@@ -100,6 +102,14 @@ func (n *News) BeforeCreate(*gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (n *News) ToHeadline() *composer.Headline {
+	return &composer.Headline{
+		ID:   n.ID.String(),
+		Text: n.OriginalTitle,
+		Link: fmt.Sprintf("https://t.me/%s/%s", n.ChannelID, n.PublicationID),
+	}
 }
 
 func (db *NewsDB) Create(ctx context.Context, n *News) error {

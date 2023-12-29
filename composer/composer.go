@@ -88,7 +88,7 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 //
 // `maxTokens` is used to limit summary size in tokens. It is the hard limit for AI and also used
 // for dynamically decide how many sentences AI should produce.
-func (c *Composer) Summarise(ctx context.Context, headlines []Headline, headlinesLimit, maxTokens int) ([]SummarisedHeadline, error) {
+func (c *Composer) Summarise(ctx context.Context, headlines []*Headline, headlinesLimit, maxTokens int) ([]*SummarisedHeadline, error) {
 	if len(headlines) == 0 {
 		return nil, nil
 	}
@@ -136,7 +136,7 @@ func (c *Composer) Summarise(ctx context.Context, headlines []Headline, headline
 		return nil, newErr(err, "Summarise", "openaiJSONStringFixer")
 	}
 
-	var h []SummarisedHeadline
+	var h []*SummarisedHeadline
 	err = json.Unmarshal([]byte(matches), &h)
 	if err != nil {
 		return nil, newErr(err, "Summarise", "json.Unmarshal").WithValue(resp.Choices[0].Message.Content)
