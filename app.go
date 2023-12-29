@@ -186,6 +186,28 @@ func (a *App) start() {
 		panic(err)
 	}
 
+	// Before market open job
+	bmoJob := NewSummaryJob(
+		composer,
+		publisher,
+		archivist,
+	)
+	_, err = s.NewJob(
+		// TODO: Use holidays calendar to avoid unnecessary runs
+		gocron.CronJob("0 14 * * 1-5", false), // every weekday at 14:00 UTC (market opens at 14:30 UTC)
+		gocron.NewTask(bmoJob.Run(time.Now().Truncate(24*time.Hour))),
+		gocron.WithName("scheduler for Before Market Open summary job"),
+	)
+	if err != nil {
+		sentry.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "scheduler",
+			Message:  "Error scheduling job for Before Market Open",
+			Level:    sentry.LevelFatal,
+		})
+		hub.CaptureException(err)
+		panic(err)
+	}
+
 	defer func(s gocron.Scheduler) {
 		err := s.Shutdown()
 		if err != nil {

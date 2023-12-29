@@ -1,8 +1,15 @@
 package composer
 
+import "fmt"
+
 type PromptConfig struct {
-	ComposePrompt string
+	ComposePrompt   string
+	SummarisePrompt SummarisePromptFunc
 }
+
+const (
+	MaxWordsPerSentence = 10
+)
 
 func DefaultPromptConfig() *PromptConfig {
 	return &PromptConfig{
@@ -19,5 +26,18 @@ func DefaultPromptConfig() *PromptConfig {
 		Next you need to create an informative, original 'text' based on the title and description.
 		You need to write a 'text' that would be easy to read and understand, 1-2 sentences long.
 `,
+		SummarisePrompt: func(headlinesLimit int) string {
+			return fmt.Sprintf(`You will receive a JSON array of news with IDs.
+You need to create a short (%v words max) summary for the %v most important financial, 
+economical, stock market news what happened from the start of the day.
+Find the main verb in the string and put it into the result JSON.
+Response in JSON array format:
+[{summary:"", verb:"", id:"", link:""}]`,
+				MaxWordsPerSentence,
+				headlinesLimit,
+			)
+		},
 	}
 }
+
+type SummarisePromptFunc = func(headlinesLimit int) string

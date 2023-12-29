@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"github.com/google/uuid"
+	"github.com/samgozman/fin-thread/composer"
 	"github.com/samgozman/fin-thread/scavenger/ecal"
 	"gorm.io/gorm"
 	"time"
@@ -70,6 +71,14 @@ func (e *Event) BeforeUpdate(_ *gorm.DB) error {
 	return nil
 }
 
+func (e *Event) ToHeadline() *composer.Headline {
+	return &composer.Headline{
+		ID:   e.ID.String(),
+		Text: e.Title,
+		// TODO: Publication link?
+	}
+}
+
 func (edb *EventsDB) Create(ctx context.Context, e *Event) error {
 	res := edb.Conn.WithContext(ctx).Create(e)
 	if res.Error != nil {
@@ -100,6 +109,17 @@ func (edb *EventsDB) FindRecentEventsWithoutValue(ctx context.Context) ([]*Event
 		Where("actual = ?", "").
 		Find(&events)
 
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return events, nil
+}
+
+// FindAllUntilDate finds all events until the provided date
+func (edb *EventsDB) FindAllUntilDate(ctx context.Context, until time.Time) ([]*Event, error) {
+	var events []*Event
+	res := edb.Conn.WithContext(ctx).Where("created_at >= ?", until).Find(&events)
 	if res.Error != nil {
 		return nil, res.Error
 	}
