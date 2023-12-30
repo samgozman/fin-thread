@@ -12,17 +12,21 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
-type OpenAiClientInterface interface {
-	CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (response openai.ChatCompletionResponse, error error)
-}
-
+// Composer is used to compose (rephrase) news and events, find some meta information about them,
+// filter out some unnecessary stuff, summarise them and so on.
 type Composer struct {
-	OpenAiClient OpenAiClientInterface
-	Config       *PromptConfig
+	OpenAiClient     OpenAiClientInterface
+	TogetherAIClient TogetherAIClientInterface
+	Config           *PromptConfig
 }
 
-func NewComposer(oaiToken string) *Composer {
-	return &Composer{OpenAiClient: openai.NewClient(oaiToken), Config: DefaultPromptConfig()}
+// NewComposer creates a new Composer instance with OpenAI and TogetherAI clients and default config
+func NewComposer(oaiToken, tgrAiToken string) *Composer {
+	return &Composer{
+		OpenAiClient:     openai.NewClient(oaiToken),
+		TogetherAIClient: NewTogetherAI(tgrAiToken),
+		Config:           DefaultPromptConfig(),
+	}
 }
 
 func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*ComposedNews, error) {

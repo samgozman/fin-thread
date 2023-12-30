@@ -5,6 +5,7 @@ type Env struct {
 	TelegramChannelID string `mapstructure:"TELEGRAM_CHANNEL_ID"`
 	TelegramBotToken  string `mapstructure:"TELEGRAM_BOT_TOKEN"`
 	OpenAiToken       string `mapstructure:"OPENAI_TOKEN"`
+	TogetherAIToken   string `mapstructure:"TOGETHER_AI_TOKEN"`
 	PostgresDSN       string `mapstructure:"POSTGRES_DSN"`
 	SentryDSN         string `mapstructure:"SENTRY_DSN"`
 }
