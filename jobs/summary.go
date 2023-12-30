@@ -2,7 +2,9 @@ package jobs
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/avast/retry-go"
 	"github.com/getsentry/sentry-go"
 	"github.com/samgozman/fin-thread/archivist"
 	"github.com/samgozman/fin-thread/composer"
@@ -35,117 +37,124 @@ func NewSummaryJob(
 // Run runs the Summary job. From if the time from which events should be processed.
 func (j *SummaryJob) Run(from time.Time) JobFunc {
 	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
+		_ = retry.Do(func() error {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
 
-		tx := sentry.StartTransaction(ctx, "RunSummaryJob")
-		tx.Op = "job-summary"
+			tx := sentry.StartTransaction(ctx, "RunSummaryJob")
+			tx.Op = "job-summary"
 
-		// Sentry performance monitoring
-		hub := sentry.GetHubFromContext(ctx)
-		if hub == nil {
-			hub = sentry.CurrentHub().Clone()
-			ctx = sentry.SetHubOnContext(ctx, hub)
-		}
+			// Sentry performance monitoring
+			hub := sentry.GetHubFromContext(ctx)
+			if hub == nil {
+				hub = sentry.CurrentHub().Clone()
+				ctx = sentry.SetHubOnContext(ctx, hub)
+			}
 
-		defer func() {
-			tx.Finish()
-			hub.Flush(2 * time.Second)
-		}()
+			defer func() {
+				tx.Finish()
+				hub.Flush(2 * time.Second)
+			}()
 
-		// Fetch news from the database
-		span := sentry.StartSpan(ctx, "News.FindAllUntilDate", sentry.WithTransactionName("SummaryJob.Run"))
-		news, err := j.archivist.Entities.News.FindAllUntilDate(ctx, from)
-		span.Finish()
-		if err != nil {
-			j.logger.Error("Error fetching news from the database", err)
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "database",
-				Message:  "Error fetching news from the database",
-				Level:    sentry.LevelError,
-			}, nil)
-			hub.CaptureException(err)
-			return
-		}
+			// Fetch news from the database
+			span := sentry.StartSpan(ctx, "News.FindAllUntilDate", sentry.WithTransactionName("SummaryJob.Run"))
+			news, err := j.archivist.Entities.News.FindAllUntilDate(ctx, from)
+			span.Finish()
+			if err != nil {
+				j.logger.Error("Error fetching news from the database", err)
+				hub.AddBreadcrumb(&sentry.Breadcrumb{
+					Category: "database",
+					Message:  "Error fetching news from the database",
+					Level:    sentry.LevelError,
+				}, nil)
+				hub.CaptureException(err)
+				return nil
+			}
 
-		// Find all events
-		span = sentry.StartSpan(ctx, "Events.FindAllUntilDate", sentry.WithTransactionName("SummaryJob.Run"))
-		events, err := j.archivist.Entities.Events.FindAllUntilDate(ctx, from)
-		span.Finish()
-		if err != nil {
-			j.logger.Error("Error fetching events from the database", err)
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "database",
-				Message:  "Error fetching events from the database",
-				Level:    sentry.LevelError,
-			}, nil)
-			hub.CaptureException(err)
-			return
-		}
+			// Find all events
+			span = sentry.StartSpan(ctx, "Events.FindAllUntilDate", sentry.WithTransactionName("SummaryJob.Run"))
+			events, err := j.archivist.Entities.Events.FindAllUntilDate(ctx, from)
+			span.Finish()
+			if err != nil {
+				j.logger.Error("Error fetching events from the database", err)
+				hub.AddBreadcrumb(&sentry.Breadcrumb{
+					Category: "database",
+					Message:  "Error fetching events from the database",
+					Level:    sentry.LevelError,
+				}, nil)
+				hub.CaptureException(err)
+				return nil
+			}
 
-		if len(events)+len(news) < 5 {
-			j.logger.Info("No news or events to process (or total < 5)")
-			return
-		}
+			if len(events)+len(news) < 5 {
+				j.logger.Info("No news or events to process (or total < 5)")
+				return nil
+			}
 
-		var headlines []*composer.Headline
-		for _, e := range events {
-			headlines = append(headlines, e.ToHeadline())
-		}
-		for _, n := range news {
-			headlines = append(headlines, n.ToHeadline())
-		}
+			var headlines []*composer.Headline
+			for _, e := range events {
+				headlines = append(headlines, e.ToHeadline())
+			}
+			for _, n := range news {
+				headlines = append(headlines, n.ToHeadline())
+			}
 
-		span = sentry.StartSpan(ctx, "Summarise", sentry.WithTransactionName("SummaryJob.Run"))
-		summarised, err := j.composer.Summarise(ctx, headlines, 20, 1024)
-		span.Finish()
-		if err != nil {
-			j.logger.Error("Error composing summary", err)
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "composer",
-				Message:  "Error composing summary",
-				Level:    sentry.LevelError,
-			}, nil)
-			hub.CaptureException(err)
-			return
-		}
-		if len(summarised) == 0 {
-			j.logger.Info("No summarised news")
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "debug",
-				Message:  "No summarised news",
-				Level:    sentry.LevelDebug,
-			}, nil)
-			return
-		}
+			span = sentry.StartSpan(ctx, "Summarise", sentry.WithTransactionName("SummaryJob.Run"))
+			summarised, err := j.composer.Summarise(ctx, headlines, 20, 1024)
+			span.Finish()
+			if err != nil {
+				j.logger.Error("Error composing summary", err)
+				hub.AddBreadcrumb(&sentry.Breadcrumb{
+					Category: "composer",
+					Message:  "Error composing summary",
+					Level:    sentry.LevelError,
+				}, nil)
+				hub.CaptureException(err)
+				return nil
+			}
+			if len(summarised) == 0 {
+				j.logger.Info("No summarised news")
+				hub.AddBreadcrumb(&sentry.Breadcrumb{
+					Category: "debug",
+					Message:  "No summarised news",
+					Level:    sentry.LevelDebug,
+				}, nil)
+				return nil
+			}
 
-		message := formatSummary(summarised, from)
-		if message == "" {
-			j.logger.Info("No summary message")
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "debug",
-				Message:  "No summary message",
-				Level:    sentry.LevelDebug,
-			}, nil)
-			return
-		}
+			message := formatSummary(summarised, from)
+			if message == "" {
+				j.logger.Info("No summary message")
+				hub.AddBreadcrumb(&sentry.Breadcrumb{
+					Category: "debug",
+					Message:  "No summary message",
+					Level:    sentry.LevelDebug,
+				}, nil)
+				return nil
+			}
 
-		// Publish summary to the channel
-		span = sentry.StartSpan(ctx, "Publish", sentry.WithTransactionName("SummaryJob.Run"))
-		_, err = j.publisher.Publish(message)
-		span.Finish()
-		if err != nil {
-			j.logger.Error("Error publishing summary", err)
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "publisher",
-				Message:  "Error publishing summary",
-				Level:    sentry.LevelError,
-			}, nil)
-			hub.CaptureException(err)
-			return
-		}
+			// Publish summary to the channel
+			span = sentry.StartSpan(ctx, "Publish", sentry.WithTransactionName("SummaryJob.Run"))
+			_, err = j.publisher.Publish(message)
+			span.Finish()
+			if err != nil {
+				j.logger.Error("Error publishing summary", err)
+				hub.AddBreadcrumb(&sentry.Breadcrumb{
+					Category: "publisher",
+					Message:  "Error publishing summary",
+					Level:    sentry.LevelError,
+				}, nil)
+				hub.CaptureException(err)
+				// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
+				return retry.Unrecoverable(errors.New("publishing error"))
+			}
 
-		// TODO: Save or not to save summary to db?
+			// TODO: Save or not to save summary to db?
+			return nil
+		},
+			retry.Attempts(5),
+			retry.Delay(60*time.Second),
+		)
 	}
 }
 
