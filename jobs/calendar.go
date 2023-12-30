@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/avast/retry-go"
 	"github.com/getsentry/sentry-go"
 	"github.com/samgozman/fin-thread/archivist"
 	"github.com/samgozman/fin-thread/archivist/models"
@@ -44,75 +45,82 @@ func NewCalendarJob(
 // It should be run once a week on Monday.
 func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-		j.logger.Info("[calendar] Running weekly plan")
+		_ = retry.Do(func() error {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
+			j.logger.Info("[calendar] Running weekly plan")
 
-		tx := sentry.StartTransaction(ctx, "RunWeeklyCalendarJob")
-		tx.Op = "job-calendar"
+			tx := sentry.StartTransaction(ctx, "RunWeeklyCalendarJob")
+			tx.Op = "job-calendar"
 
-		// Sentry performance monitoring
-		hub := sentry.GetHubFromContext(ctx)
-		if hub == nil {
-			hub = sentry.CurrentHub().Clone()
-			ctx = sentry.SetHubOnContext(ctx, hub)
-		}
+			// Sentry performance monitoring
+			hub := sentry.GetHubFromContext(ctx)
+			if hub == nil {
+				hub = sentry.CurrentHub().Clone()
+				ctx = sentry.SetHubOnContext(ctx, hub)
+			}
 
-		defer func() {
-			tx.Finish()
-			hub.Flush(2 * time.Second)
-		}()
+			defer func() {
+				tx.Finish()
+				hub.Flush(2 * time.Second)
+			}()
 
-		// Create events plan for the upcoming week
-		// from should be always a Monday of the current week
-		from := time.Now().Truncate(24 * time.Hour).Add(-time.Duration(time.Now().Weekday()-time.Monday) * 24 * time.Hour)
-		to := from.Add(6 * 24 * time.Hour).Add(23 * time.Hour).Add(59 * time.Minute).Add(59 * time.Second)
-		span := tx.StartChild("EconomicCalendar.Fetch")
-		events, err := j.calendarScavenger.Fetch(ctx, from, to)
-		span.Finish()
-		if err != nil {
-			e := errors.New(fmt.Sprintf("[job-calendar] Error fetching events: %v", err))
-			j.logger.Error(e.Error())
-			hub.CaptureException(e)
-			return
-		}
-		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "successful",
-			Message:  fmt.Sprintf("EconomicCalendar.Fetch returned %d events", len(events)),
-			Level:    sentry.LevelInfo,
-		}, nil)
-		if len(events) == 0 {
-			return
-		}
-
-		// Format events to the text
-		m := formatWeeklyEvents(events)
-
-		// Publish events to the channel
-		span = tx.StartChild("TelegramPublisher.Publish")
-		_, err = j.publisher.Publish(m)
-		span.Finish()
-		if err != nil {
-			e := errors.New(fmt.Sprintf("[job-calendar] Error publishing events: %v", err))
-			j.logger.Error(e.Error())
-			hub.CaptureException(e)
-			return
-		}
-
-		// TODO: add create many method to archivist with transaction
-		for _, e := range events {
-			ev := mapEventToDB(e, j.publisher.ChannelID, j.providerName)
-
-			span = tx.StartChild("Archivist.CreateEvent")
-			err := j.archivist.Entities.Events.Create(ctx, ev)
+			// Create events plan for the upcoming week
+			// from should be always a Monday of the current week
+			from := time.Now().Truncate(24 * time.Hour).Add(-time.Duration(time.Now().Weekday()-time.Monday) * 24 * time.Hour)
+			to := from.Add(6 * 24 * time.Hour).Add(23 * time.Hour).Add(59 * time.Minute).Add(59 * time.Second)
+			span := tx.StartChild("EconomicCalendar.Fetch")
+			events, err := j.calendarScavenger.Fetch(ctx, from, to)
 			span.Finish()
 			if err != nil {
-				e := errors.New(fmt.Sprintf("[job-calendar] Error saving event: %v", err))
+				e := errors.New(fmt.Sprintf("[job-calendar] Error fetching events: %v", err))
 				j.logger.Error(e.Error())
 				hub.CaptureException(e)
-				return
+				return nil
 			}
-		}
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  fmt.Sprintf("EconomicCalendar.Fetch returned %d events", len(events)),
+				Level:    sentry.LevelInfo,
+			}, nil)
+			if len(events) == 0 {
+				return nil
+			}
+
+			// Format events to the text
+			m := formatWeeklyEvents(events)
+
+			// Publish events to the channel
+			span = tx.StartChild("TelegramPublisher.Publish")
+			_, err = j.publisher.Publish(m)
+			span.Finish()
+			if err != nil {
+				e := errors.New(fmt.Sprintf("[job-calendar] Error publishing events: %v", err))
+				j.logger.Error(e.Error())
+				// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
+				return retry.Unrecoverable(errors.New("publishing error"))
+			}
+
+			// TODO: add create many method to archivist with transaction
+			for _, e := range events {
+				ev := mapEventToDB(e, j.publisher.ChannelID, j.providerName)
+
+				span = tx.StartChild("Archivist.CreateEvent")
+				err := j.archivist.Entities.Events.Create(ctx, ev)
+				span.Finish()
+				if err != nil {
+					e := errors.New(fmt.Sprintf("[job-calendar] Error saving event: %v", err))
+					j.logger.Error(e.Error())
+					hub.CaptureException(e)
+					return nil
+				}
+			}
+
+			return nil
+		},
+			retry.Attempts(5),
+			retry.Delay(10*time.Minute),
+		)
 	}
 }
 
