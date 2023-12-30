@@ -171,7 +171,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		calendarEvents, err := j.calendarScavenger.Fetch(ctx, from, to)
 		span.Finish()
 		if err != nil {
-			e := errors.New(fmt.Sprintf("[job-calendar-updates] Error fetching eventsDB: %v", err))
+			e := errors.New(fmt.Sprintf("[job-calendar-updates] Error fetching events from provider: %v", err))
 			j.logger.Error(e.Error())
 			hub.CaptureException(e)
 			return
