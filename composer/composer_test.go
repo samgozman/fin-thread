@@ -77,7 +77,7 @@ func TestComposer_Compose(t *testing.T) {
 				ctx:  context.Background(),
 				news: news,
 			},
-			expectedFilteredNews: journalist.NewsList{news[0], news[1]},
+			expectedFilteredNews: journalist.NewsList{news[0], news[1], news[2]},
 			want: []*ComposedNews{
 				{
 					ID:       "1",
