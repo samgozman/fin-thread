@@ -116,7 +116,7 @@ func (job *Job) SaveToDB() *Job {
 // Run return job function that will be executed by the scheduler
 func (job *Job) Run() JobFunc {
 	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 		defer cancel()
 
 		jobName := fmt.Sprintf("Run.%s", job.journalist.Name)
