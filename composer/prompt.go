@@ -3,8 +3,9 @@ package composer
 import "fmt"
 
 type PromptConfig struct {
-	ComposePrompt   string
-	SummarisePrompt SummarisePromptFunc
+	ComposePrompt        string
+	SummarisePrompt      SummarisePromptFunc
+	FilterPromptInstruct FilterPromptFunc
 }
 
 const (
@@ -14,10 +15,7 @@ const (
 func DefaultPromptConfig() *PromptConfig {
 	return &PromptConfig{
 		ComposePrompt: `You will be answering only in JSON array format: [{id:"", text:"", tickers:[], markets:[], hashtags:[]}]
-		You need to remove from array blank, spam, purposeless, clickbait, tabloid, advertising, unspecified, anonymous or non-financial news.
-		Most important news right know is inflation, interest rates, war, elections, crisis, unemployment index, regulations.
-		If none of the news are important, return empty array [].
-		Next you need to fill some (or none) tickers, markets and hashtags arrays for each news.
+		You need to fill some (or none) tickers, markets and hashtags arrays for each news.
 		If news are mentioning some companies and stocks you need to find appropriate stocks 'tickers'. 
 		If news are about some market events you need to fill 'markets' with some index tickers (like SPY, QQQ, or RUT etc.) based on the context.
 		News context can be also related to some popular topics, we call it 'hashtags'.
@@ -28,16 +26,25 @@ func DefaultPromptConfig() *PromptConfig {
 `,
 		SummarisePrompt: func(headlinesLimit int) string {
 			return fmt.Sprintf(`You will receive a JSON array of news with IDs.
-You need to create a short (%v words max) summary for the %v most important financial, 
-economical, stock market news what happened from the start of the day.
-Find the main verb in the string and put it into the result JSON.
-Response in JSON array format:
-[{summary:"", verb:"", id:"", link:""}]`,
+				You need to create a short (%v words max) summary for the %v most important financial, 
+				economical, stock market news what happened from the start of the day.
+				Find the main verb in the string and put it into the result JSON.
+				Response in JSON array format:
+				[{summary:"", verb:"", id:"", link:""}]`,
 				MaxWordsPerSentence,
 				headlinesLimit,
 			)
+		},
+		FilterPromptInstruct: func(newsJson string) string {
+			return fmt.Sprintf(`[INST]You will be given a JSON array of financial news.
+				You need to remove from array blank, purposeless, clickbait, advertising or non-financial news.
+				Most important news right know is inflation, interest rates, war, elections, crisis, unemployment index etc.
+				Return the response in the same JSON format. If none of the news are important, return empty array [].
+				Do not add any additional text or explanation, just plain JSON response.\n%s[/INST]`, newsJson)
 		},
 	}
 }
 
 type SummarisePromptFunc = func(headlinesLimit int) string
+
+type FilterPromptFunc = func(newsJson string) string
