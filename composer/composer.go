@@ -12,19 +12,25 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
-type OpenAiClientInterface interface {
-	CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (response openai.ChatCompletionResponse, error error)
-}
-
+// Composer is used to compose (rephrase) news and events, find some meta information about them,
+// filter out some unnecessary stuff, summarise them and so on.
 type Composer struct {
-	OpenAiClient OpenAiClientInterface
-	Config       *PromptConfig
+	OpenAiClient     OpenAiClientInterface
+	TogetherAIClient TogetherAIClientInterface
+	Config           *PromptConfig
 }
 
-func NewComposer(oaiToken string) *Composer {
-	return &Composer{OpenAiClient: openai.NewClient(oaiToken), Config: DefaultPromptConfig()}
+// NewComposer creates a new Composer instance with OpenAI and TogetherAI clients and default config
+func NewComposer(oaiToken, tgrAiToken string) *Composer {
+	return &Composer{
+		OpenAiClient:     openai.NewClient(oaiToken),
+		TogetherAIClient: NewTogetherAI(tgrAiToken),
+		Config:           DefaultPromptConfig(),
+	}
 }
 
+// Compose creates a new AI-composed news from the given news list.
+// It will also find some meta information about the news and events (markets, tickers, hashtags).
 func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*ComposedNews, error) {
 	// RemoveDuplicates out news that are not from today
 	var todayNews journalist.NewsList = lo.Filter(news, func(n *journalist.News, _ int) bool {
@@ -143,6 +149,50 @@ func (c *Composer) Summarise(ctx context.Context, headlines []*Headline, headlin
 	}
 
 	return h, nil
+}
+
+// Filter removes unnecessary news from the given news list using TogetherAI API.
+func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journalist.NewsList, error) {
+	if len(news) == 0 {
+		return nil, nil
+	}
+
+	// TODO: This can be optimised by using ToContentJSON() method.
+	// But it will require to map the response back to the original news list.
+	// Also prompt can be optimised to return only IDs of the news to reduce tokens count.
+	jsonNews, err := news.ToJSON()
+	if err != nil {
+		return nil, newErr(err, "Filter", "json.Marshal news").WithValue(fmt.Sprintf("%+v", news))
+	}
+
+	resp, err := c.TogetherAIClient.CreateChatCompletion(
+		ctx,
+		TogetherAIRequest{
+			Model:             "mistralai/Mistral-7B-Instruct-v0.2",
+			Prompt:            c.Config.FilterPromptInstruct(jsonNews),
+			MaxTokens:         2048,
+			Temperature:       0.7,
+			TopP:              0.7,
+			TopK:              50,
+			RepetitionPenalty: 1,
+		},
+	)
+	if err != nil {
+		return nil, newErr(err, "Filter", "TogetherAIClient.CreateChatCompletion")
+	}
+
+	matches, err := openaiJSONStringFixer(resp.Choices[0].Text)
+	if err != nil {
+		return nil, newErr(err, "Filter", "openaiJSONStringFixer")
+	}
+
+	var filtered journalist.NewsList
+	err = json.Unmarshal([]byte(matches), &filtered)
+	if err != nil {
+		return nil, newErr(err, "Filter", "json.Unmarshal").WithValue(resp.Choices[0].Text)
+	}
+
+	return filtered, nil
 }
 
 // Headline is the base data structure for the data to summarise

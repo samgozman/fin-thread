@@ -116,7 +116,7 @@ func (job *Job) SaveToDB() *Job {
 // Run return job function that will be executed by the scheduler
 func (job *Job) Run() JobFunc {
 	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 		defer cancel()
 
 		jobName := fmt.Sprintf("Run.%s", job.journalist.Name)
@@ -169,6 +169,23 @@ func (job *Job) Run() JobFunc {
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "successful",
 			Message:  fmt.Sprintf("removeDuplicates returned %d news", len(jobData.News)),
+			Level:    sentry.LevelInfo,
+		}, nil)
+		if len(jobData.News) == 0 {
+			return
+		}
+
+		span = tx.StartChild("filter")
+		jobData.News, err = job.composer.Filter(ctx, jobData.News)
+		span.Finish()
+		if err != nil {
+			job.logger.Info(fmt.Sprintf("[%s][filter]", jobName), "error", err)
+			hub.CaptureException(err)
+			return
+		}
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "successful",
+			Message:  fmt.Sprintf("filter returned %d news", len(jobData.News)),
 			Level:    sentry.LevelInfo,
 		}, nil)
 		if len(jobData.News) == 0 {

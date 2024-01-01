@@ -23,6 +23,15 @@ func (m *MockOpenAiClient) CreateChatCompletion(ctx context.Context, req openai.
 	return args.Get(0).(openai.ChatCompletionResponse), args.Error(1)
 }
 
+type MockTogetherAIClient struct {
+	mock.Mock
+}
+
+func (m *MockTogetherAIClient) CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (TogetherAIResponse, error) {
+	args := m.Called(ctx, options)
+	return args.Get(0).(TogetherAIResponse), args.Error(1)
+}
+
 func TestComposer_Compose(t *testing.T) {
 	news := journalist.NewsList{
 		{
@@ -46,7 +55,7 @@ func TestComposer_Compose(t *testing.T) {
 			Title:        "Wholesale prices fell 0.5% in October for biggest monthly drop since April 2020",
 			Description:  "Wholesale prices fell 0.5% in October for biggest monthly drop since April 2020",
 			Link:         "https://www.cnbc.com/",
-			Date:         time.Now().Add(-24 * time.Hour * 2).UTC(), // Should be filtered out
+			Date:         time.Now().UTC(),
 			ProviderName: "cnbc",
 		},
 	}
@@ -68,7 +77,7 @@ func TestComposer_Compose(t *testing.T) {
 				ctx:  context.Background(),
 				news: news,
 			},
-			expectedFilteredNews: journalist.NewsList{news[0], news[1]},
+			expectedFilteredNews: journalist.NewsList{news[0], news[1], news[2]},
 			want: []*ComposedNews{
 				{
 					ID:       "1",
@@ -83,6 +92,13 @@ func TestComposer_Compose(t *testing.T) {
 					Tickers:  []string{},
 					Markets:  []string{},
 					Hashtags: []string{"interestrates"},
+				},
+				{
+					ID:       "3",
+					Text:     "Wholesale prices fell 0.5% in October for biggest monthly drop since April 2020",
+					Tickers:  []string{},
+					Markets:  []string{},
+					Hashtags: []string{},
 				},
 			},
 			wantErr: false,
@@ -287,6 +303,123 @@ func TestComposer_Summarise(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Summarise() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestComposer_Filter(t *testing.T) {
+	type args struct {
+		ctx  context.Context
+		news journalist.NewsList
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    journalist.NewsList
+		wantErr bool
+	}{
+		{
+			name: "Should pass and return correct filtered news",
+			args: args{
+				ctx: context.Background(),
+				news: journalist.NewsList{
+					{
+						ID:           "1",
+						Title:        "Ray Dalio says U.S. reaching an inflection point where the debt problem quickly gets even worse",
+						Description:  "Soaring U.S. government debt is reaching a point where it will begin creating larger problems, the hedge fund titan said Friday.",
+						Link:         "https://www.cnbc.com/",
+						Date:         time.Now().UTC(),
+						ProviderName: "cnbc",
+					},
+					{
+						ID:           "2",
+						Title:        "The market thinks the Fed is going to start cutting rates aggressively. Investors could be in for a letdown",
+						Description:  "Markets may be at least a tad optimistic, particularly considering the cautious approach central bank officials have taken.",
+						Link:         "https://www.cnbc.com/",
+						Date:         time.Now().UTC(),
+						ProviderName: "cnbc",
+					},
+					{
+						ID:           "3",
+						Title:        "Wholesale prices fell 0.5% in October for biggest monthly drop since April 2020",
+						Description:  "Wholesale prices fell 0.5% in October for biggest monthly drop since April 2020",
+						Link:         "https://www.cnbc.com/",
+						Date:         time.Now().UTC(),
+						ProviderName: "cnbc",
+					},
+				},
+			},
+			want: journalist.NewsList{
+				{
+					ID:           "1",
+					Title:        "Ray Dalio says U.S. reaching an inflection point where the debt problem quickly gets even worse",
+					Description:  "Soaring U.S. government debt is reaching a point where it will begin creating larger problems, the hedge fund titan said Friday.",
+					Link:         "https://www.cnbc.com/",
+					Date:         time.Now().UTC(),
+					ProviderName: "cnbc",
+				},
+				{
+					ID:           "3",
+					Title:        "Wholesale prices fell 0.5% in October for biggest monthly drop since April 2020",
+					Description:  "Wholesale prices fell 0.5% in October for biggest monthly drop since April 2020",
+					Link:         "https://www.cnbc.com/",
+					Date:         time.Now().UTC(),
+					ProviderName: "cnbc",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := new(MockTogetherAIClient)
+			defConf := DefaultPromptConfig()
+
+			// Set expectations for the mock client
+			if tt.wantErr {
+				mockError := errors.New("some error")
+				mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(TogetherAIResponse{}, mockError)
+			} else {
+				jsonNews, _ := tt.args.news.ToJSON()
+				expectedJsonNews, _ := tt.want.ToJSON()
+
+				mockClient.On("CreateChatCompletion",
+					mock.Anything,
+					TogetherAIRequest{
+						Model:             "mistralai/Mistral-7B-Instruct-v0.2",
+						Prompt:            defConf.FilterPromptInstruct(jsonNews),
+						MaxTokens:         2048,
+						Temperature:       0.7,
+						TopP:              0.7,
+						TopK:              50,
+						RepetitionPenalty: 1,
+					},
+				).Return(TogetherAIResponse{
+					Choices: []struct {
+						Text string `json:"text"`
+					}{
+						{
+							Text: expectedJsonNews,
+						},
+					},
+				}, nil)
+			}
+
+			c := &Composer{
+				TogetherAIClient: mockClient,
+				Config:           DefaultPromptConfig(),
+			}
+			got, err := c.Filter(tt.args.ctx, tt.args.news)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Filter() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			for i, n := range got {
+				if !reflect.DeepEqual(n, tt.want[i]) {
+					t.Errorf("Filter() = %v, want %v", n, tt.want[i])
+				}
 			}
 		})
 	}

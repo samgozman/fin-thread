@@ -30,7 +30,7 @@ func (a *App) start() {
 		panic(err)
 	}
 
-	composer := NewComposer(a.cnf.env.OpenAiToken)
+	composer := NewComposer(a.cnf.env.OpenAiToken, a.cnf.env.TogetherAIToken)
 
 	marketJournalist := NewJournalist("MarketNews", []NewsProvider{
 		NewRssProvider("benzinga:large-cap", "https://www.benzinga.com/news/large-cap/feed"),
