@@ -21,13 +21,14 @@ type TogetherAIClientInterface interface {
 
 // TogetherAIRequest is a struct that contains options for TogetherAI API requests
 type TogetherAIRequest struct {
-	Model             string  `json:"model"`
-	Prompt            string  `json:"prompt"`
-	MaxTokens         int     `json:"max_tokens"`
-	Temperature       float64 `json:"temperature"`
-	TopP              float64 `json:"top_p"`
-	TopK              int     `json:"top_k"`
-	RepetitionPenalty float64 `json:"repetition_penalty"`
+	Model             string   `json:"model"`
+	Prompt            string   `json:"prompt"`
+	MaxTokens         int      `json:"max_tokens"`
+	Temperature       float64  `json:"temperature"`
+	TopP              float64  `json:"top_p"`
+	TopK              int      `json:"top_k"`
+	RepetitionPenalty float64  `json:"repetition_penalty"`
+	Stop              []string `json:"stop"`
 }
 
 // TogetherAIResponse is a struct that contains response from TogetherAI API

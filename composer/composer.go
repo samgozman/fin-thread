@@ -73,9 +73,9 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 		return nil, newErr(err, "Compose", "OpenAiClient.CreateChatCompletion")
 	}
 
-	matches, err := openaiJSONStringFixer(resp.Choices[0].Message.Content)
+	matches, err := aiJSONStringFixer(resp.Choices[0].Message.Content)
 	if err != nil {
-		return nil, newErr(err, "Compose", "openaiJSONStringFixer")
+		return nil, newErr(err, "Compose", "aiJSONStringFixer")
 	}
 
 	var fullComposedNews []*ComposedNews
@@ -137,9 +137,9 @@ func (c *Composer) Summarise(ctx context.Context, headlines []*Headline, headlin
 		return nil, newErr(err, "Summarise", "OpenAiClient.CreateChatCompletion")
 	}
 
-	matches, err := openaiJSONStringFixer(resp.Choices[0].Message.Content)
+	matches, err := aiJSONStringFixer(resp.Choices[0].Message.Content)
 	if err != nil {
-		return nil, newErr(err, "Summarise", "openaiJSONStringFixer")
+		return nil, newErr(err, "Summarise", "aiJSONStringFixer")
 	}
 
 	var h []*SummarisedHeadline
@@ -175,15 +175,16 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 			TopP:              0.7,
 			TopK:              50,
 			RepetitionPenalty: 1,
+			Stop:              []string{"[/INST]", "</s>"},
 		},
 	)
 	if err != nil {
 		return nil, newErr(err, "Filter", "TogetherAIClient.CreateChatCompletion")
 	}
 
-	matches, err := openaiJSONStringFixer(resp.Choices[0].Text)
+	matches, err := aiJSONStringFixer(resp.Choices[0].Text)
 	if err != nil {
-		return nil, newErr(err, "Filter", "openaiJSONStringFixer")
+		return nil, newErr(err, "Filter", "aiJSONStringFixer")
 	}
 
 	var filtered journalist.NewsList
