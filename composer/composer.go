@@ -157,6 +157,9 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 		return nil, nil
 	}
 
+	// TODO: This can be optimised by using ToContentJSON() method.
+	// But it will require to map the response back to the original news list.
+	// Also prompt can be optimised to return only IDs of the news to reduce tokens count.
 	jsonNews, err := news.ToJSON()
 	if err != nil {
 		return nil, newErr(err, "Filter", "json.Marshal news").WithValue(fmt.Sprintf("%+v", news))
