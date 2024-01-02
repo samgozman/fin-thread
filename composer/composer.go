@@ -157,12 +157,9 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 		return nil, nil
 	}
 
-	// TODO: This can be optimised by using ToContentJSON() method.
-	// But it will require to map the response back to the original news list.
-	// Also prompt can be optimised to return only IDs of the news to reduce tokens count.
-	jsonNews, err := news.ToJSON()
+	jsonNews, err := news.ToContentJSON()
 	if err != nil {
-		return nil, newErr(err, "Filter", "json.Marshal news").WithValue(fmt.Sprintf("%+v", news))
+		return nil, newErr(err, "Filter", "ToContentJSON").WithValue(fmt.Sprintf("%+v", news))
 	}
 
 	resp, err := c.TogetherAIClient.CreateChatCompletion(
@@ -187,10 +184,21 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 		return nil, newErr(err, "Filter", "aiJSONStringFixer")
 	}
 
-	var filtered journalist.NewsList
-	err = json.Unmarshal([]byte(matches), &filtered)
+	var filteredAi journalist.NewsList
+	err = json.Unmarshal([]byte(matches), &filteredAi)
 	if err != nil {
 		return nil, newErr(err, "Filter", "json.Unmarshal").WithValue(resp.Choices[0].Text)
+	}
+
+	// Map AI response back to the original news list
+	var filtered journalist.NewsList
+	for _, n := range news {
+		for _, ai := range filteredAi {
+			if n.ID == ai.ID {
+				filtered = append(filtered, n)
+				break
+			}
+		}
 	}
 
 	return filtered, nil

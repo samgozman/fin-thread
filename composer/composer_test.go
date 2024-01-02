@@ -381,8 +381,8 @@ func TestComposer_Filter(t *testing.T) {
 				mockError := errors.New("some error")
 				mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(TogetherAIResponse{}, mockError)
 			} else {
-				jsonNews, _ := tt.args.news.ToJSON()
-				expectedJsonNews, _ := tt.want.ToJSON()
+				jsonNews, _ := tt.args.news.ToContentJSON()
+				expectedJsonNews, _ := tt.want.ToContentJSON()
 
 				mockClient.On("CreateChatCompletion",
 					mock.Anything,
@@ -394,6 +394,7 @@ func TestComposer_Filter(t *testing.T) {
 						TopP:              0.7,
 						TopK:              50,
 						RepetitionPenalty: 1,
+						Stop:              []string{"[/INST]", "</s>"},
 					},
 				).Return(TogetherAIResponse{
 					Choices: []struct {
