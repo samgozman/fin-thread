@@ -169,7 +169,7 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 	resp, err := c.TogetherAIClient.CreateChatCompletion(
 		ctx,
 		TogetherAIRequest{
-			Model:             "mistralai/Mistral-7B-Instruct-v0.2",
+			Model:             "mistralai/Mixtral-8x7B-Instruct-v0.1",
 			Prompt:            c.Config.FilterPromptInstruct(jsonNews),
 			MaxTokens:         2048,
 			Temperature:       0.7,
