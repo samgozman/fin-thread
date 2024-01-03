@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/google/generative-ai-go/genai"
 	"github.com/sashabaranov/go-openai"
+	"google.golang.org/api/option"
 	"io"
 	"net/http"
 )
@@ -98,4 +100,56 @@ func NewTogetherAI(apiKey string) *TogetherAI {
 		APIKey: apiKey,
 		URL:    "https://api.together.xyz/completions",
 	}
+}
+
+type GoogleGeminiClientInterface interface {
+	CreateChatCompletion(ctx context.Context, req GoogleGeminiRequest) (response *genai.GenerateContentResponse, error error)
+}
+
+// GoogleGeminiRequest is a struct that contains options for Google Gemini API requests
+type GoogleGeminiRequest struct {
+	Prompt      string  `json:"prompt"`
+	MaxTokens   int32   `json:"max_tokens"`
+	Temperature float32 `json:"temperature"`
+	TopP        float32 `json:"top_p"`
+	TopK        int32   `json:"top_k"`
+}
+
+// GoogleGemini is a structure for Google Gemini AI API client
+type GoogleGemini struct {
+	APIKey string
+}
+
+// NewGoogleGemini creates new Google Gemini client
+func NewGoogleGemini(apiKey string) *GoogleGemini {
+	return &GoogleGemini{
+		APIKey: apiKey,
+	}
+}
+
+// CreateChatCompletion creates a new chat completion request to Google Gemini API
+func (g *GoogleGemini) CreateChatCompletion(ctx context.Context, req GoogleGeminiRequest) (response *genai.GenerateContentResponse, error error) {
+	client, err := genai.NewClient(ctx, option.WithAPIKey(g.APIKey))
+	if err != nil {
+		return nil, error
+	}
+	defer func(client *genai.Client) {
+		err := client.Close()
+		if err != nil {
+			return
+		}
+	}(client)
+
+	model := client.GenerativeModel("gemini-pro")
+	model.SetTemperature(req.Temperature)
+	model.SetTopP(req.TopP)
+	model.SetTopK(req.TopK)
+	model.SetMaxOutputTokens(req.MaxTokens)
+
+	resp, err := model.GenerateContent(ctx, genai.Text(req.Prompt))
+	if err != nil {
+		return nil, error
+	}
+
+	return resp, nil
 }

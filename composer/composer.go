@@ -12,20 +12,24 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
+// TODO: refactor Composer to be able to choose provider for each method
+
 // Composer is used to compose (rephrase) news and events, find some meta information about them,
 // filter out some unnecessary stuff, summarise them and so on.
 type Composer struct {
-	OpenAiClient     OpenAiClientInterface
-	TogetherAIClient TogetherAIClientInterface
-	Config           *PromptConfig
+	OpenAiClient       OpenAiClientInterface
+	TogetherAIClient   TogetherAIClientInterface
+	GoogleGeminiClient GoogleGeminiClientInterface
+	Config             *PromptConfig
 }
 
 // NewComposer creates a new Composer instance with OpenAI and TogetherAI clients and default config
-func NewComposer(oaiToken, tgrAiToken string) *Composer {
+func NewComposer(oaiToken, tgrAiToken, geminiToken string) *Composer {
 	return &Composer{
-		OpenAiClient:     openai.NewClient(oaiToken),
-		TogetherAIClient: NewTogetherAI(tgrAiToken),
-		Config:           DefaultPromptConfig(),
+		OpenAiClient:       openai.NewClient(oaiToken),
+		TogetherAIClient:   NewTogetherAI(tgrAiToken),
+		GoogleGeminiClient: NewGoogleGemini(geminiToken),
+		Config:             DefaultPromptConfig(),
 	}
 }
 
