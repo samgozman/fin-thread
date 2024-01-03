@@ -27,9 +27,9 @@ type MockTogetherAIClient struct {
 	mock.Mock
 }
 
-func (m *MockTogetherAIClient) CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (TogetherAIResponse, error) {
+func (m *MockTogetherAIClient) CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (*TogetherAIResponse, error) {
 	args := m.Called(ctx, options)
-	return args.Get(0).(TogetherAIResponse), args.Error(1)
+	return args.Get(0).(*TogetherAIResponse), args.Error(1)
 }
 
 func TestComposer_Compose(t *testing.T) {
@@ -379,7 +379,7 @@ func TestComposer_Filter(t *testing.T) {
 			// Set expectations for the mock client
 			if tt.wantErr {
 				mockError := errors.New("some error")
-				mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(TogetherAIResponse{}, mockError)
+				mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(&TogetherAIResponse{}, mockError)
 			} else {
 				jsonNews, _ := tt.args.news.ToContentJSON()
 				expectedJsonNews, _ := tt.want.ToContentJSON()
@@ -396,7 +396,7 @@ func TestComposer_Filter(t *testing.T) {
 						RepetitionPenalty: 1,
 						Stop:              []string{"[/INST]", "</s>"},
 					},
-				).Return(TogetherAIResponse{
+				).Return(&TogetherAIResponse{
 					Choices: []struct {
 						Text string `json:"text"`
 					}{
