@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/generative-ai-go/genai"
 	"time"
 
 	"github.com/samber/lo"
@@ -166,24 +167,19 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 		return nil, newErr(err, "Filter", "ToContentJSON").WithValue(fmt.Sprintf("%+v", news))
 	}
 
-	resp, err := c.TogetherAIClient.CreateChatCompletion(
-		ctx,
-		TogetherAIRequest{
-			Model:             "mistralai/Mistral-7B-Instruct-v0.2",
-			Prompt:            c.Config.FilterPromptInstruct(jsonNews),
-			MaxTokens:         2048,
-			Temperature:       0.7,
-			TopP:              0.7,
-			TopK:              50,
-			RepetitionPenalty: 1,
-			Stop:              []string{"[/INST]", "</s>"},
-		},
-	)
+	resp, err := c.GoogleGeminiClient.CreateChatCompletion(ctx, GoogleGeminiRequest{
+		Prompt:      c.Config.FilterPromptInstruct(jsonNews),
+		MaxTokens:   2048,
+		Temperature: 0.9,
+		TopP:        1,
+		TopK:        1,
+	})
 	if err != nil {
-		return nil, newErr(err, "Filter", "TogetherAIClient.CreateChatCompletion")
+		return nil, newErr(err, "Filter", "GoogleGeminiClient.CreateChatCompletion")
 	}
 
-	matches, err := aiJSONStringFixer(resp.Choices[0].Text)
+	respString := string(resp.Candidates[0].Content.Parts[0].(genai.Text))
+	matches, err := aiJSONStringFixer(respString)
 	if err != nil {
 		return nil, newErr(err, "Filter", "aiJSONStringFixer")
 	}
@@ -191,7 +187,7 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 	var filteredAi journalist.NewsList
 	err = json.Unmarshal([]byte(matches), &filteredAi)
 	if err != nil {
-		return nil, newErr(err, "Filter", "json.Unmarshal").WithValue(resp.Choices[0].Text)
+		return nil, newErr(err, "Filter", "json.Unmarshal").WithValue(respString)
 	}
 
 	// Map AI response back to the original news list
