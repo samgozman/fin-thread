@@ -417,10 +417,14 @@ func TestComposer_Filter(t *testing.T) {
 				return
 			}
 
-			for i, n := range got {
-				if !reflect.DeepEqual(n, tt.want[i]) {
-					t.Errorf("Filter() = %v, want %v", n, tt.want[i])
-				}
+			if len(got) != len(tt.want) {
+				t.Errorf("Filter() wrong len = %v, want %v", len(got), len(tt.want))
+			}
+
+			gj, _ := got.ToJSON()
+			wj, _ := tt.want.ToJSON()
+			if !reflect.DeepEqual(gj, wj) {
+				t.Errorf("Filter() got = %v, want %v", gj, wj)
 			}
 		})
 	}
