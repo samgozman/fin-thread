@@ -46,7 +46,7 @@ func NewCalendarJob(
 func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 	return func() {
 		_ = retry.Do(func() error {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 			defer cancel()
 			j.logger.Info("[calendar] Running weekly plan")
 
@@ -127,7 +127,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 // RunCalendarUpdatesJob fetches "Actual" values for today's events and publishes updates to the channel.
 func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 		defer cancel()
 
 		tx := sentry.StartTransaction(ctx, "RunCalendarUpdatesJob")
