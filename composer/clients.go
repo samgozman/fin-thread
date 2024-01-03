@@ -58,17 +58,15 @@ type TogetherAI struct {
 }
 
 // CreateChatCompletion creates a new chat completion request to TogetherAI API
-func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (TogetherAIResponse, error) {
-	var response TogetherAIResponse
-
+func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (*TogetherAIResponse, error) {
 	bodyJSON, err := json.Marshal(options)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
 	req, err := http.NewRequest("POST", t.URL, bytes.NewBuffer(bodyJSON))
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+t.APIKey)
@@ -78,7 +76,7 @@ func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherA
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
 	defer func(Body io.ReadCloser) {
@@ -88,12 +86,13 @@ func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherA
 		}
 	}(resp.Body)
 
+	var response TogetherAIResponse
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
-	return response, nil
+	return &response, nil
 }
 
 // NewTogetherAI creates new TogetherAI client
