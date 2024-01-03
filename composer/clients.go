@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/google/generative-ai-go/genai"
 	"github.com/sashabaranov/go-openai"
 	"google.golang.org/api/option"
@@ -131,7 +133,7 @@ func NewGoogleGemini(apiKey string) *GoogleGemini {
 func (g *GoogleGemini) CreateChatCompletion(ctx context.Context, req GoogleGeminiRequest) (response *genai.GenerateContentResponse, error error) {
 	client, err := genai.NewClient(ctx, option.WithAPIKey(g.APIKey))
 	if err != nil {
-		return nil, error
+		return nil, errors.New(fmt.Sprintf("error creating Google Gemini client: %v", err))
 	}
 	defer func(client *genai.Client) {
 		err := client.Close()
@@ -148,7 +150,7 @@ func (g *GoogleGemini) CreateChatCompletion(ctx context.Context, req GoogleGemin
 
 	resp, err := model.GenerateContent(ctx, genai.Text(req.Prompt))
 	if err != nil {
-		return nil, error
+		return nil, errors.New(fmt.Sprintf("error generating content Google Gemini: %v", err))
 	}
 
 	return resp, nil
