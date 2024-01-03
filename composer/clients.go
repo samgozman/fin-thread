@@ -4,7 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/google/generative-ai-go/genai"
 	"github.com/sashabaranov/go-openai"
+	"google.golang.org/api/option"
 	"io"
 	"net/http"
 )
@@ -16,7 +20,7 @@ type OpenAiClientInterface interface {
 
 // TogetherAIClientInterface is an interface for TogetherAI API client
 type TogetherAIClientInterface interface {
-	CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (TogetherAIResponse, error)
+	CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (*TogetherAIResponse, error)
 }
 
 // TogetherAIRequest is a struct that contains options for TogetherAI API requests
@@ -54,17 +58,15 @@ type TogetherAI struct {
 }
 
 // CreateChatCompletion creates a new chat completion request to TogetherAI API
-func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (TogetherAIResponse, error) {
-	var response TogetherAIResponse
-
+func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (*TogetherAIResponse, error) {
 	bodyJSON, err := json.Marshal(options)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
 	req, err := http.NewRequest("POST", t.URL, bytes.NewBuffer(bodyJSON))
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+t.APIKey)
@@ -74,7 +76,7 @@ func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherA
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
 	defer func(Body io.ReadCloser) {
@@ -84,12 +86,13 @@ func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherA
 		}
 	}(resp.Body)
 
+	var response TogetherAIResponse
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
-	return response, nil
+	return &response, nil
 }
 
 // NewTogetherAI creates new TogetherAI client
@@ -98,4 +101,56 @@ func NewTogetherAI(apiKey string) *TogetherAI {
 		APIKey: apiKey,
 		URL:    "https://api.together.xyz/completions",
 	}
+}
+
+type GoogleGeminiClientInterface interface {
+	CreateChatCompletion(ctx context.Context, req GoogleGeminiRequest) (response *genai.GenerateContentResponse, error error)
+}
+
+// GoogleGeminiRequest is a struct that contains options for Google Gemini API requests
+type GoogleGeminiRequest struct {
+	Prompt      string  `json:"prompt"`
+	MaxTokens   int32   `json:"max_tokens"`
+	Temperature float32 `json:"temperature"`
+	TopP        float32 `json:"top_p"`
+	TopK        int32   `json:"top_k"`
+}
+
+// GoogleGemini is a structure for Google Gemini AI API client
+type GoogleGemini struct {
+	APIKey string
+}
+
+// NewGoogleGemini creates new Google Gemini client
+func NewGoogleGemini(apiKey string) *GoogleGemini {
+	return &GoogleGemini{
+		APIKey: apiKey,
+	}
+}
+
+// CreateChatCompletion creates a new chat completion request to Google Gemini API
+func (g *GoogleGemini) CreateChatCompletion(ctx context.Context, req GoogleGeminiRequest) (response *genai.GenerateContentResponse, error error) {
+	client, err := genai.NewClient(ctx, option.WithAPIKey(g.APIKey))
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("error creating Google Gemini client: %v", err))
+	}
+	defer func(client *genai.Client) {
+		err := client.Close()
+		if err != nil {
+			return
+		}
+	}(client)
+
+	model := client.GenerativeModel("gemini-pro")
+	model.SetTemperature(req.Temperature)
+	model.SetTopP(req.TopP)
+	model.SetTopK(req.TopK)
+	model.SetMaxOutputTokens(req.MaxTokens)
+
+	resp, err := model.GenerateContent(ctx, genai.Text(req.Prompt))
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("error generating content Google Gemini: %v", err))
+	}
+
+	return resp, nil
 }

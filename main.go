@@ -26,6 +26,7 @@ func main() {
 			TelegramBotToken:  os.Getenv("TELEGRAM_BOT_TOKEN"),
 			OpenAiToken:       os.Getenv("OPENAI_TOKEN"),
 			TogetherAIToken:   os.Getenv("TOGETHER_AI_TOKEN"),
+			GoogleGeminiToken: os.Getenv("GOOGLE_GEMINI_TOKEN"),
 			PostgresDSN:       os.Getenv("POSTGRES_DSN"),
 			SentryDSN:         os.Getenv("SENTRY_DSN"),
 		}
