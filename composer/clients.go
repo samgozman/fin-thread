@@ -117,6 +117,8 @@ type GoogleGeminiRequest struct {
 }
 
 // GoogleGemini is a structure for Google Gemini AI API client
+// ! https://ai.google.dev/available_regions#available_regions
+// ! Gemini is not available in EU region yet
 type GoogleGemini struct {
 	APIKey string
 }
