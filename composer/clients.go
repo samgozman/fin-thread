@@ -20,7 +20,7 @@ type OpenAiClientInterface interface {
 
 // TogetherAIClientInterface is an interface for TogetherAI API client
 type TogetherAIClientInterface interface {
-	CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (TogetherAIResponse, error)
+	CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (*TogetherAIResponse, error)
 }
 
 // TogetherAIRequest is a struct that contains options for TogetherAI API requests
