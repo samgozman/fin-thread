@@ -13,6 +13,7 @@ import (
 	"github.com/samgozman/fin-thread/publisher"
 	"log/slog"
 	"slices"
+	"strings"
 	"time"
 )
 
@@ -402,7 +403,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 		if job.options.shouldComposeText {
 			formattedText = fmt.Sprintf(
 				"Hash: %s\nProvider: %s\nMeta: %s\n %s",
-				n.Hash, n.ProviderName, n.MetaData.String(), n.ComposedText,
+				n.Hash, n.ProviderName, n.MetaData.String(), formatNewsWithComposedMeta(*n),
 			)
 		} else {
 			formattedText = n.OriginalTitle + "\n" + n.OriginalDesc
@@ -443,6 +444,27 @@ func (job *Job) updateNews(ctx context.Context, dbNews []*models.News) error {
 	}
 
 	return nil
+}
+
+func formatNewsWithComposedMeta(n models.News) string {
+	if n.MetaData == nil {
+		return n.ComposedText
+	}
+
+	var meta composer.ComposedMeta
+	err := json.Unmarshal(n.MetaData, &meta)
+	if err != nil {
+		return n.ComposedText
+	}
+
+	var result string
+	for _, t := range meta.Tickers {
+		result = strings.ReplaceAll(n.ComposedText, t, fmt.Sprintf("[%s](https://short-fork.extr.app/en/%s?utm_source=finthread)", t, t))
+	}
+
+	// TODO: Decide what to do with markets and hashtags
+
+	return result
 }
 
 // JobData holds different types of news data passed between the job functions just for convenience
