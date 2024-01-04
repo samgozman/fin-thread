@@ -43,7 +43,7 @@ func DefaultPromptConfig() *PromptConfig {
 			return fmt.Sprintf(`[INST]You will be given a JSON array of financial news.
 				You need to remove from array blank, purposeless, clickbait, advertising or non-financial news.
 				Most important news right know is inflation, interest rates, war, elections, crisis, unemployment index etc.
-				Always answer in the following JSON format: [{\"ID\":\"\",\"Title\":\"\",\"Description\":\"\",\"Link\":\"\",\"Date\":\"\",\"ProviderName\":\"\"}] or [].
+				Always answer in the following JSON format: [{\"ID\":\"\",\"Title\":\"\",\"Description\":\"\"}] or [].
 				----------------------------------------
 				ONLY JSON IS ALLOWED as an answer. No explanation or other text is allowed.
 				Input:\n%s[/INST]`, newsJson)
