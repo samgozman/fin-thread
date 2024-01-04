@@ -15,7 +15,7 @@ const (
 func DefaultPromptConfig() *PromptConfig {
 	return &PromptConfig{
 		ComposePrompt: `You need to fill some (or none) tickers, markets and hashtags arrays for each news.
-		If news are mentioning some companies and stocks you need to find appropriate stocks 'tickers'. 
+		If news are mentioning some companies and stocks you need to find appropriate stocks 'tickers' (ONLY STOCKS, ignore ETFs and crypto). 
 		If news are about some market events you need to fill 'markets' with some index tickers (like SPY, QQQ, or RUT etc.) based on the context.
 		News context can be also related to some popular topics, we call it 'hashtags'.
 		You only need to choose appropriate hashtag (0-3) only from this list: inflation, interestrates, crisis, unemployment, bankruptcy, dividends, IPO, debt, war, buybacks, fed, AI, crypto, bitcoin.
