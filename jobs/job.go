@@ -457,9 +457,9 @@ func formatNewsWithComposedMeta(n models.News) string {
 		return n.ComposedText
 	}
 
-	var result string
+	result := n.ComposedText
 	for _, t := range meta.Tickers {
-		result = strings.ReplaceAll(n.ComposedText, t, fmt.Sprintf("[%s](https://short-fork.extr.app/en/%s?utm_source=finthread)", t, t))
+		result = strings.ReplaceAll(result, t, fmt.Sprintf("[%s](https://short-fork.extr.app/en/%s?utm_source=finthread)", t, t))
 	}
 
 	// TODO: Decide what to do with markets and hashtags
