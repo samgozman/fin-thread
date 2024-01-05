@@ -79,7 +79,7 @@ func (e *Event) ToHeadline() *composer.Headline {
 	}
 }
 
-func (edb *EventsDB) Create(ctx context.Context, e *Event) error {
+func (edb *EventsDB) Create(ctx context.Context, e []*Event) error {
 	res := edb.Conn.WithContext(ctx).Create(e)
 	if res.Error != nil {
 		return res.Error
