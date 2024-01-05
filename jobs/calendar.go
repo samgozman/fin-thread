@@ -101,19 +101,19 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 				return retry.Unrecoverable(errors.New("publishing error"))
 			}
 
-			// TODO: add create many method to archivist with transaction
+			mappedEvents := make([]*models.Event, len(events))
 			for _, e := range events {
-				ev := mapEventToDB(e, j.publisher.ChannelID, j.providerName)
+				mappedEvents = append(mappedEvents, mapEventToDB(e, j.publisher.ChannelID, j.providerName))
+			}
 
-				span = tx.StartChild("Archivist.CreateEvent")
-				err := j.archivist.Entities.Events.Create(ctx, ev)
-				span.Finish()
-				if err != nil {
-					e := errors.New(fmt.Sprintf("[job-calendar] Error saving event: %v", err))
-					j.logger.Error(e.Error())
-					hub.CaptureException(e)
-					return nil
-				}
+			span = tx.StartChild("Archivist.CreateEvents")
+			err = j.archivist.Entities.Events.Create(ctx, mappedEvents)
+			span.Finish()
+			if err != nil {
+				e := errors.New(fmt.Sprintf("[job-calendar] Error saving events: %v", err))
+				j.logger.Error(e.Error())
+				hub.CaptureException(e)
+				return nil
 			}
 
 			return nil

@@ -348,16 +348,11 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 		}
 	}
 
-	// TODO: add create many method to archivist with transaction
-	for _, n := range dbNews {
-		span := sentry.StartSpan(ctx, "News.Create", sentry.WithTransactionName("Job.saveNews"))
-		err := job.archivist.Entities.News.Create(ctx, n)
-		span.SetTag("news_id", n.ID.String())
-		span.SetTag("news_hash", n.Hash)
-		span.Finish()
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("[Job.saveNews][News.Create]: %v", err))
-		}
+	span := sentry.StartSpan(ctx, "News.Create", sentry.WithTransactionName("Job.saveNews"))
+	err := job.archivist.Entities.News.Create(ctx, dbNews)
+	span.Finish()
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("[Job.saveNews][News.Create]: %v", err))
 	}
 
 	return dbNews, nil

@@ -112,7 +112,7 @@ func (n *News) ToHeadline() *composer.Headline {
 	}
 }
 
-func (db *NewsDB) Create(ctx context.Context, n *News) error {
+func (db *NewsDB) Create(ctx context.Context, n []*News) error {
 	res := db.Conn.WithContext(ctx).Create(&n)
 	if res.Error != nil {
 		return res.Error
