@@ -32,7 +32,7 @@ func Test_formatNewsWithComposedMeta(t *testing.T) {
 					MetaData:     d1,
 				},
 			},
-			want: "Some [AAPL](https://short-fork.extr.app/en/AAPL?utm_source=finthread) news about [AAPL](https://short-fork.extr.app/en/AAPL?utm_source=finthread) stock.",
+			want: "Some [AAPL](https://short-fork.extr.app/en/AAPL?utm_source=finthread) news about AAPL stock.",
 		},
 		{
 			name: "test2",
