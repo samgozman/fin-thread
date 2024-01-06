@@ -38,9 +38,9 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 	f := from.Format("2006-01-02T15:04:05")
 	t := to.Format("2006-01-02T15:04:05")
 	data := strings.NewReader(
-		// importance=9 - high impact
+		// importance=13 - high impact, holidays and medium
 		// currencies=65743 - CHF, EUR, GBP, JPY, USD, CNY, INR
-		fmt.Sprintf("date_mode=1&from=%s&to=%s&importance=9&currencies=65743", f, t),
+		fmt.Sprintf("date_mode=1&from=%s&to=%s&importance=13&currencies=65743", f, t),
 	)
 	req, err := http.NewRequest(http.MethodPost, EconomicCalendarUrl, data)
 	if err != nil {
