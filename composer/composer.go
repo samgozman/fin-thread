@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/samgozman/fin-thread/utils"
+	"strconv"
 	"time"
 
 	"github.com/samber/lo"
@@ -102,6 +103,12 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 					return false
 				}
 			}
+
+			// Remove tickers that starts from numbers
+			if _, err := strconv.Atoi(string(t[0])); err == nil {
+				return false
+			}
+
 			return true
 		})
 
