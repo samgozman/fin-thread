@@ -12,6 +12,11 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
+var (
+	// ProhibitedTickers holds tickers that will be omitted from the news. AI often wrongly uses them in the wrong sections.
+	ProhibitedTickers = []string{"BTC", "ETH", "SPY", "QQQ", "NDX", "ETF", "DJI", "VIX"}
+)
+
 // TODO: refactor Composer to be able to choose provider for each method
 
 // Composer is used to compose (rephrase) news and events, find some meta information about them,
@@ -86,6 +91,18 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 	err = json.Unmarshal([]byte(matches), &fullComposedNews)
 	if err != nil {
 		return nil, newErr(err, "Compose", "json.Unmarshal").WithValue(matches)
+	}
+
+	// Remove prohibited tickers from array
+	for _, n := range fullComposedNews {
+		n.Tickers = lo.Filter(n.Tickers, func(t string, _ int) bool {
+			for _, pt := range ProhibitedTickers {
+				if t == pt {
+					return false
+				}
+			}
+			return true
+		})
 	}
 
 	return fullComposedNews, nil

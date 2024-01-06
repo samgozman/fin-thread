@@ -82,7 +82,7 @@ func TestComposer_Compose(t *testing.T) {
 				{
 					ID:       "1",
 					Text:     "Ray Dalio warns about the soaring U.S. government debt reaching a critical inflection point, potentially leading to larger problems.",
-					Tickers:  []string{},
+					Tickers:  []string{"AAPL"},
 					Markets:  []string{},
 					Hashtags: []string{"debt"},
 				},
