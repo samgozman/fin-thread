@@ -44,8 +44,8 @@ func NewNews(title, description, link, date, provider string) (*News, error) {
 	description = html.UnescapeString(description)
 
 	// Replace Unicode escape sequences (e.g., \u0026)
-	title = replaceUnicodeSymbols(title)
-	description = replaceUnicodeSymbols(description)
+	title = utils.ReplaceUnicodeSymbols(title)
+	description = utils.ReplaceUnicodeSymbols(description)
 
 	if len(description) > 1024 {
 		description = description[:1024]
