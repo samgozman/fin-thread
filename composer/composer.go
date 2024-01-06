@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/samgozman/fin-thread/utils"
 	"time"
 
 	"github.com/samber/lo"
@@ -103,6 +104,11 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 			}
 			return true
 		})
+
+		// Fix unicode symbols in tickers
+		for i, t := range n.Tickers {
+			n.Tickers[i] = utils.ReplaceUnicodeSymbols(t)
+		}
 	}
 
 	return fullComposedNews, nil
