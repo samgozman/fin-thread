@@ -318,10 +318,13 @@ func formatEventUpdate(event *models.Event) string {
 		previousNumber := utils.StrValueToFloat(event.Previous)
 		forecastNumber := utils.StrValueToFloat(event.Forecast)
 
-		if event.Previous != "" && actualNumber != previousNumber {
-			m.WriteString("🔥")
-		} else if event.Forecast != "" && actualNumber != forecastNumber {
-			m.WriteString("🔥")
+		if (event.Previous != "" && actualNumber != previousNumber) ||
+			(event.Forecast != "" && actualNumber != forecastNumber) {
+			if event.Impact == ecal.EconomicCalendarImpactHigh {
+				m.WriteString("🔥")
+			} else {
+				m.WriteString("⚠️")
+			}
 		}
 	}
 
