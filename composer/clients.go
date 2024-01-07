@@ -14,7 +14,7 @@ import (
 
 // OpenAiClientInterface is an interface for OpenAI API client.
 type OpenAiClientInterface interface {
-	CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (response openai.ChatCompletionResponse, error error)
+	CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (response openai.ChatCompletionResponse, err error)
 }
 
 // TogetherAIClientInterface is an interface for TogetherAI API client.
@@ -63,14 +63,13 @@ func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherA
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", t.URL, bytes.NewBuffer(bodyJSON))
+	req, err := http.NewRequestWithContext(ctx, "POST", t.URL, bytes.NewBuffer(bodyJSON))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+t.APIKey)
 	req.Header.Set("Content-Type", "application/json")
-	req.WithContext(ctx)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -103,7 +102,7 @@ func NewTogetherAI(apiKey string) *TogetherAI {
 }
 
 type GoogleGeminiClientInterface interface {
-	CreateChatCompletion(ctx context.Context, req GoogleGeminiRequest) (response *genai.GenerateContentResponse, error error)
+	CreateChatCompletion(ctx context.Context, req GoogleGeminiRequest) (response *genai.GenerateContentResponse, err error)
 }
 
 // GoogleGeminiRequest is a struct that contains options for Google Gemini API requests.
@@ -130,7 +129,7 @@ func NewGoogleGemini(apiKey string) *GoogleGemini {
 }
 
 // CreateChatCompletion creates a new chat completion request to Google Gemini API.
-func (g *GoogleGemini) CreateChatCompletion(ctx context.Context, req GoogleGeminiRequest) (response *genai.GenerateContentResponse, error error) {
+func (g *GoogleGemini) CreateChatCompletion(ctx context.Context, req GoogleGeminiRequest) (response *genai.GenerateContentResponse, err error) {
 	client, err := genai.NewClient(ctx, option.WithAPIKey(g.APIKey))
 	if err != nil {
 		return nil, fmt.Errorf("error creating Google Gemini client: %w", err)

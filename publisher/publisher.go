@@ -10,13 +10,13 @@ type TelegramPublisher struct {
 	BotAPI    *tgbotapi.BotAPI
 }
 
-func NewTelegramPublisher(channelId, token string) (*TelegramPublisher, error) {
+func NewTelegramPublisher(channelID, token string) (*TelegramPublisher, error) {
 	b, e := tgbotapi.NewBotAPI(token)
 	if e != nil {
 		return nil, e
 	}
 	return &TelegramPublisher{
-		ChannelID: channelId,
+		ChannelID: channelID,
 		BotAPI:    b,
 	}, nil
 }

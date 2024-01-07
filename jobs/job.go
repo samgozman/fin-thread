@@ -320,7 +320,6 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 
 	dbNews := make([]*models.News, len(data.News))
 	for i, n := range data.News {
-
 		dbNews[i] = &models.News{
 			Hash:          n.ID,
 			ChannelID:     job.publisher.ChannelID,

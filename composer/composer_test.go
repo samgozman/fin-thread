@@ -18,7 +18,7 @@ type MockOpenAiClient struct {
 	mock.Mock
 }
 
-func (m *MockOpenAiClient) CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (response openai.ChatCompletionResponse, error error) {
+func (m *MockOpenAiClient) CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (response openai.ChatCompletionResponse, err error) {
 	args := m.Called(ctx, req)
 	return args.Get(0).(openai.ChatCompletionResponse), args.Error(1)
 }
