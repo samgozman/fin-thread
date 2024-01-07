@@ -27,6 +27,17 @@ linters-settings:
     min-complexity: 15
   govet:
     check-shadowing: true
+  gomnd:
+    checks:
+      - argument
+      - condition
+      - return
+    ignored-functions:
+      - '^context\.WithTimeout'
+      - '^\.Flush'
+      - '^retry\.Attempts'
+      - '^retry\.Delay'
+      - '^\.Limit'
 
 output:
   format: colored-line-number
