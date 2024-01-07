@@ -21,7 +21,6 @@ linters:
     - tenv
     - unparam
     - whitespace
-    - wsl
 
 linters-settings:
   gocyclo:
