@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -17,7 +16,7 @@ func ParseDate(dateString Datable) (time.Time, error) {
 	case nil:
 		return time.Time{}, nil
 	case string:
-		if dateString.(string) == "" {
+		if dateString == "" {
 			return time.Time{}, nil
 		}
 		// List of potential layouts to try
@@ -39,7 +38,7 @@ func ParseDate(dateString Datable) (time.Time, error) {
 		}
 
 		if parsedTime.IsZero() && err != nil {
-			return time.Time{}, errors.New(fmt.Sprintf("error parsing date: %s", dateString.(string)))
+			return time.Time{}, fmt.Errorf("error parsing date: %s", dateString)
 		}
 
 		return parsedTime.UTC(), err
@@ -51,7 +50,7 @@ func ParseDate(dateString Datable) (time.Time, error) {
 		timestamp = dateString.(int64)
 
 	default:
-		return time.Time{}, errors.New(fmt.Sprintf("unknown type: %T of value %s", dateString, dateString))
+		return time.Time{}, fmt.Errorf("unknown type: %T of value %s", dateString, dateString)
 	}
 
 	if timestamp == 0 {

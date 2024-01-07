@@ -74,7 +74,7 @@ func TestNewNews(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := NewNews(tt.args.title, tt.args.description, tt.args.link, tt.args.date, tt.args.providerName)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewNews() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NewNews() error = %v, wantErr %w", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

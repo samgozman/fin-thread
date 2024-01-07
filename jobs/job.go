@@ -81,7 +81,7 @@ func (job *Job) OmitEmptyMeta(key MetaKey) *Job {
 	case MetaHashtags:
 		job.options.omitEmptyMetaKeys.emptyHashtags = true
 	default:
-		panic(errors.New(fmt.Sprintf("Unknown meta key: %s", key)))
+		panic(fmt.Errorf("unknown meta key: %s", key))
 	}
 	return job
 }
@@ -270,7 +270,7 @@ func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) 
 	exists, err := job.archivist.Entities.News.FindAllByHashes(ctx, hashes)
 	span.Finish()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[Job.removeDuplicates][News.FindAllByHashes]: %v", err))
+		return nil, fmt.Errorf("[Job.removeDuplicates][News.FindAllByHashes]: %w", err)
 	}
 	existedHashes := make([]string, len(exists))
 	for i, n := range exists {
@@ -297,7 +297,7 @@ func (job *Job) composeNews(ctx context.Context, news journalist.NewsList) ([]*c
 	composedNews, err := job.composer.Compose(ctx, news)
 	span.Finish()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[Job.composeNews][composer.Compose]: %v", err))
+		return nil, fmt.Errorf("[Job.composeNews][composer.Compose]: %w", err)
 	}
 
 	return composedNews, nil
@@ -309,7 +309,7 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 	}
 
 	if len(data.News) < len(data.ComposedNews) {
-		return nil, errors.New(fmt.Sprintf("[Job.saveNews]: Composed news count is more than original news count"))
+		return nil, errors.New("[Job.saveNews]: Composed news count is more than original news count")
 	}
 
 	// Map composed news by hash for convenience
@@ -340,7 +340,7 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 				Hashtags: val.Hashtags,
 			})
 			if err != nil {
-				return nil, errors.New(fmt.Sprintf("[Job.saveNews][json.Marshal] meta: %v", err))
+				return nil, fmt.Errorf("[Job.saveNews][json.Marshal] meta: %w", err)
 			}
 
 			dbNews[i].ComposedText = val.Text
@@ -352,7 +352,7 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 	err := job.archivist.Entities.News.Create(ctx, dbNews)
 	span.Finish()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[Job.saveNews][News.Create]: %v", err))
+		return nil, fmt.Errorf("[Job.saveNews][News.Create]: %w", err)
 	}
 
 	return dbNews, nil
@@ -370,7 +370,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 		var meta composer.ComposedMeta
 		err := json.Unmarshal(n.MetaData, &meta)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("[Job.publish][json.Unmarshal] meta: %v. Value: %s", err, n.MetaData))
+			return nil, fmt.Errorf("[Job.publish][json.Unmarshal] meta: %w. Value: %v", err, n.MetaData)
 		}
 
 		// Skip news with empty meta if needed
@@ -407,7 +407,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 		span.Finish()
 
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("[Job.publish][publisher.Publish]: %v", err))
+			return nil, fmt.Errorf("[Job.publish][publisher.Publish]: %w", err)
 		}
 
 		// Save publication data to the entity
@@ -431,7 +431,7 @@ func (job *Job) updateNews(ctx context.Context, dbNews []*models.News) error {
 		err := job.archivist.Entities.News.Update(ctx, n)
 		span.Finish()
 		if err != nil {
-			return errors.New(fmt.Sprintf("[Job.updateNews][News.Update]: %v", err))
+			return fmt.Errorf("[Job.updateNews][News.Update]: %w", err)
 		}
 	}
 

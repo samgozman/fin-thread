@@ -73,7 +73,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 			events, err := j.calendarScavenger.Fetch(ctx, from, to)
 			span.Finish()
 			if err != nil {
-				e := errors.New(fmt.Sprintf("[job-calendar] Error fetching events: %v", err))
+				e := fmt.Errorf("[job-calendar] Error fetching events: %w", err)
 				j.logger.Error(e.Error())
 				hub.CaptureException(e)
 				return nil
@@ -95,7 +95,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 			_, err = j.publisher.Publish(m)
 			span.Finish()
 			if err != nil {
-				e := errors.New(fmt.Sprintf("[job-calendar] Error publishing events: %v", err))
+				e := fmt.Errorf("[job-calendar] Error publishing events: %w", err)
 				j.logger.Error(e.Error())
 				// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
 				return retry.Unrecoverable(errors.New("publishing error"))
@@ -110,7 +110,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 			err = j.archivist.Entities.Events.Create(ctx, mappedEvents)
 			span.Finish()
 			if err != nil {
-				e := errors.New(fmt.Sprintf("[job-calendar] Error saving events: %v", err))
+				e := fmt.Errorf("[job-calendar] Error saving events: %w", err)
 				j.logger.Error(e.Error())
 				hub.CaptureException(e)
 				return nil
@@ -150,7 +150,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		eventsDB, err := j.archivist.Entities.Events.FindRecentEventsWithoutValue(ctx)
 		span.Finish()
 		if err != nil {
-			e := errors.New(fmt.Sprintf("[job-calendar-updates] Error fetching eventsDB: %v", err))
+			e := fmt.Errorf("[job-calendar-updates] Error fetching eventsDB: %w", err)
 			j.logger.Error(e.Error())
 			hub.CaptureException(e)
 			return
@@ -171,7 +171,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		calendarEvents, err := j.calendarScavenger.Fetch(ctx, from, to)
 		span.Finish()
 		if err != nil {
-			e := errors.New(fmt.Sprintf("[job-calendar-updates] Error fetching events from provider: %v", err))
+			e := fmt.Errorf("[job-calendar-updates] Error fetching events from provider: %w", err)
 			j.logger.Error(e.Error())
 			hub.CaptureException(e)
 			return
@@ -225,7 +225,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 			err := j.archivist.Entities.Events.Update(ctx, e)
 			span.Finish()
 			if err != nil {
-				e := errors.New(fmt.Sprintf("[job-calendar-updates] Error updating event: %v", err))
+				e := fmt.Errorf("[job-calendar-updates] Error updating event: %w", err)
 				j.logger.Error(e.Error())
 				hub.CaptureException(e)
 				return
@@ -243,7 +243,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 			_, err := j.publisher.Publish(m)
 			span.Finish()
 			if err != nil {
-				e := errors.New(fmt.Sprintf("[job-calendar-updates] Error publishing event: %v", err))
+				e := fmt.Errorf("[job-calendar-updates] Error publishing event: %w", err)
 				j.logger.Error(e.Error())
 				hub.CaptureException(e)
 				return

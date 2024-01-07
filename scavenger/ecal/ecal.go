@@ -3,7 +3,6 @@ package ecal
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/samgozman/fin-thread/utils"
 	"io"
@@ -23,15 +22,15 @@ type EconomicCalendar struct{}
 // Fetch fetches economics events for the specified period.
 func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (EconomicCalendarEvents, error) {
 	if from.IsZero() || to.IsZero() {
-		return nil, errors.New(fmt.Sprintf("invalid date range: from %v, to %v", from, to))
+		return nil, fmt.Errorf("invalid date range: from %v, to %v", from, to)
 	}
 
 	if from.After(to) {
-		return nil, errors.New(fmt.Sprintf("invalid date range: from %v, to %v", from, to))
+		return nil, fmt.Errorf("invalid date range: from %v, to %v", from, to)
 	}
 
 	if to.Sub(from) > 7*24*time.Hour {
-		return nil, errors.New(fmt.Sprintf("invalid date range (more than 7 days): from %v, to %v", from, to))
+		return nil, fmt.Errorf("invalid date range (more than 7 days): from %v, to %v", from, to)
 	}
 
 	// Create request body with the specified date range
@@ -59,22 +58,22 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 	}
 
 	if res.StatusCode != 200 {
-		return nil, errors.New(fmt.Sprintf("invalid status code error: %d, value %s", res.StatusCode, res.Status))
+		return nil, fmt.Errorf("invalid status code error: %d, value %s", res.StatusCode, res.Status)
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error reading response body: %s", err))
+		return nil, fmt.Errorf("error reading response body: %w", err)
 	}
 	err = res.Body.Close()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error closing response body: %s", err))
+		return nil, fmt.Errorf("error closing response body: %w", err)
 	}
 
 	// Unmarshal the response
 	var mql5Events []mql5Calendar
 	if err := json.Unmarshal(body, &mql5Events); err != nil {
-		return nil, errors.New(fmt.Sprintf("error unmarshalling response body: %s", err))
+		return nil, fmt.Errorf("error unmarshalling response body: %w", err)
 	}
 
 	var events EconomicCalendarEvents
@@ -118,7 +117,7 @@ func parseEvent(event mql5Calendar) (*EconomicCalendarEvent, error) {
 	case "INR":
 		currency = EconomicCalendarINR
 	default:
-		return nil, errors.New(fmt.Sprintf("unknown currency: %s", event.CurrencyCode))
+		return nil, fmt.Errorf("unknown currency: %s", event.CurrencyCode)
 	}
 
 	// Parse country
@@ -188,17 +187,17 @@ func parseEvent(event mql5Calendar) (*EconomicCalendarEvent, error) {
 			impact = EconomicCalendarImpactNone
 		}
 	default:
-		return nil, errors.New(fmt.Sprintf("unknown impact: %s", event.Importance))
+		return nil, fmt.Errorf("unknown impact: %s", event.Importance)
 	}
 
 	// Parse dates
 	dt, err := utils.ParseDate(event.FullDate)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error parsing date: %s, value %s", err, event.FullDate))
+		return nil, fmt.Errorf("error parsing date: %w, value %v", err, event.FullDate)
 	}
 	et, err := utils.ParseDate(event.ReleaseDate)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error parsing date: %s, value %v", err, event.ReleaseDate))
+		return nil, fmt.Errorf("error parsing date: %w, value %v", err, event.ReleaseDate)
 	}
 
 	e := &EconomicCalendarEvent{

@@ -173,7 +173,7 @@ func TestComposer_Compose(t *testing.T) {
 			}
 			got, err := c.Compose(tt.args.ctx, tt.args.news)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Compose() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Compose() error = %v, wantErr %w", err, tt.wantErr)
 				return
 			}
 
@@ -298,7 +298,7 @@ func TestComposer_Summarise(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := c.Summarise(tt.args.ctx, tt.args.headlines, tt.args.headlinesLimit, tt.args.maxTokens)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Summarise() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Summarise() error = %v, wantErr %w", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -413,7 +413,7 @@ func TestComposer_Filter(t *testing.T) {
 			}
 			got, err := c.Filter(tt.args.ctx, tt.args.news)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Filter() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Filter() error = %v, wantErr %w", err, tt.wantErr)
 				return
 			}
 

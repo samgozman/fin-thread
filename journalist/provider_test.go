@@ -53,7 +53,7 @@ func TestRssProvider_Fetch(t *testing.T) {
 			defer cancel()
 			got, err := r.Fetch(ctx, time.Now().AddDate(0, 0, -3))
 			if (err != nil) != tt.wantErr {
-				t.Errorf("RssProvider.Fetch() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("RssProvider.Fetch() error = %v, wantErr %w", err, tt.wantErr)
 				return
 			}
 			for _, news := range got {

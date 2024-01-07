@@ -84,7 +84,7 @@ func Test_ParseDate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := ParseDate(tt.dateString)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("parseDate() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("parseDate() error = %v, wantErr %w", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
