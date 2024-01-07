@@ -101,7 +101,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 				return retry.Unrecoverable(errors.New("publishing error"))
 			}
 
-			mappedEvents := make([]*models.Event, len(events))
+			mappedEvents := make([]*models.Event, 0, len(events))
 			for _, e := range events {
 				mappedEvents = append(mappedEvents, mapEventToDB(e, j.publisher.ChannelID, j.providerName))
 			}
