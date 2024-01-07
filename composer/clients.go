@@ -79,7 +79,7 @@ func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherA
 	}
 
 	defer func(Body io.ReadCloser) {
-		err := Body.Close()
+		err = Body.Close()
 		if err != nil {
 			return
 		}
@@ -136,7 +136,7 @@ func (g *GoogleGemini) CreateChatCompletion(ctx context.Context, req GoogleGemin
 		return nil, fmt.Errorf("error creating Google Gemini client: %w", err)
 	}
 	defer func(client *genai.Client) {
-		err := client.Close()
+		err = client.Close()
 		if err != nil {
 			return
 		}
