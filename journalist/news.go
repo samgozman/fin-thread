@@ -93,7 +93,7 @@ func (n NewsList) ToContentJSON() (string, error) {
 		Description string `json:"description"`
 	}
 
-	var contentNews []*simpleNews
+	contentNews := make([]*simpleNews, 0, len(n))
 	for _, news := range n {
 		contentNews = append(contentNews, &simpleNews{
 			ID:          news.ID,
@@ -143,7 +143,7 @@ func (n NewsList) FlagByKeywords(keywords []string) {
 // MapIDs removes duplicates news by creating a map of ID hashes.
 // Since same news can be fetched from multiple feeds, we need to filter them out.
 func (n NewsList) MapIDs() NewsList {
-	var filteredNews NewsList
+	filteredNews := make(NewsList, 0, len(n))
 
 	// Create a map of news ID to news
 	newsMap := make(map[string]*News)
