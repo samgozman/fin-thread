@@ -1,0 +1,37 @@
+linters:
+  enable:
+    - gofmt
+    - gocyclo
+    - bidichk
+    - decorder
+    - depguard
+    - dupword
+    - errname
+    - errorlint
+    - gci
+    - godot
+    - gomnd
+    - gosec
+    - makezero
+    - misspell
+    - nilnil
+    - noctx
+    - bodyclose
+    - prealloc
+    - predeclared
+    - stylecheck
+    - tenv
+    - unparam
+    - whitespace
+    - wsl
+
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+  govet:
+    check-shadowing: true
+
+output:
+  format: colored-line-number
+  print-issued-lines: false
+  print-linter-name: true
