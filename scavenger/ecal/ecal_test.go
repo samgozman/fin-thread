@@ -72,7 +72,7 @@ func Test_parseEvent(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := parseEvent(tt.event)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("parseEvent() error = %v, wantErr %w", err, tt.wantErr)
+				t.Errorf("parseEvent() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -126,7 +126,7 @@ func TestEconomicCalendar_Fetch(t *testing.T) {
 
 			got, err := c.Fetch(ctx, tt.args.from, tt.args.to)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Fetch() error = %v, wantErr %w", err, tt.wantErr)
+				t.Errorf("Fetch() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			// NOTE: len can be 0 if there are no events for the day with the current filter

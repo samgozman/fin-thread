@@ -56,7 +56,7 @@ func TestJournalist_GetLatestNews(t *testing.T) {
 			defer cancel()
 			got, err := j.GetLatestNews(ctx, time.Now().AddDate(0, 0, -3))
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Journalist.GetLatestNews() error = %v, wantErr %w", err, tt.wantErr)
+				t.Errorf("Journalist.GetLatestNews() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
