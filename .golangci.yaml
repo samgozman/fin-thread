@@ -38,7 +38,10 @@ linters-settings:
       - '^retry\.Attempts'
       - '^retry\.Delay'
       - '^\.Limit'
-
+  gosec:
+    excludes:
+      - G501 # excluded md5 usage error, because it is used only for non-vulnerable hashes for simplicity
+      - G401 # same as above
 output:
   format: colored-line-number
   print-issued-lines: false
