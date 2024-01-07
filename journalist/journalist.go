@@ -58,10 +58,10 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 		id := i
 
 		eg.Go(func() error {
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			c, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 
-			result, err := j.providers[id].Fetch(ctx, until)
+			result, err := j.providers[id].Fetch(c, until)
 			if err != nil {
 				// Use a mutex to safely append errors
 				mu.Lock()
