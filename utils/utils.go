@@ -12,7 +12,7 @@ import (
 func ParseDate(dateString Datable) (time.Time, error) {
 	var timestamp int64
 	// switch type
-	switch dateString.(type) {
+	switch dateString := dateString.(type) {
 	case nil:
 		return time.Time{}, nil
 	case string:
@@ -31,7 +31,7 @@ func ParseDate(dateString Datable) (time.Time, error) {
 		var err error
 
 		for _, layout := range layouts {
-			parsedTime, err = time.Parse(layout, dateString.(string))
+			parsedTime, err = time.Parse(layout, dateString)
 			if err == nil {
 				break
 			}
@@ -43,11 +43,11 @@ func ParseDate(dateString Datable) (time.Time, error) {
 
 		return parsedTime.UTC(), err
 	case int:
-		timestamp = int64(dateString.(int))
+		timestamp = int64(dateString)
 	case int32:
-		timestamp = int64(dateString.(int32))
+		timestamp = int64(dateString)
 	case int64:
-		timestamp = dateString.(int64)
+		timestamp = dateString
 
 	default:
 		return time.Time{}, fmt.Errorf("unknown type: %T of value %s", dateString, dateString)
