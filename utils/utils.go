@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// ParseDate parses a date string into a time.Time object in UTC
+// ParseDate parses a date string into a time.Time object in UTC.
 func ParseDate(dateString Datable) (time.Time, error) {
 	var timestamp int64
 	// switch type
@@ -65,7 +65,7 @@ func ParseDate(dateString Datable) (time.Time, error) {
 	return time.Unix(timestamp, 0).UTC(), nil
 }
 
-// Datable is a type that can be parsed into a date (hopefully)
+// Datable is a type that can be parsed into a date (hopefully).
 type Datable interface{}
 
 func StrValueToFloat(value string) float64 {
@@ -77,7 +77,7 @@ func StrValueToFloat(value string) float64 {
 	return result
 }
 
-// ReplaceUnicodeSymbols replaces Unicode escape sequences with their corresponding characters
+// ReplaceUnicodeSymbols replaces Unicode escape sequences with their corresponding characters.
 func ReplaceUnicodeSymbols(s string) string {
 	// Replace Unicode escape sequences (e.g., \u0026 with &)
 	re := regexp.MustCompile(`\\u([0-9A-Fa-f]{4})`)
