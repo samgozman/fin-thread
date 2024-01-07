@@ -135,8 +135,8 @@ func TestComposer_Compose(t *testing.T) {
 			jsonNews, _ := tt.expectedFilteredNews.ToContentJSON()
 
 			// Break the JSON to test the fix for OpenAI frequent bug (with extra closing bracket and some other stuff)
-			wantNewsJson, _ := json.MarshalIndent(tt.want, "", "  ")
-			wantNewsJson = []byte(fmt.Sprintf("```{%s}```", wantNewsJson))
+			wantNewsJSON, _ := json.MarshalIndent(tt.want, "", "  ")
+			wantNewsJSON = []byte(fmt.Sprintf("```{%s}```", wantNewsJSON))
 
 			mockClient.On("CreateChatCompletion", mock.Anything, openai.ChatCompletionRequest{
 				Model: openai.GPT3Dot5Turbo1106,
@@ -159,7 +159,7 @@ func TestComposer_Compose(t *testing.T) {
 				Choices: []openai.ChatCompletionChoice{
 					{
 						Message: openai.ChatCompletionMessage{
-							Content: string(wantNewsJson),
+							Content: string(wantNewsJSON),
 						},
 					},
 				},
@@ -382,7 +382,7 @@ func TestComposer_Filter(t *testing.T) {
 				mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(&TogetherAIResponse{}, mockError)
 			} else {
 				jsonNews, _ := tt.args.news.ToContentJSON()
-				expectedJsonNews, _ := tt.want.ToContentJSON()
+				expectedJSONNews, _ := tt.want.ToContentJSON()
 
 				mockClient.On("CreateChatCompletion",
 					mock.Anything,
@@ -401,7 +401,7 @@ func TestComposer_Filter(t *testing.T) {
 						Text string `json:"text"`
 					}{
 						{
-							Text: expectedJsonNews,
+							Text: expectedJSONNews,
 						},
 					},
 				}, nil)

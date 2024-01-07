@@ -9,7 +9,7 @@ import (
 func TestRssProvider_Fetch(t *testing.T) {
 	type fields struct {
 		Name string
-		Url  string
+		URL  string
 	}
 	type args struct {
 		ctx context.Context
@@ -24,7 +24,7 @@ func TestRssProvider_Fetch(t *testing.T) {
 			name: "valid rss feed",
 			fields: fields{
 				Name: "test",
-				Url:  "https://www.nasdaq.com/feed/rssoutbound?category=Dividends",
+				URL:  "https://www.nasdaq.com/feed/rssoutbound?category=Dividends",
 			},
 			args: args{
 				ctx: context.Background(),
@@ -35,7 +35,7 @@ func TestRssProvider_Fetch(t *testing.T) {
 			name: "error feed",
 			fields: fields{
 				Name: "test",
-				Url:  "https://google.com/",
+				URL:  "https://google.com/",
 			},
 			args: args{
 				ctx: context.Background(),
@@ -47,7 +47,7 @@ func TestRssProvider_Fetch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &RssProvider{
 				Name: tt.fields.Name,
-				Url:  tt.fields.Url,
+				URL:  tt.fields.URL,
 			}
 			ctx, cancel := context.WithTimeout(tt.args.ctx, 10*time.Second)
 			defer cancel()
