@@ -79,7 +79,7 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 
 	var events EconomicCalendarEvents
 	for _, event := range mql5Events {
-		e, err := parseEvent(&event)
+		e, err := parseEvent(event)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +95,7 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 }
 
 // parseEvent parses a single event from the calendar.
-func parseEvent(event *mql5Calendar) (*EconomicCalendarEvent, error) {
+func parseEvent(event mql5Calendar) (*EconomicCalendarEvent, error) {
 	// Parse currency
 	var currency EconomicCalendarCurrency
 	switch event.CurrencyCode {

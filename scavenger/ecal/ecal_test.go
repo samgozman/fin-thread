@@ -10,13 +10,13 @@ import (
 func Test_parseEvent(t *testing.T) {
 	tests := []struct {
 		name    string
-		event   *mql5Calendar
+		event   mql5Calendar
 		want    *EconomicCalendarEvent
 		wantErr bool
 	}{
 		{
 			name: "case 1 - regular event",
-			event: &mql5Calendar{
+			event: mql5Calendar{
 				ActualValue:   "0.2%",
 				CurrencyCode:  "USD",
 				Country:       840,
@@ -42,7 +42,7 @@ func Test_parseEvent(t *testing.T) {
 		},
 		{
 			name: "case 2 - holiday",
-			event: &mql5Calendar{
+			event: mql5Calendar{
 				ActualValue:   "",
 				CurrencyCode:  "EUR",
 				Country:       999,
