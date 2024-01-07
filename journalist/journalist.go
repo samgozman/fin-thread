@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Journalist is the main struct that fetches the news from all providers and merges them into unified list
+// Journalist is the main struct that fetches the news from all providers and merges them into unified list.
 type Journalist struct {
 	Name       string // Name of the journalist (for logging purposes)
 	providers  []NewsProvider
@@ -17,7 +17,7 @@ type Journalist struct {
 	limitNews  int      // Limit the number of news to fetch from each provider
 }
 
-// NewJournalist creates a new Journalist instance
+// NewJournalist creates a new Journalist instance.
 func NewJournalist(name string, providers []NewsProvider) *Journalist {
 	return &Journalist{
 		Name:      name,
@@ -25,19 +25,19 @@ func NewJournalist(name string, providers []NewsProvider) *Journalist {
 	}
 }
 
-// FlagByKeys sets the keys that will "flag" news that contain them by setting News.IsSuspicious to true
+// FlagByKeys sets the keys that will "flag" news that contain them by setting News.IsSuspicious to true.
 func (j *Journalist) FlagByKeys(flagKeys []string) *Journalist {
 	j.flagKeys = flagKeys
 	return j
 }
 
-// FilterByKeys sets the keys that will remove news that do not contain them
+// FilterByKeys sets the keys that will remove news that do not contain them.
 func (j *Journalist) FilterByKeys(filterKeys []string) *Journalist {
 	j.filterKeys = filterKeys
 	return j
 }
 
-// Limit sets the limit of news to fetch from each provider
+// Limit sets the limit of news to fetch from each provider.
 func (j *Journalist) Limit(limit int) *Journalist {
 	j.limitNews = limit
 	return j

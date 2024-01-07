@@ -30,7 +30,7 @@ type Composer struct {
 	Config             *PromptConfig
 }
 
-// NewComposer creates a new Composer instance with OpenAI and TogetherAI clients and default config
+// NewComposer creates a new Composer instance with OpenAI and TogetherAI clients and default config.
 func NewComposer(oaiToken, tgrAiToken, geminiToken string) *Composer {
 	return &Composer{
 		OpenAiClient:       openai.NewClient(oaiToken),
@@ -238,7 +238,7 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 	return filtered, nil
 }
 
-// Headline is the base data structure for the data to summarise
+// Headline is the base data structure for the data to summarise.
 type Headline struct {
 	ID   string `json:"id"`
 	Text string `json:"text"`

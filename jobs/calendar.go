@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-// CalendarJob is the struct that will fetch calendar events and publish them to the channel
+// CalendarJob is the struct that will fetch calendar events and publish them to the channel.
 type CalendarJob struct {
 	calendarScavenger *ecal.EconomicCalendar       // calendar scavenger that will fetch calendar events
 	publisher         *publisher.TelegramPublisher // publisher that will publish news to the channel
@@ -252,7 +252,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 	}
 }
 
-// formatWeeklyEvents formats events to the text for publishing to the telegram channel
+// formatWeeklyEvents formats events to the text for publishing to the telegram channel.
 func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	// Handle empty events case
 	if len(events) == 0 {

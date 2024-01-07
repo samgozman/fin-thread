@@ -116,7 +116,7 @@ func (edb *EventsDB) FindRecentEventsWithoutValue(ctx context.Context) ([]*Event
 	return events, nil
 }
 
-// FindAllUntilDate finds all events between time.Now until the provided date
+// FindAllUntilDate finds all events between time.Now until the provided date.
 func (edb *EventsDB) FindAllUntilDate(ctx context.Context, until time.Time) ([]*Event, error) {
 	var events []*Event
 	// Where date_time is between now and until

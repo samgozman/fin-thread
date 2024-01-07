@@ -19,7 +19,7 @@ type Archivist struct {
 
 // NewArchivist creates a new Archivist with provided DSN to connect to database.
 //
-// DSN is a string in the format of: "user=gorm password=gorm dbname=gorm port=9920 sslmode=disable"
+// DSN is a string in the format of: "user=gorm password=gorm dbname=gorm port=9920 sslmode=disable".
 func NewArchivist(dsn string) (*Archivist, error) {
 	conn, err := connectToPG(dsn)
 	if err != nil {

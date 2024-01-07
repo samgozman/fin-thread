@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-// Job will be executed by the scheduler and will fetch, compose, publish and save news to the database
+// Job will be executed by the scheduler and will fetch, compose, publish and save news to the database.
 type Job struct {
 	composer   *composer.Composer           // composer that will compose text for the article using OpenAI
 	publisher  *publisher.TelegramPublisher // publisher that will publish news to the channel
@@ -27,7 +27,7 @@ type Job struct {
 	options    *JobOptions                  // job options
 }
 
-// JobOptions holds job options needed for the job execution
+// JobOptions holds job options needed for the job execution.
 type JobOptions struct {
 	until              time.Time       // fetch articles until this date
 	omitSuspicious     bool            // if true, will not publish suspicious articles
@@ -38,7 +38,7 @@ type JobOptions struct {
 	shouldRemoveClones bool            // if true, will remove duplicated news found in the DB. Note: requires shouldSaveToDB to be true
 }
 
-// NewJob creates a new Job instance
+// NewJob creates a new Job instance.
 func NewJob(
 	composer *composer.Composer,
 	publisher *publisher.TelegramPublisher,
@@ -55,20 +55,20 @@ func NewJob(
 	}
 }
 
-// FetchUntil sets the date until which the articles will be fetched
+// FetchUntil sets the date until which the articles will be fetched.
 func (job *Job) FetchUntil(until time.Time) *Job {
 	job.options.until = until
 	return job
 }
 
-// OmitSuspicious sets the flag that will omit suspicious articles
+// OmitSuspicious sets the flag that will omit suspicious articles.
 func (job *Job) OmitSuspicious() *Job {
 	job.options.omitSuspicious = true
 	return job
 }
 
-// OmitEmptyMeta will omit news with empty meta for the given key from composer.ComposedMeta
-// Note: requires ComposeText to be set
+// OmitEmptyMeta will omit news with empty meta for the given key from composer.ComposedMeta.
+// Note: requires ComposeText to be set.
 func (job *Job) OmitEmptyMeta(key MetaKey) *Job {
 	if job.options.omitEmptyMetaKeys == nil {
 		job.options.omitEmptyMetaKeys = &omitKeyOptions{}
@@ -86,35 +86,35 @@ func (job *Job) OmitEmptyMeta(key MetaKey) *Job {
 	return job
 }
 
-// OmitIfAllKeysEmpty will omit articles with empty meta for all keys from composer.ComposedMeta
+// OmitIfAllKeysEmpty will omit articles with empty meta for all keys from composer.ComposedMeta.
 //
 // Example:
 // "{"Markets": [], "Tickers": [], "Hashtags": []}" will be omitted,
-// but "{"Markets": ["SPY"], "Tickers": [], "Hashtags": []}" will not
+// but "{"Markets": ["SPY"], "Tickers": [], "Hashtags": []}" will not.
 func (job *Job) OmitIfAllKeysEmpty() *Job {
 	job.options.omitIfAllKeysEmpty = true
 	return job
 }
 
-// ComposeText sets the flag that will compose text for the article using OpenAI
+// ComposeText sets the flag that will compose text for the article using OpenAI.
 func (job *Job) ComposeText() *Job {
 	job.options.shouldComposeText = true
 	return job
 }
 
-// RemoveClones sets the flag that will remove duplicated news found in the DB
+// RemoveClones sets the flag that will remove duplicated news found in the DB.
 func (job *Job) RemoveClones() *Job {
 	job.options.shouldRemoveClones = true
 	return job
 }
 
-// SaveToDB sets the flag that will save all news to the database
+// SaveToDB sets the flag that will save all news to the database.
 func (job *Job) SaveToDB() *Job {
 	job.options.shouldSaveToDB = true
 	return job
 }
 
-// Run return job function that will be executed by the scheduler
+// Run return job function that will be executed by the scheduler.
 func (job *Job) Run() JobFunc {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
@@ -254,7 +254,7 @@ func (job *Job) Run() JobFunc {
 	}
 }
 
-// removeDuplicates removes duplicated news found in the DB
+// removeDuplicates removes duplicated news found in the DB.
 func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) (journalist.NewsList, error) {
 	if !job.options.shouldRemoveClones || !job.options.shouldSaveToDB {
 		return news, nil
@@ -286,7 +286,7 @@ func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) 
 	return uniqueNews, nil
 }
 
-// composeNews composes text for the article using OpenAI and finds meta
+// composeNews composes text for the article using OpenAI and finds meta.
 func (job *Job) composeNews(ctx context.Context, news journalist.NewsList) ([]*composer.ComposedNews, error) {
 	if !job.options.shouldComposeText {
 		return nil, nil
@@ -358,7 +358,7 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 	return dbNews, nil
 }
 
-// publish publishes the news to the channel
+// publish publishes the news to the channel.
 func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.News, error) {
 	for _, n := range dbNews {
 		// Skip suspicious news if needed
@@ -418,7 +418,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 	return dbNews, nil
 }
 
-// updateNews updates news in the database
+// updateNews updates news in the database.
 func (job *Job) updateNews(ctx context.Context, dbNews []*models.News) error {
 	if !job.options.shouldSaveToDB {
 		return nil
@@ -459,27 +459,27 @@ func formatNewsWithComposedMeta(n models.News) string {
 	return result
 }
 
-// JobData holds different types of news data passed between the job functions just for convenience
+// JobData holds different types of news data passed between the job functions just for convenience.
 type JobData struct {
 	News         journalist.NewsList      // Original news fetched from the journalist
 	ComposedNews []*composer.ComposedNews // Composed news with custom text and meta
 	DBNews       []*models.News           // News entities from/for the database
 }
 
-// JobFunc is a type for job function that will be executed by the scheduler
+// JobFunc is a type for job function that will be executed by the scheduler.
 type JobFunc func()
 
-// MetaKey is a type for meta keys based on the keys from composer.ComposedMeta struct
+// MetaKey is a type for meta keys based on the keys from composer.ComposedMeta struct.
 type MetaKey string
 
-// Based on the composer.ComposedMeta struct keys
+// Based on the composer.ComposedMeta struct keys.
 const (
 	MetaTickers  MetaKey = "Tickers"
 	MetaMarkets  MetaKey = "Markets"
 	MetaHashtags MetaKey = "Hashtags"
 )
 
-// omitKeyOptions holds keys that will omit news if empty. Note: requires JobOptions.shouldComposeText to be true
+// omitKeyOptions holds keys that will omit news if empty. Note: requires JobOptions.shouldComposeText to be true.
 type omitKeyOptions struct {
 	emptyTickers  bool // if true, will omit articles with empty tickers meta from composer.ComposedMeta
 	emptyMarkets  bool // if true, will omit articles with empty markets meta from composer.ComposedMeta

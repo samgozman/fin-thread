@@ -13,17 +13,17 @@ import (
 	"net/http"
 )
 
-// OpenAiClientInterface is an interface for OpenAI API client
+// OpenAiClientInterface is an interface for OpenAI API client.
 type OpenAiClientInterface interface {
 	CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (response openai.ChatCompletionResponse, error error)
 }
 
-// TogetherAIClientInterface is an interface for TogetherAI API client
+// TogetherAIClientInterface is an interface for TogetherAI API client.
 type TogetherAIClientInterface interface {
 	CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (*TogetherAIResponse, error)
 }
 
-// TogetherAIRequest is a struct that contains options for TogetherAI API requests
+// TogetherAIRequest is a struct that contains options for TogetherAI API requests.
 type TogetherAIRequest struct {
 	Model             string   `json:"model"`
 	Prompt            string   `json:"prompt"`
@@ -35,7 +35,7 @@ type TogetherAIRequest struct {
 	Stop              []string `json:"stop"`
 }
 
-// TogetherAIResponse is a struct that contains response from TogetherAI API
+// TogetherAIResponse is a struct that contains response from TogetherAI API.
 type TogetherAIResponse struct {
 	ID      string `json:"id"`
 	Choices []struct {
@@ -51,13 +51,13 @@ type TogetherAIResponse struct {
 	Object  string `json:"object"`
 }
 
-// TogetherAI client to interact with TogetherAI API (replacement for OpenAI API in some cases)
+// TogetherAI client to interact with TogetherAI API (replacement for OpenAI API in some cases).
 type TogetherAI struct {
 	APIKey string
 	URL    string
 }
 
-// CreateChatCompletion creates a new chat completion request to TogetherAI API
+// CreateChatCompletion creates a new chat completion request to TogetherAI API.
 func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (*TogetherAIResponse, error) {
 	bodyJSON, err := json.Marshal(options)
 	if err != nil {
@@ -95,7 +95,7 @@ func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherA
 	return &response, nil
 }
 
-// NewTogetherAI creates new TogetherAI client
+// NewTogetherAI creates new TogetherAI client.
 func NewTogetherAI(apiKey string) *TogetherAI {
 	return &TogetherAI{
 		APIKey: apiKey,
@@ -107,7 +107,7 @@ type GoogleGeminiClientInterface interface {
 	CreateChatCompletion(ctx context.Context, req GoogleGeminiRequest) (response *genai.GenerateContentResponse, error error)
 }
 
-// GoogleGeminiRequest is a struct that contains options for Google Gemini API requests
+// GoogleGeminiRequest is a struct that contains options for Google Gemini API requests.
 type GoogleGeminiRequest struct {
 	Prompt      string  `json:"prompt"`
 	MaxTokens   int32   `json:"max_tokens"`
@@ -116,21 +116,21 @@ type GoogleGeminiRequest struct {
 	TopK        int32   `json:"top_k"`
 }
 
-// GoogleGemini is a structure for Google Gemini AI API client
+// GoogleGemini is a structure for Google Gemini AI API client.
 // ! https://ai.google.dev/available_regions#available_regions
-// ! Gemini is not available in EU region yet
+// ! Gemini is not available in EU region yet.
 type GoogleGemini struct {
 	APIKey string
 }
 
-// NewGoogleGemini creates new Google Gemini client
+// NewGoogleGemini creates new Google Gemini client.
 func NewGoogleGemini(apiKey string) *GoogleGemini {
 	return &GoogleGemini{
 		APIKey: apiKey,
 	}
 }
 
-// CreateChatCompletion creates a new chat completion request to Google Gemini API
+// CreateChatCompletion creates a new chat completion request to Google Gemini API.
 func (g *GoogleGemini) CreateChatCompletion(ctx context.Context, req GoogleGeminiRequest) (response *genai.GenerateContentResponse, error error) {
 	client, err := genai.NewClient(ctx, option.WithAPIKey(g.APIKey))
 	if err != nil {

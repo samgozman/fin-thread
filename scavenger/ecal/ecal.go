@@ -17,10 +17,10 @@ const (
 	EconomicCalendarUrl = "https://www.mql5.com/en/economic-calendar/content"
 )
 
-// EconomicCalendar is the struct for economics calendar fetcher
+// EconomicCalendar is the struct for economics calendar fetcher.
 type EconomicCalendar struct{}
 
-// Fetch fetches economics events for the specified period
+// Fetch fetches economics events for the specified period.
 func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (EconomicCalendarEvents, error) {
 	if from.IsZero() || to.IsZero() {
 		return nil, errors.New(fmt.Sprintf("invalid date range: from %v, to %v", from, to))
@@ -94,7 +94,7 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 	return events, nil
 }
 
-// parseEvent parses a single event from the calendar
+// parseEvent parses a single event from the calendar.
 func parseEvent(event *mql5Calendar) (*EconomicCalendarEvent, error) {
 	// Parse currency
 	var currency EconomicCalendarCurrency
@@ -216,7 +216,7 @@ func parseEvent(event *mql5Calendar) (*EconomicCalendarEvent, error) {
 	return e, nil
 }
 
-// EconomicCalendarCurrency impacted currencies(economic markets) by the event
+// EconomicCalendarCurrency impacted currencies(economic markets) by the event.
 type EconomicCalendarCurrency = string
 
 const (
@@ -283,7 +283,7 @@ var EconomicCalendarCountryHashtag = map[EconomicCalendarCountry]string{
 	EconomicCalendarUnitedStates:  "usa",
 }
 
-// EconomicCalendarCountryEmoji is the map of country code to emoji symbol
+// EconomicCalendarCountryEmoji is the map of country code to emoji symbol.
 var EconomicCalendarCountryEmoji = map[EconomicCalendarCountry]string{
 	EconomicCalendarAustralia:     "🇦🇺",
 	EconomicCalendarBrazil:        "🇧🇷",
@@ -309,7 +309,7 @@ var EconomicCalendarCountryEmoji = map[EconomicCalendarCountry]string{
 	EconomicCalendarUnitedStates:  "🇺🇸",
 }
 
-// EconomicCalendarImpact impact of the event on the market (low, medium, high, holiday, none)
+// EconomicCalendarImpact impact of the event on the market (low, medium, high, holiday, none).
 type EconomicCalendarImpact = string
 
 const (
@@ -320,7 +320,7 @@ const (
 	EconomicCalendarImpactNone    EconomicCalendarImpact = "None"     // No impact event
 )
 
-// EconomicCalendarEvent is the struct for economics calendar event object
+// EconomicCalendarEvent is the struct for economics calendar event object.
 type EconomicCalendarEvent struct {
 	DateTime  time.Time                // Date of the event
 	EventTime time.Time                // Time of the event (if available)
@@ -333,7 +333,7 @@ type EconomicCalendarEvent struct {
 	Previous  string                   // Previous value of the event (if available)
 }
 
-// MQL5 calendar event object
+// MQL5 calendar event object.
 type mql5Calendar struct {
 	Id               int         `json:"Id"`
 	EventType        int         `json:"EventType"`
@@ -356,10 +356,10 @@ type mql5Calendar struct {
 	FullDate         string      `json:"FullDate"`
 }
 
-// EconomicCalendarEvents is the slice of economics calendar events
+// EconomicCalendarEvents is the slice of economics calendar events.
 type EconomicCalendarEvents []*EconomicCalendarEvent
 
-// FilterByDateRange filters events by date range, returns new slice
+// FilterByDateRange filters events by date range, returns new slice.
 func (e EconomicCalendarEvents) FilterByDateRange(from, to time.Time) EconomicCalendarEvents {
 	var filtered EconomicCalendarEvents
 	for _, v := range e {
@@ -370,14 +370,14 @@ func (e EconomicCalendarEvents) FilterByDateRange(from, to time.Time) EconomicCa
 	return filtered
 }
 
-// SortByDate sorts events by date (ascending)
+// SortByDate sorts events by date (ascending).
 func (e EconomicCalendarEvents) SortByDate() {
 	sort.Slice(e, func(i, j int) bool {
 		return e[i].DateTime.Before(e[j].DateTime)
 	})
 }
 
-// Distinct removes duplicates from the slice
+// Distinct removes duplicates from the slice.
 func (e EconomicCalendarEvents) Distinct() EconomicCalendarEvents {
 	var distinct EconomicCalendarEvents
 	seen := make(map[string]bool)
@@ -391,7 +391,7 @@ func (e EconomicCalendarEvents) Distinct() EconomicCalendarEvents {
 	return distinct
 }
 
-// HasActualEvents checks if there are any events with EconomicCalendarEvent.Actual values
+// HasActualEvents checks if there are any events with EconomicCalendarEvent.Actual values.
 func (e EconomicCalendarEvents) HasActualEvents() bool {
 	for _, v := range e {
 		if v.Actual != "" {

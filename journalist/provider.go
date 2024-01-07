@@ -7,18 +7,18 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
-// NewsProvider is the interface for the data fetcher (via RSS, API, etc.)
+// NewsProvider is the interface for the data fetcher (via RSS, API, etc.).
 type NewsProvider interface {
 	Fetch(ctx context.Context, until time.Time) (NewsList, error)
 }
 
-// RssProvider is the RSS provider implementation
+// RssProvider is the RSS provider implementation.
 type RssProvider struct {
 	Name string // Name is used for logging purposes
 	Url  string
 }
 
-// NewRssProvider creates a new RssProvider instance
+// NewRssProvider creates a new RssProvider instance.
 func NewRssProvider(name, url string) *RssProvider {
 	return &RssProvider{
 		Name: name,
@@ -26,7 +26,7 @@ func NewRssProvider(name, url string) *RssProvider {
 	}
 }
 
-// Fetch fetches the news from the RSS feed until the given date
+// Fetch fetches the news from the RSS feed until the given date.
 func (r *RssProvider) Fetch(ctx context.Context, until time.Time) (NewsList, error) {
 	fp := gofeed.NewParser()
 	feed, err := fp.ParseURLWithContext(r.Url, ctx)

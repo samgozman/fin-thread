@@ -76,7 +76,7 @@ func (n *News) Contains(keywords []string) bool {
 
 type NewsList []*News
 
-// ToJSON returns the JSON of the news list
+// ToJSON returns the JSON of the news list.
 func (n NewsList) ToJSON() (string, error) {
 	jsonData, err := json.Marshal(n)
 	if err != nil {
@@ -85,7 +85,7 @@ func (n NewsList) ToJSON() (string, error) {
 	return string(jsonData), nil
 }
 
-// ToContentJSON returns the JSON of the news content only: id, title, description
+// ToContentJSON returns the JSON of the news content only: id, title, description.
 func (n NewsList) ToContentJSON() (string, error) {
 	type simpleNews struct {
 		ID          string `json:"id"`
@@ -109,7 +109,7 @@ func (n NewsList) ToContentJSON() (string, error) {
 	return string(jsonData), nil
 }
 
-// FindById finds news by its hash id (URL + title + description + date)
+// FindById finds news by its hash id (URL + title + description + date).
 func (n NewsList) FindById(id string) *News {
 	for _, news := range n {
 		if news.ID == id {
@@ -119,7 +119,7 @@ func (n NewsList) FindById(id string) *News {
 	return nil
 }
 
-// FilterByKeywords returns only a list of news that contains at least one of the keywords
+// FilterByKeywords returns only a list of news that contains at least one of the keywords.
 func (n NewsList) FilterByKeywords(keywords []string) NewsList {
 	var filteredNews NewsList
 	for _, n := range n {
@@ -131,7 +131,7 @@ func (n NewsList) FilterByKeywords(keywords []string) NewsList {
 	return filteredNews
 }
 
-// FlagByKeywords sets IsSuspicious to true if the news contains at least one of the keywords
+// FlagByKeywords sets IsSuspicious to true if the news contains at least one of the keywords.
 func (n NewsList) FlagByKeywords(keywords []string) {
 	for _, news := range n {
 		if news.Contains(keywords) {

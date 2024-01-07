@@ -78,7 +78,7 @@ func (n *News) Validate() error {
 	return nil
 }
 
-// GenerateHash generates the hash of the news (URL + title + description + date)
+// GenerateHash generates the hash of the news (URL + title + description + date).
 func (n *News) GenerateHash() {
 	h := md5.Sum([]byte(n.URL + n.OriginalTitle + n.OriginalDesc + n.OriginalDate.String()))
 	n.Hash = hex.EncodeToString(h[:])
@@ -130,7 +130,7 @@ func (db *NewsDB) Update(ctx context.Context, n *News) error {
 	return nil
 }
 
-// FindAllByHashes finds news by its hash (URL + title + description + date)
+// FindAllByHashes finds news by its hash (URL + title + description + date).
 func (db *NewsDB) FindAllByHashes(ctx context.Context, hashes []string) ([]*News, error) {
 	var n []*News
 	res := db.Conn.WithContext(ctx).Where("hash IN ?", hashes).Find(&n)
@@ -141,7 +141,7 @@ func (db *NewsDB) FindAllByHashes(ctx context.Context, hashes []string) ([]*News
 	return n, nil
 }
 
-// FindAllUntilDate finds all news until the provided published date
+// FindAllUntilDate finds all news until the provided published date.
 func (db *NewsDB) FindAllUntilDate(ctx context.Context, until time.Time) ([]*News, error) {
 	var n []*News
 	res := db.Conn.WithContext(ctx).Where("published_at >= ?", until).Find(&n)

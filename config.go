@@ -1,6 +1,6 @@
 package main
 
-// Env is a structure that holds all the environment variables that are used in the app
+// Env is a structure that holds all the environment variables that are used in the app.
 type Env struct {
 	TelegramChannelID string `mapstructure:"TELEGRAM_CHANNEL_ID"`
 	TelegramBotToken  string `mapstructure:"TELEGRAM_BOT_TOKEN"`
@@ -17,14 +17,14 @@ type Config struct {
 	filterKeys         []string // Used to remove news by the journalist.Journalist if they don't contain any of these keys
 }
 
-// NewConfig creates a new Config object with the given Env and default values from DefaultConfig
+// NewConfig creates a new Config object with the given Env and default values from DefaultConfig.
 func NewConfig(env *Env) *Config {
 	c := DefaultConfig()
 	c.env = env
 	return c
 }
 
-// DefaultConfig creates a new Config object with default values
+// DefaultConfig creates a new Config object with default values.
 func DefaultConfig() *Config {
 	return &Config{
 		env: &Env{},
