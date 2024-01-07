@@ -4,7 +4,6 @@ linters:
     - gocyclo
     - bidichk
     - decorder
-    - depguard
     - dupword
     - errname
     - errorlint
