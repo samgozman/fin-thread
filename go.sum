@@ -36,8 +36,8 @@ github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nos
 github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=
 github.com/getsentry/sentry-go v0.25.0 h1:q6Eo+hS+yoJlTO3uu/azhQadsD8V+jQn2D8VvX1eOyI=
 github.com/getsentry/sentry-go v0.25.0/go.mod h1:lc76E2QywIyW8WuBnwl8Lc4bkmQH4+w1gwTf25trprY=
-github.com/go-co-op/gocron/v2 v2.1.1 h1:vQPaVzCFUbfNTKjLYPCUiLlgE3mJ78XfYCo+CTfutHs=
-github.com/go-co-op/gocron/v2 v2.1.1/go.mod h1:0MfNAXEchzeSH1vtkZrTAcSMWqyL435kL6CA4b0bjrg=
+github.com/go-co-op/gocron/v2 v2.1.2 h1:+6tTOA9aBaKXpDWExw07hYoGEBzT+4CkGSVAiJ7WSXs=
+github.com/go-co-op/gocron/v2 v2.1.2/go.mod h1:0MfNAXEchzeSH1vtkZrTAcSMWqyL435kL6CA4b0bjrg=
 github.com/go-errors/errors v1.4.2 h1:J6MZopCL4uSllY1OfXM374weqZFFItUbrImctkmUxIA=
 github.com/go-errors/errors v1.4.2/go.mod h1:sIVyrIiJhuEF+Pj9Ebtd6P/rEYROXFi3BopGUQ5a5Og=
 github.com/go-sql-driver/mysql v1.7.0/go.mod h1:OXbVy3sEdcQ2Doequ6Z5BW6fXNQTmx+9S1MCJN5yJMI=
