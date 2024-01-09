@@ -249,9 +249,15 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 			}
 		}
 
-		// Publish eventsDB to the channel
+		// Group events by country
+		eventsByCountry := make(map[ecal.EconomicCalendarCountry][]*models.Event)
 		for _, e := range updatedEventsDB {
-			m := formatEventUpdate(e)
+			eventsByCountry[e.Country] = append(eventsByCountry[e.Country], e)
+		}
+
+		// Publish eventsDB to the channel
+		for country, events := range eventsByCountry {
+			m := formatEventUpdate(country, events)
 			if m == "" {
 				continue
 			}
@@ -323,62 +329,70 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	return m.String()
 }
 
-func formatEventUpdate(event *models.Event) string {
+func formatEventUpdate(country ecal.EconomicCalendarCountry, events []*models.Event) string {
 	// Handle nil event case
-	if event == nil {
+	if len(events) == 0 {
 		return ""
 	}
 
 	// Initialize message string
 	var m strings.Builder
 
-	// Check if the event has a previous value or a forecast value
-	if event.Previous != "" || event.Forecast != "" {
-		actualNumber := utils.StrValueToFloat(event.Actual)
-
-		// Check for a change in actual value compared to previous value or forecast value
-		previousNumber := utils.StrValueToFloat(event.Previous)
-		forecastNumber := utils.StrValueToFloat(event.Forecast)
-
-		if (event.Previous != "" && actualNumber != previousNumber) ||
-			(event.Forecast != "" && actualNumber != forecastNumber) {
-			if event.Impact == ecal.EconomicCalendarImpactHigh {
-				m.WriteString("🔥")
-			} else {
-				m.WriteString("⚠️")
-			}
-		}
-	}
-
 	// Add country emoji and hashtag
-	country := ecal.EconomicCalendarCountryEmoji[event.Country]
-	countryHashtag := ecal.EconomicCalendarCountryHashtag[event.Country]
-	m.WriteString(fmt.Sprintf("%s #%s\n", country, countryHashtag))
+	countryEmoji := ecal.EconomicCalendarCountryEmoji[country]
+	countryHashtag := ecal.EconomicCalendarCountryHashtag[country]
+	m.WriteString(fmt.Sprintf("%s #%s\n", countryEmoji, countryHashtag))
 
-	// Add event title and actual value in bold
-	m.WriteString(fmt.Sprintf("%s: *%s*", event.Title, event.Actual))
+	// Iterate through events
+	for i, event := range events {
+		// Add new line between events
+		if i > 0 {
+			m.WriteString("\n")
+		}
 
-	// For non-percentage events, add percentage change from previous value
-	if event.Previous != "" && !strings.Contains(event.Previous, "%") {
-		actualNumber := utils.StrValueToFloat(event.Actual)
-		previousNumber := utils.StrValueToFloat(event.Previous)
-		p := ((actualNumber / previousNumber) - 1) * 100
+		// Check if the event has a previous value or a forecast value
+		if event.Previous != "" || event.Forecast != "" {
+			actualNumber := utils.StrValueToFloat(event.Actual)
 
-		if p != math.Inf(1) && p != math.Inf(-1) {
-			if p > 0 {
-				m.WriteString(fmt.Sprintf(" (+%.2f%%)", p))
-			} else {
-				m.WriteString(fmt.Sprintf(" (%.2f%%)", p))
+			// Check for a change in actual value compared to previous value or forecast value
+			previousNumber := utils.StrValueToFloat(event.Previous)
+			forecastNumber := utils.StrValueToFloat(event.Forecast)
+
+			if (event.Previous != "" && actualNumber != previousNumber) ||
+				(event.Forecast != "" && actualNumber != forecastNumber) {
+				if event.Impact == ecal.EconomicCalendarImpactHigh {
+					m.WriteString("🔥 ")
+				} else {
+					m.WriteString("⚠️ ")
+				}
 			}
 		}
-	}
 
-	// Print forecast and previous values if they are not empty
-	if event.Forecast != "" {
-		m.WriteString(fmt.Sprintf(", forecast: %s", event.Forecast))
-	}
-	if event.Previous != "" {
-		m.WriteString(fmt.Sprintf(", last: %s", event.Previous))
+		// Add event title and actual value in bold
+		m.WriteString(fmt.Sprintf("%s: *%s*", event.Title, event.Actual))
+
+		// For non-percentage events, add percentage change from previous value
+		if event.Previous != "" && !strings.Contains(event.Previous, "%") {
+			actualNumber := utils.StrValueToFloat(event.Actual)
+			previousNumber := utils.StrValueToFloat(event.Previous)
+			p := ((actualNumber / previousNumber) - 1) * 100
+
+			if p != math.Inf(1) && p != math.Inf(-1) {
+				if p > 0 {
+					m.WriteString(fmt.Sprintf(" (+%.2f%%)", p))
+				} else {
+					m.WriteString(fmt.Sprintf(" (%.2f%%)", p))
+				}
+			}
+		}
+
+		// Print forecast and previous values if they are not empty
+		if event.Forecast != "" {
+			m.WriteString(fmt.Sprintf(", forecast: %s", event.Forecast))
+		}
+		if event.Previous != "" {
+			m.WriteString(fmt.Sprintf(", last: %s", event.Previous))
+		}
 	}
 
 	return m.String()

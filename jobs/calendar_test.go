@@ -189,7 +189,8 @@ func Test_mapEventToDB(t *testing.T) {
 
 func Test_formatEventUpdate(t *testing.T) {
 	type args struct {
-		event *models.Event
+		country ecal.EconomicCalendarCountry
+		events  []*models.Event
 	}
 	tests := []struct {
 		name string
@@ -199,29 +200,35 @@ func Test_formatEventUpdate(t *testing.T) {
 		{
 			name: "case 1 - event with previous value",
 			args: args{
-				event: &models.Event{
-					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
-					Country:  ecal.EconomicCalendarUnitedStates,
-					Currency: ecal.EconomicCalendarUSD,
-					Impact:   ecal.EconomicCalendarImpactHigh,
-					Title:    "CPI Announcement",
-					Actual:   "2.9%",
-					Forecast: "2.9%",
-					Previous: "2.8%",
+				country: ecal.EconomicCalendarUnitedStates,
+				events: []*models.Event{
+					{
+						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+						Country:  ecal.EconomicCalendarUnitedStates,
+						Currency: ecal.EconomicCalendarUSD,
+						Impact:   ecal.EconomicCalendarImpactHigh,
+						Title:    "CPI Announcement",
+						Actual:   "2.9%",
+						Forecast: "2.9%",
+						Previous: "2.8%",
+					},
 				},
 			},
-			want: "🔥🇺🇸 #usa\nCPI Announcement: *2.9%*, forecast: 2.9%, last: 2.8%",
+			want: "🇺🇸 #usa\n🔥 CPI Announcement: *2.9%*, forecast: 2.9%, last: 2.8%",
 		},
 		{
 			name: "case 2 - event without previous value or forecast",
 			args: args{
-				event: &models.Event{
-					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
-					Country:  ecal.EconomicCalendarEuropeanUnion,
-					Currency: ecal.EconomicCalendarEUR,
-					Impact:   ecal.EconomicCalendarImpactHigh,
-					Title:    "EU is strongly concerned score",
-					Actual:   "1.3%",
+				country: ecal.EconomicCalendarEuropeanUnion,
+				events: []*models.Event{
+					{
+						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+						Country:  ecal.EconomicCalendarEuropeanUnion,
+						Currency: ecal.EconomicCalendarEUR,
+						Impact:   ecal.EconomicCalendarImpactHigh,
+						Title:    "EU is strongly concerned score",
+						Actual:   "1.3%",
+					},
 				},
 			},
 			want: "🇪🇺 #europe\nEU is strongly concerned score: *1.3%*",
@@ -229,71 +236,112 @@ func Test_formatEventUpdate(t *testing.T) {
 		{
 			name: "case 3 - with multiplier",
 			args: args{
-				event: &models.Event{
-					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
-					Country:  ecal.EconomicCalendarUnitedStates,
-					Currency: ecal.EconomicCalendarUSD,
-					Impact:   ecal.EconomicCalendarImpactHigh,
-					Title:    "Home sales",
-					Actual:   "4.5 M",
-					Forecast: "4.25 M",
-					Previous: "4.0 M",
+				country: ecal.EconomicCalendarUnitedStates,
+				events: []*models.Event{
+					{
+						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+						Country:  ecal.EconomicCalendarUnitedStates,
+						Currency: ecal.EconomicCalendarUSD,
+						Impact:   ecal.EconomicCalendarImpactHigh,
+						Title:    "Home sales",
+						Actual:   "4.5 M",
+						Forecast: "4.25 M",
+						Previous: "4.0 M",
+					},
 				},
 			},
-			want: "🔥🇺🇸 #usa\nHome sales: *4.5 M* (+12.50%), forecast: 4.25 M, last: 4.0 M",
+			want: "🇺🇸 #usa\n🔥 Home sales: *4.5 M* (+12.50%), forecast: 4.25 M, last: 4.0 M",
 		},
 		{
 			name: "case 4 - with multiplier and negative value",
 			args: args{
-				event: &models.Event{
-					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
-					Country:  ecal.EconomicCalendarUnitedStates,
-					Currency: ecal.EconomicCalendarUSD,
-					Impact:   ecal.EconomicCalendarImpactHigh,
-					Title:    "Home sales",
-					Actual:   "4.0 M",
-					Forecast: "4.25 M",
-					Previous: "4.5 M",
+				country: ecal.EconomicCalendarUnitedStates,
+				events: []*models.Event{
+					{
+						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+						Country:  ecal.EconomicCalendarUnitedStates,
+						Currency: ecal.EconomicCalendarUSD,
+						Impact:   ecal.EconomicCalendarImpactHigh,
+						Title:    "Home sales",
+						Actual:   "4.0 M",
+						Forecast: "4.25 M",
+						Previous: "4.5 M",
+					},
 				},
 			},
-			want: "🔥🇺🇸 #usa\nHome sales: *4.0 M* (-11.11%), forecast: 4.25 M, last: 4.5 M",
+			want: "🇺🇸 #usa\n🔥 Home sales: *4.0 M* (-11.11%), forecast: 4.25 M, last: 4.5 M",
 		},
 		{
 			name: "case 5 - with zero values",
 			args: args{
-				event: &models.Event{
-					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
-					Country:  ecal.EconomicCalendarUnitedStates,
-					Currency: ecal.EconomicCalendarUSD,
-					Impact:   ecal.EconomicCalendarImpactHigh,
-					Title:    "Home sales",
-					Actual:   "2 M",
-					Forecast: "1 M",
-					Previous: "0 M",
+				country: ecal.EconomicCalendarUnitedStates,
+				events: []*models.Event{
+					{
+						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+						Country:  ecal.EconomicCalendarUnitedStates,
+						Currency: ecal.EconomicCalendarUSD,
+						Impact:   ecal.EconomicCalendarImpactHigh,
+						Title:    "Home sales",
+						Actual:   "2 M",
+						Forecast: "1 M",
+						Previous: "0 M",
+					},
 				},
 			},
-			want: "🔥🇺🇸 #usa\nHome sales: *2 M*, forecast: 1 M, last: 0 M",
+			want: "🇺🇸 #usa\n🔥 Home sales: *2 M*, forecast: 1 M, last: 0 M",
 		},
 		{
 			name: "case 6 - with medium impact event",
 			args: args{
-				event: &models.Event{
-					DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
-					Country:  ecal.EconomicCalendarUnitedStates,
-					Currency: ecal.EconomicCalendarUSD,
-					Impact:   ecal.EconomicCalendarImpactMedium,
-					Title:    "CPI Announcement",
-					Actual:   "2.9%",
-					Forecast: "2.9%",
-					Previous: "2.8%",
+				country: ecal.EconomicCalendarUnitedStates,
+				events: []*models.Event{
+					{
+						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+						Country:  ecal.EconomicCalendarUnitedStates,
+						Currency: ecal.EconomicCalendarUSD,
+						Impact:   ecal.EconomicCalendarImpactMedium,
+						Title:    "CPI Announcement",
+						Actual:   "2.9%",
+						Forecast: "2.9%",
+						Previous: "2.8%",
+					},
 				},
 			},
-			want: "⚠️🇺🇸 #usa\nCPI Announcement: *2.9%*, forecast: 2.9%, last: 2.8%",
+			want: "🇺🇸 #usa\n⚠️ CPI Announcement: *2.9%*, forecast: 2.9%, last: 2.8%",
+		},
+		{
+			name: "case 7 - with grouped events",
+			args: args{
+				country: ecal.EconomicCalendarUnitedStates,
+				events: []*models.Event{
+					{
+						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+						Country:  ecal.EconomicCalendarUnitedStates,
+						Currency: ecal.EconomicCalendarUSD,
+						Impact:   ecal.EconomicCalendarImpactHigh,
+						Title:    "CPI Announcement",
+						Actual:   "2.9%",
+						Forecast: "2.9%",
+						Previous: "2.8%",
+					},
+					{
+						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+						Country:  ecal.EconomicCalendarUnitedStates,
+						Currency: ecal.EconomicCalendarUSD,
+						Impact:   ecal.EconomicCalendarImpactMedium,
+						Title:    "Some other event",
+						Actual:   "1.9%",
+						Forecast: "1.9%",
+						Previous: "1.8%",
+					},
+				},
+			},
+			want: "🇺🇸 #usa\n🔥 CPI Announcement: *2.9%*, forecast: 2.9%, last: 2.8%\n⚠️ Some other event: *1.9%*, forecast: 1.9%, last: 1.8%",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := formatEventUpdate(tt.args.event); got != tt.want {
+			if got := formatEventUpdate(tt.args.country, tt.args.events); got != tt.want {
 				t.Errorf("formatEventUpdate() = %v, want %v", got, tt.want)
 			}
 		})
