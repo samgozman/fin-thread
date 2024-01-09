@@ -24,6 +24,7 @@ type CalendarJob struct {
 	archivist         *archivist.Archivist         // archivist that will save news to the database
 	logger            *slog.Logger                 // special logger for the job
 	providerName      string                       // name of the job provider
+	options           *CalendarJobOptions          // options for the job
 }
 
 func NewCalendarJob(
@@ -38,7 +39,19 @@ func NewCalendarJob(
 		archivist:         archivist,
 		logger:            slog.Default(),
 		providerName:      providerName,
+		options:           &CalendarJobOptions{},
 	}
+}
+
+// Publish will set the job to publish events to the channel.
+func (j *CalendarJob) Publish() *CalendarJob {
+	j.options.shouldPublish = true
+	return j
+}
+
+// CalendarJobOptions is the struct that contains options for the calendar job.
+type CalendarJobOptions struct {
+	shouldPublish bool // if true, will publish news to the channel. Else: will just print them to the console (for development)
 }
 
 // RunWeeklyCalendarJob creates events plan for the upcoming week and publishes them to the channel.
@@ -90,15 +103,19 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 			// Format events to the text
 			m := formatWeeklyEvents(events)
 
-			// Publish events to the channel
-			span = tx.StartChild("TelegramPublisher.Publish")
-			_, err = j.publisher.Publish(m)
-			span.Finish()
-			if err != nil {
-				e := fmt.Errorf("[job-calendar] Error publishing events: %w", err)
-				j.logger.Error(e.Error())
-				// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
-				return retry.Unrecoverable(errors.New("publishing error"))
+			if j.options.shouldPublish {
+				// Publish events to the channel
+				span = tx.StartChild("TelegramPublisher.Publish")
+				_, err = j.publisher.Publish(m)
+				span.Finish()
+				if err != nil {
+					e := fmt.Errorf("[job-calendar] Error publishing events: %w", err)
+					j.logger.Error(e.Error())
+					// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
+					return retry.Unrecoverable(errors.New("publishing error"))
+				}
+			} else {
+				fmt.Println(m)
 			}
 
 			mappedEvents := make([]*models.Event, 0, len(events))
@@ -236,6 +253,11 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		for _, e := range updatedEventsDB {
 			m := formatEventUpdate(e)
 			if m == "" {
+				continue
+			}
+
+			if !j.options.shouldPublish {
+				fmt.Println(m)
 				continue
 			}
 
