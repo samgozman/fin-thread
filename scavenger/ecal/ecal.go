@@ -116,6 +116,8 @@ func parseEvent(event mql5Calendar) (*EconomicCalendarEvent, error) {
 		currency = EconomicCalendarNZD
 	case "INR":
 		currency = EconomicCalendarINR
+	case "ALL":
+		currency = EconomicCalendarALL
 	default:
 		return nil, fmt.Errorf("unknown currency: %s", event.CurrencyCode)
 	}
@@ -228,6 +230,7 @@ const (
 	EconomicCalendarAUD EconomicCalendarCurrency = "AUD" // Australian Dollar
 	EconomicCalendarNZD EconomicCalendarCurrency = "NZD" // New Zealand Dollar
 	EconomicCalendarINR EconomicCalendarCurrency = "INR" // Indian Rupee
+	EconomicCalendarALL EconomicCalendarCurrency = "ALL" // All currencies
 )
 
 type EconomicCalendarCountry = string
