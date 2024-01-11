@@ -13,7 +13,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/mmcdole/gofeed v1.2.1
 	github.com/samber/lo v1.39.0
-	github.com/sashabaranov/go-openai v1.17.9
+	github.com/sashabaranov/go-openai v1.17.10
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/sync v0.5.0
