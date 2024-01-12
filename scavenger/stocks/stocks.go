@@ -11,8 +11,9 @@ import (
 // Screener is a struct to fetch all available Stocks from external API.
 type Screener struct{}
 
-// FetchAll fetches all available Stocks from external API.
-func (f *Screener) FetchAll(ctx context.Context) ([]Stock, error) {
+// FetchAll fetches all available Stocks from external API
+// and returns them as a map of `ticker` -> Stock.
+func (f *Screener) FetchAll(ctx context.Context) (StockMap, error) {
 	url := "https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=25&offset=0&download=true"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -37,29 +38,49 @@ func (f *Screener) FetchAll(ctx context.Context) ([]Stock, error) {
 		return nil, fmt.Errorf("error parsing response from nasdaq: %w", err)
 	}
 
-	return respParsed.Data.Rows, nil
+	stockMap := make(StockMap)
+	for _, stock := range respParsed.Data.Rows {
+		stockMap[stock.Symbol] = Stock{
+			Name:      stock.Name,
+			MarketCap: stock.MarketCap,
+			Country:   stock.Country,
+			Industry:  stock.Industry,
+			Sector:    stock.Sector,
+		}
+	}
+
+	return stockMap, nil
 }
 
 type Stock struct {
-	Symbol    string `json:"symbol"`
 	Name      string `json:"name"`
-	LastSale  string `json:"lastsale"`
-	NetChange string `json:"netchange"`
-	PctChange string `json:"pctchange"`
-	Volume    string `json:"volume"`
 	MarketCap string `json:"marketCap"`
 	Country   string `json:"country"`
-	IPOYear   string `json:"ipoyear"`
 	Industry  string `json:"industry"`
 	Sector    string `json:"sector"`
-	URL       string `json:"url"`
 }
+
+// StockMap is a map of `ticker` -> Stock.
+type StockMap map[string]Stock
 
 type nasdaqScreenerResponse struct {
 	Data struct {
-		AsOf    string  `json:"asOf"`    // unnecessary, but keeping it for JSON unmarshalling
-		Headers any     `json:"headers"` // unnecessary, but keeping it for JSON unmarshalling
-		Rows    []Stock `json:"rows"`    // Stocks array
+		AsOf    string `json:"asOf"`    // unnecessary, but keeping it for JSON unmarshalling
+		Headers any    `json:"headers"` // unnecessary, but keeping it for JSON unmarshalling
+		Rows    []struct {
+			Symbol    string `json:"symbol"`
+			Name      string `json:"name"`
+			LastSale  string `json:"lastsale"`
+			NetChange string `json:"netchange"`
+			PctChange string `json:"pctchange"`
+			Volume    string `json:"volume"`
+			MarketCap string `json:"marketCap"`
+			Country   string `json:"country"`
+			IPOYear   string `json:"ipoyear"`
+			Industry  string `json:"industry"`
+			Sector    string `json:"sector"`
+			URL       string `json:"url"`
+		} `json:"rows"` // Stocks array
 	} `json:"data"`
 	Message string `json:"message"`
 	Status  any    `json:"status"` // Status object, probably not needed for this project
