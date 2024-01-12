@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // Screener is a struct to fetch all available Stocks from external API.
@@ -40,7 +41,9 @@ func (f *Screener) FetchAll(ctx context.Context) (StockMap, error) {
 
 	stockMap := make(StockMap)
 	for _, stock := range respParsed.Data.Rows {
-		stockMap[stock.Symbol] = Stock{
+		// replace / with . in ticker to match the format of other sources (BRK/A -> BRK.A)
+		s := strings.ReplaceAll(stock.Symbol, "/", ".")
+		stockMap[s] = Stock{
 			Name:      stock.Name,
 			MarketCap: stock.MarketCap,
 			Country:   stock.Country,
