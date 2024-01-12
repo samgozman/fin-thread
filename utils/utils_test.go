@@ -138,6 +138,13 @@ func TestStrValueToFloat(t *testing.T) {
 			},
 			want: 1.23,
 		},
+		{
+			name: "with multiplier and money symbol",
+			args: args{
+				value: "$1.25b",
+			},
+			want: 1.25,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

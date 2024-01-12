@@ -69,7 +69,14 @@ type Datable interface{}
 
 func StrValueToFloat(value string) float64 {
 	var result float64
-	_, err := fmt.Sscanf(strings.ReplaceAll(value, ",", "."), "%f", &result)
+	// Remove all non-digit and non-dot/comma characters
+	re := regexp.MustCompile("[^0-9.,]+")
+	value = re.ReplaceAllString(value, "")
+	// Replace comma with dot
+	value = strings.Replace(value, ",", ".", 1)
+
+	// Convert the cleaned string to float64
+	result, err := strconv.ParseFloat(value, 64)
 	if err != nil {
 		return 0
 	}

@@ -338,6 +338,25 @@ func Test_formatEventUpdate(t *testing.T) {
 			},
 			want: "🇺🇸 #usa\n🔥 CPI Announcement: *2.9%*, forecast: 2.9%, last: 2.8%\n⚠️ Some other event: *1.9%*, forecast: 1.9%, last: 1.8%",
 		},
+		{
+			name: "case 8 - with money events",
+			args: args{
+				country: ecal.EconomicCalendarGermany,
+				events: []*models.Event{
+					{
+						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
+						Country:  ecal.EconomicCalendarGermany,
+						Currency: ecal.EconomicCalendarEUR,
+						Impact:   ecal.EconomicCalendarImpactHigh,
+						Title:    "Current Account n.s.a.",
+						Actual:   "€​30.8b",
+						Forecast: "€​21.7b",
+						Previous: "€​20.0b",
+					},
+				},
+			},
+			want: "🇩🇪 #germany\n🔥 Current Account n.s.a.: *€​30.8b* (+54.00%), forecast: €​21.7b, last: €​20.0b",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
