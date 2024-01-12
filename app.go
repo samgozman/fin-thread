@@ -49,17 +49,6 @@ func (a *App) start() {
 		NewRssProvider("finpost:news", "https://financialpost.com/feed"),
 	}).FlagByKeys(a.cnf.suspiciousKeywords).Limit(1)
 
-	teJournalist := NewJournalist("TradingEconomics", []NewsProvider{
-		NewRssProvider("trading-economics:european-union", "https://tradingeconomics.com/european-union/rss"),
-		NewRssProvider("trading-economics:core-inflation-rate-mom", "https://tradingeconomics.com/rss/news.aspx?i=core+inflation+rate+mom"),
-		NewRssProvider("trading-economics:wholesale-prices-mom", "https://tradingeconomics.com/rss/news.aspx?i=wholesale+prices+mom"),
-		NewRssProvider("trading-economics:weapons-sales", "https://tradingeconomics.com/rss/news.aspx?i=weapons+sales"),
-		NewRssProvider("trading-economics:housing-index", "https://tradingeconomics.com/rss/news.aspx?i=housing+index"),
-		NewRssProvider("trading-economics:housing-starts", "https://tradingeconomics.com/rss/news.aspx?i=housing+starts"),
-		NewRssProvider("trading-economics:households-debt-to-gdp", "https://tradingeconomics.com/rss/news.aspx?i=households+debt+to+gdp"),
-		NewRssProvider("trading-economics:government-debt", "https://tradingeconomics.com/rss/news.aspx?i=government+debt"),
-	}).FlagByKeys(a.cnf.suspiciousKeywords).Limit(1).FilterByKeys(a.cnf.filterKeys)
-
 	marketJob := NewJob(composer, publisher, archivist, marketJournalist).
 		FetchUntil(time.Now().Add(-60 * time.Second)).
 		OmitSuspicious().
@@ -73,14 +62,6 @@ func (a *App) start() {
 		FetchUntil(time.Now().Add(-4 * time.Minute)).
 		OmitSuspicious().
 		OmitEmptyMeta(MetaTickers).
-		RemoveClones().
-		ComposeText().
-		SaveToDB().
-		Publish()
-
-	teJob := NewJob(composer, publisher, archivist, teJournalist).
-		FetchUntil(time.Now().Add(-5 * time.Minute)).
-		OmitEmptyMeta(MetaHashtags).
 		RemoveClones().
 		ComposeText().
 		SaveToDB().
@@ -132,21 +113,6 @@ func (a *App) start() {
 			Message:  "Error scheduling job for Broad news",
 			Level:    sentry.LevelFatal,
 		}, nil)
-		hub.CaptureException(err)
-		panic(err)
-	}
-
-	_, err = s.NewJob(
-		gocron.DurationJob(5*time.Minute),
-		gocron.NewTask(teJob.Run()),
-		gocron.WithName("scheduler for TradingEconomics news"),
-	)
-	if err != nil {
-		sentry.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "scheduler",
-			Message:  "Error scheduling job for TradingEconomics",
-			Level:    sentry.LevelFatal,
-		})
 		hub.CaptureException(err)
 		panic(err)
 	}
