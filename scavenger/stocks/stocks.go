@@ -45,6 +45,9 @@ func (f *Screener) FetchAll(ctx context.Context) (*StockMap, error) {
 	for _, stock := range respParsed.Data.Rows {
 		// replace / with . in ticker to match the format of other sources (BRK/A -> BRK.A)
 		s := strings.ReplaceAll(stock.Symbol, "/", ".")
+		if strings.Contains(s, "^") { // Exclude tickers with ^ separator
+			continue
+		}
 		stockMap[s] = Stock{
 			Name:      stock.Name,
 			MarketCap: stock.MarketCap,
