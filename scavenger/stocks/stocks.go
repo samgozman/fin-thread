@@ -14,7 +14,7 @@ type Screener struct{}
 
 // FetchAll fetches all available Stocks from external API
 // and returns them as a map of `ticker` -> Stock.
-func (f *Screener) FetchAll(ctx context.Context) (StockMap, error) {
+func (f *Screener) FetchAll(ctx context.Context) (*StockMap, error) {
 	url := "https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=25&offset=0&download=true"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -52,7 +52,7 @@ func (f *Screener) FetchAll(ctx context.Context) (StockMap, error) {
 		}
 	}
 
-	return stockMap, nil
+	return &stockMap, nil
 }
 
 type Stock struct {
