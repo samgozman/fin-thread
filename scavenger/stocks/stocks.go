@@ -21,6 +21,8 @@ func (f *Screener) FetchAll(ctx context.Context) (*StockMap, error) {
 		return nil, fmt.Errorf("error creating request to fetch stocks from nasdaq: %w", err)
 	}
 	req = req.WithContext(ctx)
+	req.Header.Set("accept", "application/json")
+	req.Header.Set("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 
 	client := &http.Client{}
 	resp, err := client.Do(req) //nolint:bodyclose
