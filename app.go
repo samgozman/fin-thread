@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-co-op/gocron/v2"
-	. "github.com/samgozman/fin-thread/archivist"
-	. "github.com/samgozman/fin-thread/composer"
-	. "github.com/samgozman/fin-thread/jobs"
-	. "github.com/samgozman/fin-thread/journalist"
-	. "github.com/samgozman/fin-thread/publisher"
+	"github.com/samgozman/fin-thread/archivist"
+	"github.com/samgozman/fin-thread/composer"
+	"github.com/samgozman/fin-thread/jobs"
+	"github.com/samgozman/fin-thread/journalist"
+	"github.com/samgozman/fin-thread/publisher"
 	"github.com/samgozman/fin-thread/scavenger"
 	"log/slog"
 	"time"
@@ -18,50 +19,62 @@ type App struct {
 }
 
 func (a *App) start() {
-	publisher, err := NewTelegramPublisher(a.cnf.env.TelegramChannelID, a.cnf.env.TelegramBotToken)
+	telegramPublisher, err := publisher.NewTelegramPublisher(a.cnf.env.TelegramChannelID, a.cnf.env.TelegramBotToken)
 	if err != nil {
-		slog.Default().Error("[main] Error creating Telegram publisher:", err)
+		slog.Default().Error("[main] Error creating Telegram telegramPublisher:", err)
 		panic(err)
 	}
 
-	archivist, err := NewArchivist(a.cnf.env.PostgresDSN)
+	archivistEntity, err := archivist.NewArchivist(a.cnf.env.PostgresDSN)
 	if err != nil {
 		slog.Default().Error("[main] Error creating Archivist:", err)
 		panic(err)
 	}
 
-	composer := NewComposer(a.cnf.env.OpenAiToken, a.cnf.env.TogetherAIToken, a.cnf.env.GoogleGeminiToken)
+	composerEntity := composer.NewComposer(a.cnf.env.OpenAiToken, a.cnf.env.TogetherAIToken, a.cnf.env.GoogleGeminiToken)
 
-	marketJournalist := NewJournalist("MarketNews", []NewsProvider{
-		NewRssProvider("benzinga:large-cap", "https://www.benzinga.com/news/large-cap/feed"),
-		NewRssProvider("benzinga:mid-cap", "https://www.benzinga.com/news/mid-cap/feed"),
-		NewRssProvider("benzinga:m&a", "https://www.benzinga.com/news/m-a/feed"),
-		NewRssProvider("benzinga:buybacks", "https://www.benzinga.com/news/buybacks/feed"),
-		NewRssProvider("benzinga:global", "https://www.benzinga.com/news/global/feed"),
-		NewRssProvider("benzinga:sec", "https://www.benzinga.com/sec/feed"),
-		NewRssProvider("benzinga:bonds", "https://www.benzinga.com/markets/bonds/feed"),
-		NewRssProvider("benzinga:analyst:upgrades", "https://www.benzinga.com/analyst-ratings/upgrades/feed"),
-		NewRssProvider("benzinga:analyst:downgrades", "https://www.benzinga.com/analyst-ratings/downgrades/feed"),
-		NewRssProvider("benzinga:etfs", "https://www.benzinga.com/etfs/feed"),
+	marketJournalist := journalist.NewJournalist("MarketNews", []journalist.NewsProvider{
+		journalist.NewRssProvider("benzinga:large-cap", "https://www.benzinga.com/news/large-cap/feed"),
+		journalist.NewRssProvider("benzinga:mid-cap", "https://www.benzinga.com/news/mid-cap/feed"),
+		journalist.NewRssProvider("benzinga:m&a", "https://www.benzinga.com/news/m-a/feed"),
+		journalist.NewRssProvider("benzinga:buybacks", "https://www.benzinga.com/news/buybacks/feed"),
+		journalist.NewRssProvider("benzinga:global", "https://www.benzinga.com/news/global/feed"),
+		journalist.NewRssProvider("benzinga:sec", "https://www.benzinga.com/sec/feed"),
+		journalist.NewRssProvider("benzinga:bonds", "https://www.benzinga.com/markets/bonds/feed"),
+		journalist.NewRssProvider("benzinga:analyst:upgrades", "https://www.benzinga.com/analyst-ratings/upgrades/feed"),
+		journalist.NewRssProvider("benzinga:analyst:downgrades", "https://www.benzinga.com/analyst-ratings/downgrades/feed"),
+		journalist.NewRssProvider("benzinga:etfs", "https://www.benzinga.com/etfs/feed"),
 	}).FlagByKeys(a.cnf.suspiciousKeywords).Limit(2)
 
-	broadNews := NewJournalist("BroadNews", []NewsProvider{
-		NewRssProvider("finpost:news", "https://financialpost.com/feed"),
+	broadNews := journalist.NewJournalist("BroadNews", []journalist.NewsProvider{
+		journalist.NewRssProvider("finpost:news", "https://financialpost.com/feed"),
 	}).FlagByKeys(a.cnf.suspiciousKeywords).Limit(1)
 
-	marketJob := NewJob(composer, publisher, archivist, marketJournalist).
+	// get all stocks and pass as a parameter to jobs
+	scv := scavenger.Scavenger{}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	stocks, err := scv.Screener.FetchAll(ctx)
+	if err != nil {
+		slog.Default().Error("[main] Error fetching stocks:", err)
+		panic(err)
+	}
+
+	marketJob := jobs.NewJob(composerEntity, telegramPublisher, archivistEntity, marketJournalist, stocks).
 		FetchUntil(time.Now().Add(-60 * time.Second)).
 		OmitSuspicious().
 		OmitIfAllKeysEmpty().
+		OmitUnlistedStocks().
 		RemoveClones().
 		ComposeText().
 		SaveToDB().
 		Publish()
 
-	broadJob := NewJob(composer, publisher, archivist, broadNews).
+	broadJob := jobs.NewJob(composerEntity, telegramPublisher, archivistEntity, broadNews, stocks).
 		FetchUntil(time.Now().Add(-4 * time.Minute)).
 		OmitSuspicious().
-		OmitEmptyMeta(MetaTickers).
+		OmitEmptyMeta(jobs.MetaTickers).
+		OmitUnlistedStocks().
 		RemoveClones().
 		ComposeText().
 		SaveToDB().
@@ -118,11 +131,10 @@ func (a *App) start() {
 	}
 
 	// Calendar job
-	scv := scavenger.Scavenger{}
-	calJob := NewCalendarJob(
+	calJob := jobs.NewCalendarJob(
 		scv.EconomicCalendar,
-		publisher,
-		archivist,
+		telegramPublisher,
+		archivistEntity,
 		"mql5-calendar",
 	).Publish()
 
@@ -157,10 +169,10 @@ func (a *App) start() {
 	}
 
 	// Before market open job
-	bmoJob := NewSummaryJob(
-		composer,
-		publisher,
-		archivist,
+	bmoJob := jobs.NewSummaryJob(
+		composerEntity,
+		telegramPublisher,
+		archivistEntity,
 	).Publish()
 	_, err = s.NewJob(
 		// TODO: Use holidays calendar to avoid unnecessary runs

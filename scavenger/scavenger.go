@@ -1,6 +1,9 @@
 package scavenger
 
-import "github.com/samgozman/fin-thread/scavenger/ecal"
+import (
+	"github.com/samgozman/fin-thread/scavenger/ecal"
+	"github.com/samgozman/fin-thread/scavenger/stocks"
+)
 
 // Scavenger is the struct that fetches some custom data from defined sources.
 // The Scavenger will hold all available sources and will fetch the data from them.
@@ -9,4 +12,5 @@ import "github.com/samgozman/fin-thread/scavenger/ecal"
 // fetch custom unstructured data for different purposes. For example to fetch info updates or parse calendar events.
 type Scavenger struct {
 	EconomicCalendar *ecal.EconomicCalendar
+	Screener         *stocks.Screener
 }

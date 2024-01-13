@@ -11,6 +11,7 @@ import (
 	"github.com/samgozman/fin-thread/composer"
 	"github.com/samgozman/fin-thread/journalist"
 	"github.com/samgozman/fin-thread/publisher"
+	"github.com/samgozman/fin-thread/scavenger/stocks"
 	"log/slog"
 	"slices"
 	"strings"
@@ -23,6 +24,7 @@ type Job struct {
 	publisher  *publisher.TelegramPublisher // publisher that will publish news to the channel
 	archivist  *archivist.Archivist         // archivist that will save news to the database
 	journalist *journalist.Journalist       // journalist that will fetch news
+	stocks     *stocks.StockMap             // stocks that will be used to filter news and compose meta (optional). TODO: use more fields from Stock struct
 	logger     *slog.Logger                 // special logger for the job
 	options    *JobOptions                  // job options
 }
@@ -33,6 +35,7 @@ type JobOptions struct {
 	omitSuspicious     bool            // if true, will not publish suspicious articles
 	omitEmptyMetaKeys  *omitKeyOptions // holds keys that will omit news if empty. Note: requires shouldComposeText to be true
 	omitIfAllKeysEmpty bool            // if true, will omit articles with empty meta for all keys. Note: requires shouldComposeText to be set
+	omitUnlistedStocks bool            // if true, will omit articles with stocks unlisted in the Job.stocks
 	shouldComposeText  bool            // if true, will compose text for the article using OpenAI. If false, will use original title and description
 	shouldSaveToDB     bool            // if true, will save all news to the database
 	shouldRemoveClones bool            // if true, will remove duplicated news found in the DB. Note: requires shouldSaveToDB to be true
@@ -45,12 +48,14 @@ func NewJob(
 	publisher *publisher.TelegramPublisher,
 	archivist *archivist.Archivist,
 	journalist *journalist.Journalist,
+	stocks *stocks.StockMap,
 ) *Job {
 	return &Job{
 		composer:   composer,
 		publisher:  publisher,
 		archivist:  archivist,
 		journalist: journalist,
+		stocks:     stocks,
 		logger:     slog.Default(),
 		options:    &JobOptions{},
 	}
@@ -118,6 +123,12 @@ func (job *Job) SaveToDB() *Job {
 // Publish sets the flag that will publish news to the channel. Else: will just print them to the console (for development).
 func (job *Job) Publish() *Job {
 	job.options.shouldPublish = true
+	return job
+}
+
+// OmitUnlistedStocks sets the flag that will omit articles publishing with stocks unlisted in the Job.stocks.
+func (job *Job) OmitUnlistedStocks() *Job {
+	job.options.omitUnlistedStocks = true
 	return job
 }
 
@@ -364,6 +375,8 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 	return dbNews, nil
 }
 
+// TODO: refactor publish. Split into two multiple methods.
+
 // publish publishes the news to the channel.
 func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.News, error) {
 	for _, n := range dbNews {
@@ -388,6 +401,20 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 				continue
 			}
 			if job.options.omitEmptyMetaKeys.emptyHashtags && len(meta.Hashtags) == 0 {
+				continue
+			}
+		}
+
+		// Skip news with unlisted stocks if needed
+		if job.options.omitUnlistedStocks && job.stocks != nil && len(meta.Tickers) > 0 {
+			skip := false
+			for _, t := range meta.Tickers {
+				if _, ok := (*job.stocks)[t]; !ok {
+					skip = true
+					break
+				}
+			}
+			if skip {
 				continue
 			}
 		}
