@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/avast/retry-go"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/samgozman/fin-thread/archivist"
@@ -10,6 +11,7 @@ import (
 	"github.com/samgozman/fin-thread/journalist"
 	"github.com/samgozman/fin-thread/publisher"
 	"github.com/samgozman/fin-thread/scavenger"
+	"github.com/samgozman/fin-thread/scavenger/stocks"
 	"log/slog"
 	"time"
 )
@@ -50,17 +52,25 @@ func (a *App) start() {
 		journalist.NewRssProvider("finpost:news", "https://financialpost.com/feed"),
 	}).FlagByKeys(a.cnf.suspiciousKeywords).Limit(1)
 
-	// get all stocks and pass as a parameter to jobs
+	// get all stockMap and pass as a parameter to jobs
 	scv := scavenger.Scavenger{}
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-	stocks, err := scv.Screener.FetchAll(ctx)
+	var stockMap *stocks.StockMap
+	err = retry.Do(func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		stockMap, err = scv.Screener.FetchAll(ctx)
+		if err != nil {
+			slog.Default().Error("[main] Error fetching stockMap:", err)
+			panic(err)
+		}
+		return nil
+	}, retry.Attempts(3), retry.Delay(5*time.Second))
 	if err != nil {
-		slog.Default().Error("[main] Error fetching stocks:", err)
+		slog.Default().Error("[main] Error fetching stockMap:", err)
 		panic(err)
 	}
 
-	marketJob := jobs.NewJob(composerEntity, telegramPublisher, archivistEntity, marketJournalist, stocks).
+	marketJob := jobs.NewJob(composerEntity, telegramPublisher, archivistEntity, marketJournalist, stockMap).
 		FetchUntil(time.Now().Add(-60 * time.Second)).
 		OmitSuspicious().
 		OmitIfAllKeysEmpty().
@@ -70,7 +80,7 @@ func (a *App) start() {
 		SaveToDB().
 		Publish()
 
-	broadJob := jobs.NewJob(composerEntity, telegramPublisher, archivistEntity, broadNews, stocks).
+	broadJob := jobs.NewJob(composerEntity, telegramPublisher, archivistEntity, broadNews, stockMap).
 		FetchUntil(time.Now().Add(-4 * time.Minute)).
 		OmitSuspicious().
 		OmitEmptyMeta(jobs.MetaTickers).
