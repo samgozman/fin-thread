@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-co-op/gocron/v2"
 	. "github.com/samgozman/fin-thread/archivist"
@@ -49,19 +50,31 @@ func (a *App) start() {
 		NewRssProvider("finpost:news", "https://financialpost.com/feed"),
 	}).FlagByKeys(a.cnf.suspiciousKeywords).Limit(1)
 
-	marketJob := NewJob(composer, publisher, archivist, marketJournalist).
+	// get all stocks and pass as a parameter to jobs
+	scv := scavenger.Scavenger{}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	stocks, err := scv.Screener.FetchAll(ctx)
+	if err != nil {
+		slog.Default().Error("[main] Error fetching stocks:", err)
+		panic(err)
+	}
+
+	marketJob := NewJob(composer, publisher, archivist, marketJournalist, stocks).
 		FetchUntil(time.Now().Add(-60 * time.Second)).
 		OmitSuspicious().
 		OmitIfAllKeysEmpty().
+		OmitUnlistedStocks().
 		RemoveClones().
 		ComposeText().
 		SaveToDB().
 		Publish()
 
-	broadJob := NewJob(composer, publisher, archivist, broadNews).
+	broadJob := NewJob(composer, publisher, archivist, broadNews, stocks).
 		FetchUntil(time.Now().Add(-4 * time.Minute)).
 		OmitSuspicious().
 		OmitEmptyMeta(MetaTickers).
+		OmitUnlistedStocks().
 		RemoveClones().
 		ComposeText().
 		SaveToDB().
@@ -118,7 +131,6 @@ func (a *App) start() {
 	}
 
 	// Calendar job
-	scv := scavenger.Scavenger{}
 	calJob := NewCalendarJob(
 		scv.EconomicCalendar,
 		publisher,
