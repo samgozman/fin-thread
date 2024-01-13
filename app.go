@@ -59,15 +59,10 @@ func (a *App) start() {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 		stockMap, err = scv.Screener.FetchAll(ctx)
-		if err != nil {
-			slog.Default().Error("[main] Error fetching stockMap:", err)
-			panic(err)
-		}
-		return nil
+		return err
 	}, retry.Attempts(3), retry.Delay(5*time.Second))
 	if err != nil {
 		slog.Default().Error("[main] Error fetching stockMap:", err)
-		panic(err)
 	}
 
 	marketJob := jobs.NewJob(composerEntity, telegramPublisher, archivistEntity, marketJournalist, stockMap).
