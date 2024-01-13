@@ -29,6 +29,7 @@ func main() {
 			GoogleGeminiToken: os.Getenv("GOOGLE_GEMINI_TOKEN"),
 			PostgresDSN:       os.Getenv("POSTGRES_DSN"),
 			SentryDSN:         os.Getenv("SENTRY_DSN"),
+			StockSymbols:      os.Getenv("STOCK_SYMBOLS"),
 		}
 	} else {
 		err = viper.Unmarshal(&env)

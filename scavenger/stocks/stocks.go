@@ -12,9 +12,27 @@ import (
 // Screener is a struct to fetch all available Stocks from external API.
 type Screener struct{}
 
-// FetchAll fetches all available Stocks from external API
+// FetchFromString fetches all available Stocks from string (env STOCK_SYMBOLS) separated with | (pipe)
 // and returns them as a map of `ticker` -> Stock.
-func (f *Screener) FetchAll(ctx context.Context) (*StockMap, error) {
+// ! NOTE: string only contains tickers, no other data. So expect empty Stock structs for now.
+func (f *Screener) FetchFromString(str string) *StockMap {
+	tickers := strings.Split(str, "|")
+
+	stockMap := make(StockMap)
+
+	for _, ticker := range tickers {
+		stockMap[ticker] = Stock{
+			// Note: empty for now because we don't have any data
+		}
+	}
+
+	return &stockMap
+}
+
+// FetchFromNasdaq fetches all available Stocks from nasdaq API
+// and returns them as a map of `ticker` -> Stock.
+// ! NOTE: nasdaq is not available in EU region yet.
+func (f *Screener) FetchFromNasdaq(ctx context.Context) (*StockMap, error) {
 	url := "https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=25&offset=0&download=true"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

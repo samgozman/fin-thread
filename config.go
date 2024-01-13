@@ -9,6 +9,7 @@ type Env struct {
 	GoogleGeminiToken string `mapstructure:"GOOGLE_GEMINI_TOKEN"`
 	PostgresDSN       string `mapstructure:"POSTGRES_DSN"`
 	SentryDSN         string `mapstructure:"SENTRY_DSN"`
+	StockSymbols      string `mapstructure:"STOCK_SYMBOLS"`
 }
 
 type Config struct {

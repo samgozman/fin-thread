@@ -58,11 +58,18 @@ func (a *App) start() {
 	err = retry.Do(func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
-		stockMap, err = scv.Screener.FetchAll(ctx)
+		stockMap, err = scv.Screener.FetchFromNasdaq(ctx)
 		return err
-	}, retry.Attempts(3), retry.Delay(5*time.Second))
+	}, retry.Attempts(2), retry.Delay(5*time.Second))
 	if err != nil {
 		slog.Default().Error("[main] Error fetching stockMap:", err)
+
+		// TODO: Find a reliable API source for this sorts of data
+		// try to fill the gaps with static data
+		stockMap = scv.Screener.FetchFromString(a.cnf.env.StockSymbols)
+		if stockMap == nil {
+			slog.Default().Error("[main] Error fetching stockMap from env")
+		}
 	}
 
 	marketJob := jobs.NewJob(composerEntity, telegramPublisher, archivistEntity, marketJournalist, stockMap).
