@@ -50,6 +50,7 @@ func DefaultConfig() *Config {
 			"gender",
 			"sexuality",
 			"class action lawsuit",
+			"class-action lawsuit",
 			"subscribe",
 			"ark invest",
 			"cathie wood",
