@@ -349,13 +349,13 @@ func Test_formatEventUpdate(t *testing.T) {
 						Currency: ecal.EconomicCalendarEUR,
 						Impact:   ecal.EconomicCalendarImpactHigh,
 						Title:    "Current Account n.s.a.",
-						Actual:   "€​30.8b",
-						Forecast: "€​21.7b",
-						Previous: "€​20.0b",
+						Actual:   "€\u200b30.8b",
+						Forecast: "€\u200b21.7b",
+						Previous: "€\u200b20.0b",
 					},
 				},
 			},
-			want: "🇩🇪 #germany\n🔥 Current Account n.s.a.: *€​30.8b* (+54.00%), forecast: €​21.7b, last: €​20.0b",
+			want: "🇩🇪 #germany\n🔥 Current Account n.s.a.: *€\u200b30.8b* (+54.00%), forecast: €\u200b21.7b, last: €\u200b20.0b",
 		},
 	}
 	for _, tt := range tests {

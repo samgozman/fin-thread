@@ -72,7 +72,7 @@ func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherA
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := client.Do(req) //nolint:bodyclose
 	if err != nil {
 		return nil, err
 	}
