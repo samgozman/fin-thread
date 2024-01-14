@@ -95,33 +95,65 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 
 // parseEvent parses a single event from the calendar.
 func parseEvent(event mql5Calendar) (*EconomicCalendarEvent, error) {
-	// Parse currency
-	var currency EconomicCalendarCurrency
-	switch event.CurrencyCode {
-	case "USD":
-		currency = EconomicCalendarUSD
-	case "EUR":
-		currency = EconomicCalendarEUR
-	case "GBP":
-		currency = EconomicCalendarGBP
-	case "JPY":
-		currency = EconomicCalendarJPY
-	case "CHF":
-		currency = EconomicCalendarCHF
-	case "CNY":
-		currency = EconomicCalendarCNY
-	case "AUD":
-		currency = EconomicCalendarAUD
-	case "NZD":
-		currency = EconomicCalendarNZD
-	case "INR":
-		currency = EconomicCalendarINR
-	case "ALL":
-		currency = EconomicCalendarALL
-	default:
-		return nil, fmt.Errorf("unknown currency: %s", event.CurrencyCode)
+	currency, err := parseCurrency(event)
+	if err != nil {
+		return nil, err
 	}
 
+	country := parseCountry(event)
+
+	impact, err := parseImpact(event)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse dates
+	dt, err := utils.ParseDate(event.FullDate)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing date: %w, value %v", err, event.FullDate)
+	}
+	et, err := utils.ParseDate(event.ReleaseDate)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing date: %w, value %v", err, event.ReleaseDate)
+	}
+
+	e := &EconomicCalendarEvent{
+		DateTime:  dt,
+		EventTime: et,
+		Country:   country,
+		Currency:  currency,
+		Impact:    impact,
+		Title:     event.EventName,
+		Actual:    strings.ReplaceAll(strings.ToLower(event.ActualValue), "\u00a0", ""), // Remove nbsp symbol, convert to lowercase
+		Forecast:  strings.ReplaceAll(strings.ToLower(event.ForecastValue), "\u00a0", ""),
+		Previous:  strings.ReplaceAll(strings.ToLower(event.PreviousValue), "\u00a0", ""),
+	}
+
+	return e, nil
+}
+
+func parseImpact(event mql5Calendar) (EconomicCalendarImpact, error) {
+	var impact EconomicCalendarImpact
+	switch event.Importance {
+	case "low":
+		impact = EconomicCalendarImpactLow
+	case "medium":
+		impact = EconomicCalendarImpactMedium
+	case "high":
+		impact = EconomicCalendarImpactHigh
+	case "none":
+		if event.EventType == 2 {
+			impact = EconomicCalendarImpactHoliday
+		} else {
+			impact = EconomicCalendarImpactNone
+		}
+	default:
+		return "", fmt.Errorf("unknown impact: %s", event.Importance)
+	}
+	return impact, nil
+}
+
+func parseCountry(event mql5Calendar) EconomicCalendarCountry { //nolint:gocyclo
 	// Parse country
 	var country EconomicCalendarCountry
 	switch event.Country {
@@ -172,49 +204,37 @@ func parseEvent(event mql5Calendar) (*EconomicCalendarEvent, error) {
 	default:
 		country = ""
 	}
+	return country
+}
 
-	// Parse impact
-	var impact EconomicCalendarImpact
-	switch event.Importance {
-	case "low":
-		impact = EconomicCalendarImpactLow
-	case "medium":
-		impact = EconomicCalendarImpactMedium
-	case "high":
-		impact = EconomicCalendarImpactHigh
-	case "none":
-		if event.EventType == 2 {
-			impact = EconomicCalendarImpactHoliday
-		} else {
-			impact = EconomicCalendarImpactNone
-		}
+func parseCurrency(event mql5Calendar) (EconomicCalendarCurrency, error) {
+	// Parse currency
+	var currency EconomicCalendarCurrency
+	switch event.CurrencyCode {
+	case "USD":
+		currency = EconomicCalendarUSD
+	case "EUR":
+		currency = EconomicCalendarEUR
+	case "GBP":
+		currency = EconomicCalendarGBP
+	case "JPY":
+		currency = EconomicCalendarJPY
+	case "CHF":
+		currency = EconomicCalendarCHF
+	case "CNY":
+		currency = EconomicCalendarCNY
+	case "AUD":
+		currency = EconomicCalendarAUD
+	case "NZD":
+		currency = EconomicCalendarNZD
+	case "INR":
+		currency = EconomicCalendarINR
+	case "ALL":
+		currency = EconomicCalendarALL
 	default:
-		return nil, fmt.Errorf("unknown impact: %s", event.Importance)
+		return "", fmt.Errorf("unknown currency: %s", event.CurrencyCode)
 	}
-
-	// Parse dates
-	dt, err := utils.ParseDate(event.FullDate)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing date: %w, value %v", err, event.FullDate)
-	}
-	et, err := utils.ParseDate(event.ReleaseDate)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing date: %w, value %v", err, event.ReleaseDate)
-	}
-
-	e := &EconomicCalendarEvent{
-		DateTime:  dt,
-		EventTime: et,
-		Country:   country,
-		Currency:  currency,
-		Impact:    impact,
-		Title:     event.EventName,
-		Actual:    strings.ReplaceAll(strings.ToLower(event.ActualValue), "\u00a0", ""), // Remove nbsp symbol, convert to lowercase
-		Forecast:  strings.ReplaceAll(strings.ToLower(event.ForecastValue), "\u00a0", ""),
-		Previous:  strings.ReplaceAll(strings.ToLower(event.PreviousValue), "\u00a0", ""),
-	}
-
-	return e, nil
+	return currency, nil
 }
 
 // EconomicCalendarCurrency impacted currencies(economic markets) by the event.
