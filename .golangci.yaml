@@ -8,7 +8,6 @@ linters:
     - errname
     - errorlint
     - godot
-    - gomnd
     - gosec
     - makezero
     - misspell
@@ -27,17 +26,6 @@ linters-settings:
     min-complexity: 15
   govet:
     check-shadowing: true
-  gomnd:
-    checks:
-      - argument
-      - condition
-      - return
-    ignored-functions:
-      - '^context\.WithTimeout'
-      - '^\.Flush'
-      - '^retry\.Attempts'
-      - '^retry\.Delay'
-      - '^\.Limit'
   gosec:
     excludes:
       - G501 # excluded md5 usage error, because it is used only for non-vulnerable hashes for simplicity

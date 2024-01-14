@@ -58,8 +58,10 @@ func ParseDate(dateString Datable) (time.Time, error) {
 	}
 
 	// If Unix milliseconds - convert to seconds
-	if timestamp > 9999999999 {
-		return time.Unix(timestamp/1000, 0).UTC(), nil
+	var maxPossibleSeconds int64 = 9999999999
+	var millisecondsInSecond int64 = 1000
+	if timestamp > maxPossibleSeconds {
+		return time.Unix(timestamp/millisecondsInSecond, 0).UTC(), nil
 	}
 	return time.Unix(timestamp, 0).UTC(), nil
 }
