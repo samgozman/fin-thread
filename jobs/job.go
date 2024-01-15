@@ -238,7 +238,7 @@ func (job *Job) Run() JobFunc {
 		}, nil)
 
 		span = tx.StartChild("publish")
-		err = job.publish(ctx, &dbNews)
+		err = job.publish(ctx, dbNews)
 		span.Finish()
 		if err != nil {
 			job.logger.Warn(fmt.Sprintf("[%s][publish]", jobName), "error", err)
@@ -378,8 +378,8 @@ func (job *Job) saveNews(
 // TODO: refactor publish. Split into two multiple methods.
 
 // publish publishes the news to the channel and updates dbNews with PublicationID and PublishedAt fields.
-func (job *Job) publish(ctx context.Context, dbNews *[]*models.News) error {
-	for _, n := range *dbNews {
+func (job *Job) publish(ctx context.Context, dbNews []*models.News) error {
+	for _, n := range dbNews {
 		// Skip suspicious news if needed
 		if n.IsSuspicious && job.options.omitSuspicious {
 			continue
