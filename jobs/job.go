@@ -172,13 +172,8 @@ func (job *Job) Run() JobFunc {
 			return
 		}
 
-		// TODO: Get rid of JobData structure
-		jobData := &JobData{
-			News: news,
-		}
-
 		span = tx.StartChild("removeDuplicates")
-		jobData.News, err = job.removeDuplicates(ctx, news)
+		err = job.removeDuplicates(ctx, &news)
 		span.Finish()
 		if err != nil {
 			job.logger.Info(fmt.Sprintf("[%s][removeDuplicates]", jobName), "error", err)
@@ -187,15 +182,15 @@ func (job *Job) Run() JobFunc {
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "successful",
-			Message:  fmt.Sprintf("removeDuplicates returned %d news", len(jobData.News)),
+			Message:  fmt.Sprintf("removeDuplicates returned %d news", len(news)),
 			Level:    sentry.LevelInfo,
 		}, nil)
-		if len(jobData.News) == 0 {
+		if len(news) == 0 {
 			return
 		}
 
 		span = tx.StartChild("filter")
-		jobData.News, err = job.composer.Filter(ctx, jobData.News)
+		news, err = job.composer.Filter(ctx, news)
 		span.Finish()
 		if err != nil {
 			job.logger.Info(fmt.Sprintf("[%s][filter]", jobName), "error", err)
@@ -204,15 +199,15 @@ func (job *Job) Run() JobFunc {
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "successful",
-			Message:  fmt.Sprintf("filter returned %d news", len(jobData.News)),
+			Message:  fmt.Sprintf("filter returned %d news", len(news)),
 			Level:    sentry.LevelInfo,
 		}, nil)
-		if len(jobData.News) == 0 {
+		if len(news) == 0 {
 			return
 		}
 
 		span = tx.StartChild("composeNews")
-		jobData.ComposedNews, err = job.composeNews(ctx, jobData.News)
+		composedNews, err := job.composeNews(ctx, news)
 		span.Finish()
 		if err != nil {
 			job.logger.Warn(fmt.Sprintf("[%s][composeNews]", jobName), "error", err)
@@ -221,15 +216,15 @@ func (job *Job) Run() JobFunc {
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "successful",
-			Message:  fmt.Sprintf("composeNews returned %d news", len(jobData.ComposedNews)),
+			Message:  fmt.Sprintf("composeNews returned %d news", len(composedNews)),
 			Level:    sentry.LevelInfo,
 		}, nil)
-		if len(jobData.ComposedNews) == 0 {
+		if len(composedNews) == 0 {
 			return
 		}
 
 		span = tx.StartChild("saveNews")
-		jobData.DBNews, err = job.saveNews(ctx, jobData)
+		dbNews, err := job.saveNews(ctx, news, composedNews)
 		span.Finish()
 		if err != nil {
 			job.logger.Warn(fmt.Sprintf("[%s][saveNews]", jobName), "error", err)
@@ -238,12 +233,12 @@ func (job *Job) Run() JobFunc {
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "successful",
-			Message:  fmt.Sprintf("saveNews returned %d news", len(jobData.DBNews)),
+			Message:  fmt.Sprintf("saveNews returned %d news", len(dbNews)),
 			Level:    sentry.LevelInfo,
 		}, nil)
 
 		span = tx.StartChild("publish")
-		jobData.DBNews, err = job.publish(ctx, jobData.DBNews)
+		err = job.publish(ctx, &dbNews)
 		span.Finish()
 		if err != nil {
 			job.logger.Warn(fmt.Sprintf("[%s][publish]", jobName), "error", err)
@@ -252,12 +247,12 @@ func (job *Job) Run() JobFunc {
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "successful",
-			Message:  fmt.Sprintf("publish returned %d news", len(jobData.DBNews)),
+			Message:  fmt.Sprintf("publish returned %d news", len(dbNews)),
 			Level:    sentry.LevelInfo,
 		}, nil)
 
 		span = tx.StartChild("updateNews")
-		err = job.updateNews(ctx, jobData.DBNews)
+		err = job.updateNews(ctx, dbNews)
 		span.Finish()
 		if err != nil {
 			job.logger.Warn(fmt.Sprintf("[%s][updateNews]", jobName), "error", err)
@@ -272,14 +267,14 @@ func (job *Job) Run() JobFunc {
 	}
 }
 
-// removeDuplicates removes duplicated news found in the DB.
-func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) (journalist.NewsList, error) {
+// removeDuplicates removes duplicated news in place found in the DB.
+func (job *Job) removeDuplicates(ctx context.Context, news *journalist.NewsList) error {
 	if !job.options.shouldRemoveClones || !job.options.shouldSaveToDB {
-		return news, nil
+		return nil
 	}
 
-	hashes := make([]string, len(news))
-	for i, n := range news {
+	hashes := make([]string, len(*news))
+	for i, n := range *news {
 		hashes[i] = n.ID
 	}
 
@@ -288,20 +283,21 @@ func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) 
 	exists, err := job.archivist.Entities.News.FindAllByHashes(ctx, hashes)
 	span.Finish()
 	if err != nil {
-		return nil, fmt.Errorf("[Job.removeDuplicates][News.FindAllByHashes]: %w", err)
+		return fmt.Errorf("[Job.removeDuplicates][News.FindAllByHashes]: %w", err)
 	}
 	existedHashes := make([]string, len(exists))
 	for i, n := range exists {
 		existedHashes[i] = n.Hash
 	}
 
-	var uniqueNews journalist.NewsList
-	for _, n := range news {
-		if !slices.Contains(existedHashes, n.ID) {
-			uniqueNews = append(uniqueNews, n)
+	// remove duplicates in place
+	for i := len(*news) - 1; i >= 0; i-- {
+		if slices.Contains(existedHashes, (*news)[i].ID) {
+			*news = append((*news)[:i], (*news)[i+1:]...)
 		}
 	}
-	return uniqueNews, nil
+
+	return nil
 }
 
 // composeNews composes text for the article using OpenAI and finds meta.
@@ -321,23 +317,27 @@ func (job *Job) composeNews(ctx context.Context, news journalist.NewsList) ([]*c
 	return composedNews, nil
 }
 
-func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, error) {
+func (job *Job) saveNews(
+	ctx context.Context,
+	news journalist.NewsList,
+	composedNews []*composer.ComposedNews,
+) ([]*models.News, error) {
 	if !job.options.shouldSaveToDB {
 		return nil, nil
 	}
 
-	if len(data.News) < len(data.ComposedNews) {
+	if len(news) < len(composedNews) {
 		return nil, errors.New("[Job.saveNews]: Composed news count is more than original news count")
 	}
 
 	// Map composed news by hash for convenience
-	composedNewsMap := make(map[string]*composer.ComposedNews, len(data.ComposedNews))
-	for _, n := range data.ComposedNews {
+	composedNewsMap := make(map[string]*composer.ComposedNews, len(composedNews))
+	for _, n := range composedNews {
 		composedNewsMap[n.ID] = n
 	}
 
-	dbNews := make([]*models.News, len(data.News))
-	for i, n := range data.News {
+	dbNews := make([]*models.News, len(news))
+	for i, n := range news {
 		dbNews[i] = &models.News{
 			Hash:          n.ID,
 			ChannelID:     job.publisher.ChannelID,
@@ -377,9 +377,9 @@ func (job *Job) saveNews(ctx context.Context, data *JobData) ([]*models.News, er
 
 // TODO: refactor publish. Split into two multiple methods.
 
-// publish publishes the news to the channel.
-func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.News, error) {
-	for _, n := range dbNews {
+// publish publishes the news to the channel and updates dbNews with PublicationID and PublishedAt fields.
+func (job *Job) publish(ctx context.Context, dbNews *[]*models.News) error {
+	for _, n := range *dbNews {
 		// Skip suspicious news if needed
 		if n.IsSuspicious && job.options.omitSuspicious {
 			continue
@@ -389,7 +389,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 		var meta composer.ComposedMeta
 		err := json.Unmarshal(n.MetaData, &meta)
 		if err != nil {
-			return nil, fmt.Errorf("[Job.publish][json.Unmarshal] meta: %w. Value: %v", err, n.MetaData)
+			return fmt.Errorf("[Job.publish][json.Unmarshal] meta: %w. Value: %v", err, n.MetaData)
 		}
 
 		// Skip news with empty meta if needed
@@ -446,7 +446,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 		span.Finish()
 
 		if err != nil {
-			return nil, fmt.Errorf("[Job.publish][publisher.Publish]: %w", err)
+			return fmt.Errorf("[Job.publish][publisher.Publish]: %w", err)
 		}
 
 		// Save publication data to the entity
@@ -454,7 +454,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 		n.PublishedAt = time.Now()
 	}
 
-	return dbNews, nil
+	return nil
 }
 
 // updateNews updates news in the database.
@@ -496,13 +496,6 @@ func formatNewsWithComposedMeta(n models.News) string {
 	// TODO: Decide what to do with markets and hashtags
 
 	return result
-}
-
-// JobData holds different types of news data passed between the job functions just for convenience.
-type JobData struct {
-	News         journalist.NewsList      // Original news fetched from the journalist
-	ComposedNews []*composer.ComposedNews // Composed news with custom text and meta
-	DBNews       []*models.News           // News entities from/for the database
 }
 
 // JobFunc is a type for job function that will be executed by the scheduler.
