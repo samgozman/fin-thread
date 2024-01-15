@@ -14,7 +14,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/mmcdole/gofeed v1.2.1
 	github.com/samber/lo v1.39.0
-	github.com/sashabaranov/go-openai v1.17.10
+	github.com/sashabaranov/go-openai v1.17.11
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/sync v0.6.0
 	google.golang.org/api v0.155.0
