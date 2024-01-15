@@ -2,44 +2,32 @@ package main
 
 import (
 	"github.com/getsentry/sentry-go"
-	"github.com/spf13/viper"
+	"github.com/go-playground/validator/v10"
 	"log/slog"
 	"os"
 	"time"
 )
 
 func main() {
-	// Initialize viper
-	viper.AddConfigPath(".")
-	viper.SetConfigFile(".env")
-
 	l := slog.Default()
 
-	var env Env
-	// Read the config file, if present
-	err := viper.ReadInConfig()
-	if err != nil {
-		l.Info("[main] No config file found, reading from the system env")
-		// TODO: fetch with viper, add validation
-		env = Env{
-			TelegramChannelID: os.Getenv("TELEGRAM_CHANNEL_ID"),
-			TelegramBotToken:  os.Getenv("TELEGRAM_BOT_TOKEN"),
-			OpenAiToken:       os.Getenv("OPENAI_TOKEN"),
-			TogetherAIToken:   os.Getenv("TOGETHER_AI_TOKEN"),
-			GoogleGeminiToken: os.Getenv("GOOGLE_GEMINI_TOKEN"),
-			PostgresDSN:       os.Getenv("POSTGRES_DSN"),
-			SentryDSN:         os.Getenv("SENTRY_DSN"),
-			StockSymbols:      os.Getenv("STOCK_SYMBOLS"),
-		}
-	} else {
-		err = viper.Unmarshal(&env)
-		if err != nil {
-			l.Error("[main] Error unmarshalling config:", err)
-			os.Exit(1)
-		}
+	env := Env{
+		TelegramChannelID: os.Getenv("TELEGRAM_CHANNEL_ID"),
+		TelegramBotToken:  os.Getenv("TELEGRAM_BOT_TOKEN"),
+		OpenAiToken:       os.Getenv("OPENAI_TOKEN"),
+		TogetherAIToken:   os.Getenv("TOGETHER_AI_TOKEN"),
+		GoogleGeminiToken: os.Getenv("GOOGLE_GEMINI_TOKEN"),
+		PostgresDSN:       os.Getenv("POSTGRES_DSN"),
+		SentryDSN:         os.Getenv("SENTRY_DSN"),
+		StockSymbols:      os.Getenv("STOCK_SYMBOLS"),
+	}
+	validate := validator.New()
+	if err := validate.Struct(env); err != nil {
+		l.Error("[main] Error validating environment variables:", err)
+		return
 	}
 
-	err = sentry.Init(sentry.ClientOptions{
+	err := sentry.Init(sentry.ClientOptions{
 		Dsn:                env.SentryDSN,
 		EnableTracing:      true,
 		TracesSampleRate:   1.0, // There are not many transactions, so we can afford to send all of them

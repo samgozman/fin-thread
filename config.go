@@ -2,14 +2,14 @@ package main
 
 // Env is a structure that holds all the environment variables that are used in the app.
 type Env struct {
-	TelegramChannelID string `mapstructure:"TELEGRAM_CHANNEL_ID"`
-	TelegramBotToken  string `mapstructure:"TELEGRAM_BOT_TOKEN"`
-	OpenAiToken       string `mapstructure:"OPENAI_TOKEN"`
-	TogetherAIToken   string `mapstructure:"TOGETHER_AI_TOKEN"`
+	TelegramChannelID string `mapstructure:"TELEGRAM_CHANNEL_ID" validate:"required"`
+	TelegramBotToken  string `mapstructure:"TELEGRAM_BOT_TOKEN" validate:"required"`
+	OpenAiToken       string `mapstructure:"OPENAI_TOKEN" validate:"required"`
+	TogetherAIToken   string `mapstructure:"TOGETHER_AI_TOKEN" validate:"required"`
 	GoogleGeminiToken string `mapstructure:"GOOGLE_GEMINI_TOKEN"`
-	PostgresDSN       string `mapstructure:"POSTGRES_DSN"`
-	SentryDSN         string `mapstructure:"SENTRY_DSN"`
-	StockSymbols      string `mapstructure:"STOCK_SYMBOLS"`
+	PostgresDSN       string `mapstructure:"POSTGRES_DSN" validate:"required"`
+	SentryDSN         string `mapstructure:"SENTRY_DSN" validate:"required"`
+	StockSymbols      string `mapstructure:"STOCK_SYMBOLS" validate:"required"`
 }
 
 type Config struct {
