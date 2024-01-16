@@ -98,8 +98,8 @@ func DefaultConfig() *Config {
 }
 
 type rssProvider struct {
-	name string `validate:"required"`
-	url  string `validate:"required,url"`
+	Name string `validate:"required"`
+	Url  string `validate:"required,url"`
 }
 
 // unmarshalRssProviders unmarshal a JSON string into a slice of rssProvider objects.
@@ -118,7 +118,7 @@ func unmarshalRssProviders(str string) ([]journalist.NewsProvider, error) {
 
 	result := make([]journalist.NewsProvider, 0, len(rssProviderList))
 	for _, item := range rssProviderList {
-		result = append(result, journalist.NewRssProvider(item.name, item.url))
+		result = append(result, journalist.NewRssProvider(item.Name, item.Url))
 	}
 
 	return result, nil
