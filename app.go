@@ -35,22 +35,13 @@ func (a *App) start() {
 
 	composerEntity := composer.NewComposer(a.cnf.env.OpenAiToken, a.cnf.env.TogetherAIToken, a.cnf.env.GoogleGeminiToken)
 
-	marketJournalist := journalist.NewJournalist("MarketNews", []journalist.NewsProvider{
-		journalist.NewRssProvider("benzinga:large-cap", "https://www.benzinga.com/news/large-cap/feed"),
-		journalist.NewRssProvider("benzinga:mid-cap", "https://www.benzinga.com/news/mid-cap/feed"),
-		journalist.NewRssProvider("benzinga:m&a", "https://www.benzinga.com/news/m-a/feed"),
-		journalist.NewRssProvider("benzinga:buybacks", "https://www.benzinga.com/news/buybacks/feed"),
-		journalist.NewRssProvider("benzinga:global", "https://www.benzinga.com/news/global/feed"),
-		journalist.NewRssProvider("benzinga:sec", "https://www.benzinga.com/sec/feed"),
-		journalist.NewRssProvider("benzinga:bonds", "https://www.benzinga.com/markets/bonds/feed"),
-		journalist.NewRssProvider("benzinga:analyst:upgrades", "https://www.benzinga.com/analyst-ratings/upgrades/feed"),
-		journalist.NewRssProvider("benzinga:analyst:downgrades", "https://www.benzinga.com/analyst-ratings/downgrades/feed"),
-		journalist.NewRssProvider("benzinga:etfs", "https://www.benzinga.com/etfs/feed"),
-	}).FlagByKeys(a.cnf.suspiciousKeywords).Limit(2)
+	marketJournalist := journalist.NewJournalist("MarketNews", a.cnf.rssProviders.marketJournalists).
+		FlagByKeys(a.cnf.suspiciousKeywords).
+		Limit(2)
 
-	broadNews := journalist.NewJournalist("BroadNews", []journalist.NewsProvider{
-		journalist.NewRssProvider("finpost:news", "https://financialpost.com/feed"),
-	}).FlagByKeys(a.cnf.suspiciousKeywords).Limit(1)
+	broadNews := journalist.NewJournalist("BroadNews", a.cnf.rssProviders.broadJournalists).
+		FlagByKeys(a.cnf.suspiciousKeywords).
+		Limit(1)
 
 	// get all stockMap and pass as a parameter to jobs
 	scv := scavenger.Scavenger{}

@@ -20,6 +20,8 @@ func main() {
 		PostgresDSN:       os.Getenv("POSTGRES_DSN"),
 		SentryDSN:         os.Getenv("SENTRY_DSN"),
 		StockSymbols:      os.Getenv("STOCK_SYMBOLS"),
+		MarketJournalists: os.Getenv("MARKET_JOURNALISTS"),
+		BroadJournalists:  os.Getenv("BROAD_JOURNALISTS"),
 	}
 	validate := validator.New()
 	if err := validate.Struct(env); err != nil {
@@ -39,8 +41,14 @@ func main() {
 	}
 	defer sentry.Flush(2 * time.Second)
 
+	cnf, err := NewConfig(&env)
+	if err != nil {
+		l.Error("[main] Error creating Config:", err)
+		return
+	}
+
 	app := &App{
-		cnf: NewConfig(&env),
+		cnf,
 	}
 
 	app.start()
