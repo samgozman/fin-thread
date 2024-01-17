@@ -80,7 +80,7 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 					Level:    sentry.LevelError,
 				}, nil)
 				hub.CaptureException(err)
-				return nil
+				return err
 			}
 
 			// Find all events
@@ -95,7 +95,7 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 					Level:    sentry.LevelError,
 				}, nil)
 				hub.CaptureException(err)
-				return nil
+				return err
 			}
 
 			if len(events)+len(news) < 5 {
@@ -122,7 +122,7 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 					Level:    sentry.LevelError,
 				}, nil)
 				hub.CaptureException(err)
-				return nil
+				return err
 			}
 			if len(summarised) == 0 {
 				j.logger.Info("No summarised news")
@@ -170,7 +170,7 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 			return nil
 		},
 			retry.Attempts(5),
-			retry.Delay(5*time.Minute),
+			retry.Delay(30*time.Minute),
 		)
 	}
 }

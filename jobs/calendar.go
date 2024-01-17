@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/avast/retry-go"
 	"github.com/getsentry/sentry-go"
@@ -89,7 +88,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 				e := fmt.Errorf("[job-calendar] Error fetching events: %w", err)
 				j.logger.Error(e.Error())
 				hub.CaptureException(e)
-				return nil
+				return err
 			}
 			hub.AddBreadcrumb(&sentry.Breadcrumb{
 				Category: "successful",
@@ -112,7 +111,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 					e := fmt.Errorf("[job-calendar] Error publishing events: %w", err)
 					j.logger.Error(e.Error())
 					// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
-					return retry.Unrecoverable(errors.New("publishing error"))
+					return retry.Unrecoverable(e)
 				}
 			} else {
 				fmt.Println(m)
@@ -130,7 +129,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 				e := fmt.Errorf("[job-calendar] Error saving events: %w", err)
 				j.logger.Error(e.Error())
 				hub.CaptureException(e)
-				return nil
+				return retry.Unrecoverable(e)
 			}
 
 			return nil
