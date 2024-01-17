@@ -8,6 +8,8 @@ import "github.com/getsentry/sentry-go"
 func CaptureSentryException(name string, hub *sentry.Hub, err error) {
 	hub.WithScope(func(scope *sentry.Scope) {
 		scope.AddEventProcessor(func(e *sentry.Event, hint *sentry.EventHint) *sentry.Event {
+			// NOTE: we need to change top element type in the stack.
+			// e.Exception[0] is the first element in the stack, so it's the bottom one.
 			e.Exception[len(e.Exception)-1].Type = name
 			return e
 		})
