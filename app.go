@@ -12,6 +12,7 @@ import (
 	"github.com/samgozman/fin-thread/publisher"
 	"github.com/samgozman/fin-thread/scavenger"
 	"github.com/samgozman/fin-thread/scavenger/stocks"
+	"github.com/samgozman/fin-thread/utils"
 	"log/slog"
 	"time"
 )
@@ -97,7 +98,7 @@ func (a *App) start() {
 			Message:  "Error creating scheduler",
 			Level:    sentry.LevelFatal,
 		}, nil)
-		hub.CaptureException(err)
+		utils.CaptureSentryException("createSchedulerError", hub, err)
 		panic(err)
 	}
 
@@ -114,7 +115,7 @@ func (a *App) start() {
 			Message:  "Error scheduling job for Market news",
 			Level:    sentry.LevelFatal,
 		}, nil)
-		hub.CaptureException(err)
+		utils.CaptureSentryException("createScheduleJobError", hub, err)
 		panic(err)
 	}
 
@@ -129,7 +130,7 @@ func (a *App) start() {
 			Message:  "Error scheduling job for Broad news",
 			Level:    sentry.LevelFatal,
 		}, nil)
-		hub.CaptureException(err)
+		utils.CaptureSentryException("createScheduleJobError", hub, err)
 		panic(err)
 	}
 
@@ -152,7 +153,7 @@ func (a *App) start() {
 			Message:  "Error scheduling job for Calendar",
 			Level:    sentry.LevelFatal,
 		})
-		hub.CaptureException(err)
+		utils.CaptureSentryException("createScheduleJobError", hub, err)
 		panic(err)
 	}
 
@@ -167,7 +168,7 @@ func (a *App) start() {
 			Message:  "Error scheduling job for Calendar updates",
 			Level:    sentry.LevelFatal,
 		})
-		hub.CaptureException(err)
+		utils.CaptureSentryException("createScheduleJobError", hub, err)
 		panic(err)
 	}
 
@@ -189,7 +190,7 @@ func (a *App) start() {
 			Message:  "Error scheduling job for Before Market Open",
 			Level:    sentry.LevelFatal,
 		})
-		hub.CaptureException(err)
+		utils.CaptureSentryException("createScheduleJobError", hub, err)
 		panic(err)
 	}
 

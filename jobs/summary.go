@@ -9,6 +9,7 @@ import (
 	"github.com/samgozman/fin-thread/archivist"
 	"github.com/samgozman/fin-thread/composer"
 	"github.com/samgozman/fin-thread/publisher"
+	"github.com/samgozman/fin-thread/utils"
 	"log/slog"
 	"strings"
 	"time"
@@ -79,7 +80,7 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 					Message:  "Error fetching news from the database",
 					Level:    sentry.LevelError,
 				}, nil)
-				hub.CaptureException(err)
+				utils.CaptureSentryException("jobSummaryNewsFindAllError", hub, err)
 				return err
 			}
 
@@ -94,7 +95,7 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 					Message:  "Error fetching events from the database",
 					Level:    sentry.LevelError,
 				}, nil)
-				hub.CaptureException(err)
+				utils.CaptureSentryException("jobSummaryEventsFindAllError", hub, err)
 				return err
 			}
 
@@ -121,7 +122,7 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 					Message:  "Error composing summary",
 					Level:    sentry.LevelError,
 				}, nil)
-				hub.CaptureException(err)
+				utils.CaptureSentryException("jobSummaryComposerSummariseError", hub, err)
 				return err
 			}
 			if len(summarised) == 0 {
@@ -161,7 +162,7 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 					Message:  "Error publishing summary",
 					Level:    sentry.LevelError,
 				}, nil)
-				hub.CaptureException(err)
+				utils.CaptureSentryException("jobSummaryPublishError", hub, err)
 				// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
 				return retry.Unrecoverable(errors.New("publishing error"))
 			}

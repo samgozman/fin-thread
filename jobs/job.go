@@ -12,6 +12,7 @@ import (
 	"github.com/samgozman/fin-thread/journalist"
 	"github.com/samgozman/fin-thread/publisher"
 	"github.com/samgozman/fin-thread/scavenger/stocks"
+	"github.com/samgozman/fin-thread/utils"
 	"log/slog"
 	"slices"
 	"strings"
@@ -160,7 +161,7 @@ func (job *Job) Run() JobFunc {
 		span.Finish()
 		if err != nil {
 			job.logger.Info(fmt.Sprintf("[%s][GetLatestNews]", jobName), "error", err)
-			hub.CaptureException(err)
+			utils.CaptureSentryException("jobGetLatestNewsError", hub, err)
 		}
 
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
@@ -177,7 +178,7 @@ func (job *Job) Run() JobFunc {
 		span.Finish()
 		if err != nil {
 			job.logger.Info(fmt.Sprintf("[%s][removeDuplicates]", jobName), "error", err)
-			hub.CaptureException(err)
+			utils.CaptureSentryException("jobRemoveDuplicatesError", hub, err)
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
@@ -194,7 +195,7 @@ func (job *Job) Run() JobFunc {
 		span.Finish()
 		if err != nil {
 			job.logger.Info(fmt.Sprintf("[%s][filter]", jobName), "error", err)
-			hub.CaptureException(err)
+			utils.CaptureSentryException("jobComposerFilterError", hub, err)
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
@@ -211,7 +212,7 @@ func (job *Job) Run() JobFunc {
 		span.Finish()
 		if err != nil {
 			job.logger.Warn(fmt.Sprintf("[%s][composeNews]", jobName), "error", err)
-			hub.CaptureException(err)
+			utils.CaptureSentryException("jobComposeNewsError", hub, err)
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
@@ -228,7 +229,7 @@ func (job *Job) Run() JobFunc {
 		span.Finish()
 		if err != nil {
 			job.logger.Warn(fmt.Sprintf("[%s][saveNews]", jobName), "error", err)
-			hub.CaptureException(err)
+			utils.CaptureSentryException("jobSaveNewsError", hub, err)
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
@@ -242,7 +243,7 @@ func (job *Job) Run() JobFunc {
 		span.Finish()
 		if err != nil {
 			job.logger.Warn(fmt.Sprintf("[%s][publish]", jobName), "error", err)
-			hub.CaptureException(err)
+			utils.CaptureSentryException("jobPublishError", hub, err)
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
@@ -256,7 +257,7 @@ func (job *Job) Run() JobFunc {
 		span.Finish()
 		if err != nil {
 			job.logger.Warn(fmt.Sprintf("[%s][updateNews]", jobName), "error", err)
-			hub.CaptureException(err)
+			utils.CaptureSentryException("jobUpdateNewsError", hub, err)
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{

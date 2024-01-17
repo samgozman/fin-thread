@@ -87,7 +87,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 			if err != nil {
 				e := fmt.Errorf("[job-calendar] Error fetching events: %w", err)
 				j.logger.Error(e.Error())
-				hub.CaptureException(e)
+				utils.CaptureSentryException("calendarJobFetchError", hub, e)
 				return err
 			}
 			hub.AddBreadcrumb(&sentry.Breadcrumb{
@@ -110,6 +110,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 				if err != nil {
 					e := fmt.Errorf("[job-calendar] Error publishing events: %w", err)
 					j.logger.Error(e.Error())
+					utils.CaptureSentryException("calendarJobPublishError", hub, e)
 					// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
 					return retry.Unrecoverable(e)
 				}
@@ -128,7 +129,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 			if err != nil {
 				e := fmt.Errorf("[job-calendar] Error saving events: %w", err)
 				j.logger.Error(e.Error())
-				hub.CaptureException(e)
+				utils.CaptureSentryException("calendarJobSaveError", hub, e)
 				return retry.Unrecoverable(e)
 			}
 
@@ -168,7 +169,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		if err != nil {
 			e := fmt.Errorf("[job-calendar-updates] Error fetching eventsDB: %w", err)
 			j.logger.Error(e.Error())
-			hub.CaptureException(e)
+			utils.CaptureSentryException("calendarUpdatesJobFindRecentError", hub, e)
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
@@ -189,7 +190,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		if err != nil {
 			e := fmt.Errorf("[job-calendar-updates] Error fetching events from provider: %w", err)
 			j.logger.Error(e.Error())
-			hub.CaptureException(e)
+			utils.CaptureSentryException("calendarUpdatesJobFetchError", hub, e)
 			return
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
@@ -236,14 +237,14 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		}
 
 		// TODO: add update many method to archivist with transaction
-		for _, e := range updatedEventsDB {
+		for _, event := range updatedEventsDB {
 			span = tx.StartChild("Archivist.UpdateEvent")
-			err := j.archivist.Entities.Events.Update(ctx, e)
+			err = j.archivist.Entities.Events.Update(ctx, event)
 			span.Finish()
 			if err != nil {
 				e := fmt.Errorf("[job-calendar-updates] Error updating event: %w", err)
 				j.logger.Error(e.Error())
-				hub.CaptureException(e)
+				utils.CaptureSentryException("calendarUpdatesJobUpdateEventError", hub, e)
 				return
 			}
 		}
@@ -272,7 +273,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 			if err != nil {
 				e := fmt.Errorf("[job-calendar-updates] Error publishing event: %w", err)
 				j.logger.Error(e.Error())
-				hub.CaptureException(e)
+				utils.CaptureSentryException("calendarUpdatesJobPublishError", hub, e)
 				return
 			}
 		}
