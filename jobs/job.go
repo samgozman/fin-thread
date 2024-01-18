@@ -174,7 +174,7 @@ func (job *Job) Run() JobFunc {
 		}
 
 		span = tx.StartChild("removeDuplicates")
-		err = job.removeDuplicates(ctx, &news)
+		news, err = job.removeDuplicates(ctx, news)
 		span.Finish()
 		if err != nil {
 			job.logger.Info(fmt.Sprintf("[%s][removeDuplicates]", jobName), "error", err)
@@ -239,7 +239,7 @@ func (job *Job) Run() JobFunc {
 		}, nil)
 
 		span = tx.StartChild("publish")
-		err = job.publish(ctx, dbNews)
+		publishedNews, err := job.publish(ctx, dbNews)
 		span.Finish()
 		if err != nil {
 			job.logger.Warn(fmt.Sprintf("[%s][publish]", jobName), "error", err)
@@ -248,12 +248,12 @@ func (job *Job) Run() JobFunc {
 		}
 		hub.AddBreadcrumb(&sentry.Breadcrumb{
 			Category: "successful",
-			Message:  fmt.Sprintf("publish returned %d news", len(dbNews)),
+			Message:  fmt.Sprintf("publish returned %d news", len(publishedNews)),
 			Level:    sentry.LevelInfo,
 		}, nil)
 
 		span = tx.StartChild("updateNews")
-		err = job.updateNews(ctx, dbNews)
+		err = job.updateNews(ctx, publishedNews)
 		span.Finish()
 		if err != nil {
 			job.logger.Warn(fmt.Sprintf("[%s][updateNews]", jobName), "error", err)
@@ -269,13 +269,13 @@ func (job *Job) Run() JobFunc {
 }
 
 // removeDuplicates removes duplicated news in place found in the DB.
-func (job *Job) removeDuplicates(ctx context.Context, news *journalist.NewsList) error {
+func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) (journalist.NewsList, error) {
 	if !job.options.shouldRemoveClones || !job.options.shouldSaveToDB {
-		return nil
+		return nil, nil
 	}
 
-	hashes := make([]string, len(*news))
-	for i, n := range *news {
+	hashes := make([]string, len(news))
+	for i, n := range news {
 		hashes[i] = n.ID
 	}
 
@@ -284,21 +284,23 @@ func (job *Job) removeDuplicates(ctx context.Context, news *journalist.NewsList)
 	exists, err := job.archivist.Entities.News.FindAllByHashes(ctx, hashes)
 	span.Finish()
 	if err != nil {
-		return fmt.Errorf("[Job.removeDuplicates][News.FindAllByHashes]: %w", err)
+		return nil, fmt.Errorf("[Job.removeDuplicates][News.FindAllByHashes]: %w", err)
 	}
 	existedHashes := make([]string, len(exists))
 	for i, n := range exists {
 		existedHashes[i] = n.Hash
 	}
 
-	// remove duplicates in place
-	for i := len(*news) - 1; i >= 0; i-- {
-		if slices.Contains(existedHashes, (*news)[i].ID) {
-			*news = append((*news)[:i], (*news)[i+1:]...)
+	var result journalist.NewsList
+
+	// create array without duplicates
+	for _, n := range news {
+		if !slices.Contains(existedHashes, n.ID) {
+			result = append(result, n)
 		}
 	}
 
-	return nil
+	return result, nil
 }
 
 // composeNews composes text for the article using OpenAI and finds meta.
@@ -379,7 +381,9 @@ func (job *Job) saveNews(
 // TODO: refactor publish. Split into two multiple methods.
 
 // publish publishes the news to the channel and updates dbNews with PublicationID and PublishedAt fields.
-func (job *Job) publish(ctx context.Context, dbNews []*models.News) error {
+func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.News, error) {
+	updatedNews := make([]*models.News, 0, len(dbNews))
+
 	for _, n := range dbNews {
 		// Skip suspicious news if needed
 		if n.IsSuspicious && job.options.omitSuspicious {
@@ -390,7 +394,7 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) error {
 		var meta composer.ComposedMeta
 		err := json.Unmarshal(n.MetaData, &meta)
 		if err != nil {
-			return fmt.Errorf("[Job.publish][json.Unmarshal] meta: %w. Value: %v", err, n.MetaData)
+			return nil, fmt.Errorf("[Job.publish][json.Unmarshal] meta: %w. Value: %v", err, n.MetaData)
 		}
 
 		// Skip news with empty meta if needed
@@ -447,15 +451,17 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) error {
 		span.Finish()
 
 		if err != nil {
-			return fmt.Errorf("[Job.publish][publisher.Publish]: %w", err)
+			return nil, fmt.Errorf("[Job.publish][publisher.Publish]: %w", err)
 		}
 
 		// Save publication data to the entity
 		n.PublicationID = id
 		n.PublishedAt = time.Now()
+
+		updatedNews = append(updatedNews, n)
 	}
 
-	return nil
+	return updatedNews, nil
 }
 
 // updateNews updates news in the database.
