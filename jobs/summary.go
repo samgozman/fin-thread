@@ -20,7 +20,7 @@ type SummaryJob struct {
 	publisher *publisher.TelegramPublisher // publisher that will publish news to the channel
 	archivist *archivist.Archivist         // archivist that will save news to the database
 	logger    *slog.Logger                 // special logger for the job
-	options   *SummaryJobOptions           // options for the job
+	options   *summaryJobOptions           // options for the job
 }
 
 func NewSummaryJob(
@@ -33,7 +33,7 @@ func NewSummaryJob(
 		publisher: publisher,
 		archivist: archivist,
 		logger:    slog.Default(),
-		options:   &SummaryJobOptions{},
+		options:   &summaryJobOptions{},
 	}
 }
 
@@ -43,12 +43,12 @@ func (j *SummaryJob) Publish() *SummaryJob {
 	return j
 }
 
-type SummaryJobOptions struct {
+type summaryJobOptions struct {
 	shouldPublish bool // if true, will publish news to the channel. Else: will just print them to the console (for development)
 }
 
 // Run runs the Summary job. From if the time from which events should be processed.
-func (j *SummaryJob) Run(from time.Time) JobFunc {
+func (j *SummaryJob) Run(from time.Time) jobFunc {
 	return func() {
 		_ = retry.Do(func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

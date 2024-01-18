@@ -27,11 +27,11 @@ type Job struct {
 	journalist *journalist.Journalist       // journalist that will fetch news
 	stocks     *stocks.StockMap             // stocks that will be used to filter news and compose meta (optional). TODO: use more fields from Stock struct
 	logger     *slog.Logger                 // special logger for the job
-	options    *JobOptions                  // job options
+	options    *jobOptions                  // job options
 }
 
-// JobOptions holds job options needed for the job execution.
-type JobOptions struct {
+// jobOptions holds job options needed for the job execution.
+type jobOptions struct {
 	until              time.Time       // fetch articles until this date
 	omitSuspicious     bool            // if true, will not publish suspicious articles
 	omitEmptyMetaKeys  *omitKeyOptions // holds keys that will omit news if empty. Note: requires shouldComposeText to be true
@@ -58,7 +58,7 @@ func NewJob(
 		journalist: journalist,
 		stocks:     stocks,
 		logger:     slog.Default(),
-		options:    &JobOptions{},
+		options:    &jobOptions{},
 	}
 }
 
@@ -76,7 +76,7 @@ func (job *Job) OmitSuspicious() *Job {
 
 // OmitEmptyMeta will omit news with empty meta for the given key from composer.ComposedMeta.
 // Note: requires ComposeText to be set.
-func (job *Job) OmitEmptyMeta(key MetaKey) *Job {
+func (job *Job) OmitEmptyMeta(key metaKey) *Job {
 	if job.options.omitEmptyMetaKeys == nil {
 		job.options.omitEmptyMetaKeys = &omitKeyOptions{}
 	}
@@ -134,7 +134,7 @@ func (job *Job) OmitUnlistedStocks() *Job {
 }
 
 // Run return job function that will be executed by the scheduler.
-func (job *Job) Run() JobFunc {
+func (job *Job) Run() jobFunc {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 		defer cancel()
@@ -525,20 +525,20 @@ func formatNewsWithComposedMeta(n models.News) string {
 	return result
 }
 
-// JobFunc is a type for job function that will be executed by the scheduler.
-type JobFunc func()
+// jobFunc is a type for job function that will be executed by the scheduler.
+type jobFunc func()
 
-// MetaKey is a type for meta keys based on the keys from composer.ComposedMeta struct.
-type MetaKey string
+// metaKey is a type for meta keys based on the keys from composer.ComposedMeta struct.
+type metaKey string
 
 // Based on the composer.ComposedMeta struct keys.
 const (
-	MetaTickers  MetaKey = "Tickers"
-	MetaMarkets  MetaKey = "Markets"
-	MetaHashtags MetaKey = "Hashtags"
+	MetaTickers  metaKey = "Tickers"
+	MetaMarkets  metaKey = "Markets"
+	MetaHashtags metaKey = "Hashtags"
 )
 
-// omitKeyOptions holds keys that will omit news if empty. Note: requires JobOptions.shouldComposeText to be true.
+// omitKeyOptions holds keys that will omit news if empty. Note: requires jobOptions.shouldComposeText to be true.
 type omitKeyOptions struct {
 	emptyTickers  bool // if true, will omit articles with empty tickers meta from composer.ComposedMeta
 	emptyMarkets  bool // if true, will omit articles with empty markets meta from composer.ComposedMeta

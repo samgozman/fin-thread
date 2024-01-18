@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	// ProhibitedTickers holds tickers that will be omitted from the news. AI often wrongly uses them in the wrong sections.
-	ProhibitedTickers = []string{"BTC", "ETH", "SPY", "QQQ", "NDX", "ETF", "DJI", "VIX"}
+	// prohibitedTickers holds tickers that will be omitted from the news. AI often wrongly uses them in the wrong sections.
+	prohibitedTickers = []string{"BTC", "ETH", "SPY", "QQQ", "NDX", "ETF", "DJI", "VIX"}
 )
 
 // TODO: refactor Composer to be able to choose provider for each method
@@ -24,10 +24,10 @@ var (
 // Composer is used to compose (rephrase) news and events, find some meta information about them,
 // filter out some unnecessary stuff, summarise them and so on.
 type Composer struct {
-	OpenAiClient       OpenAiClientInterface
-	TogetherAIClient   TogetherAIClientInterface
+	OpenAiClient       openAiClientInterface
+	TogetherAIClient   togetherAIClientInterface
 	GoogleGeminiClient GoogleGeminiClientInterface
-	Config             *PromptConfig
+	Config             *promptConfig
 }
 
 // NewComposer creates a new Composer instance with OpenAI and TogetherAI clients and default config.
@@ -36,7 +36,7 @@ func NewComposer(oaiToken, tgrAiToken, geminiToken string) *Composer {
 		OpenAiClient:       openai.NewClient(oaiToken),
 		TogetherAIClient:   NewTogetherAI(tgrAiToken),
 		GoogleGeminiClient: NewGoogleGemini(geminiToken),
-		Config:             DefaultPromptConfig(),
+		Config:             defaultPromptConfig(),
 	}
 }
 
@@ -98,7 +98,7 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 	// Remove prohibited tickers from array
 	for _, n := range fullComposedNews {
 		n.Tickers = lo.Filter(n.Tickers, func(t string, _ int) bool {
-			for _, pt := range ProhibitedTickers {
+			for _, pt := range prohibitedTickers {
 				if t == pt {
 					return false
 				}
@@ -198,7 +198,7 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 
 	resp, err := c.TogetherAIClient.CreateChatCompletion(
 		ctx,
-		TogetherAIRequest{
+		togetherAIRequest{
 			Model:             "mistralai/Mixtral-8x7B-Instruct-v0.1",
 			Prompt:            c.Config.FilterPromptInstruct(jsonNews),
 			MaxTokens:         2048,

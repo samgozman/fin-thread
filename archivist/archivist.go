@@ -5,8 +5,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// Entities is a struct that contains all the entities that Archivist is responsible for.
-type Entities struct {
+// entities is a struct that contains all the entities that Archivist is responsible for.
+type entities struct {
 	News   *models.NewsDB
 	Events *models.EventsDB
 }
@@ -14,7 +14,7 @@ type Entities struct {
 // Archivist is responsible for storing and retrieving data from the database.
 type Archivist struct {
 	db       *gorm.DB
-	Entities *Entities
+	Entities *entities
 }
 
 // NewArchivist creates a new Archivist with provided DSN to connect to database.
@@ -35,7 +35,7 @@ func NewArchivist(dsn string) (*Archivist, error) {
 
 	return &Archivist{
 		db: conn,
-		Entities: &Entities{
+		Entities: &entities{
 			News:   models.NewNewsDB(conn),
 			Events: models.NewEventsDB(conn),
 		},

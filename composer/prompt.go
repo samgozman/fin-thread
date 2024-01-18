@@ -2,18 +2,18 @@ package composer
 
 import "fmt"
 
-type PromptConfig struct {
+type promptConfig struct {
 	ComposePrompt        string
-	SummarisePrompt      SummarisePromptFunc
-	FilterPromptInstruct FilterPromptFunc
+	SummarisePrompt      summarisePromptFunc
+	FilterPromptInstruct filterPromptFunc
 }
 
 const (
-	MaxWordsPerSentence = 10
+	maxWordsPerSentence = 10
 )
 
-func DefaultPromptConfig() *PromptConfig {
-	return &PromptConfig{
+func defaultPromptConfig() *promptConfig {
+	return &promptConfig{
 		ComposePrompt: `You need to fill some (or none) tickers, markets and hashtags arrays for each news.
 		If news are mentioning some companies and stocks you need to find appropriate stocks 'tickers' (ONLY STOCKS, ignore ETFs and crypto). 
 		If news are about some market events you need to fill 'markets' with some index tickers (like SPY, QQQ, or RUT etc.) based on the context.
@@ -35,7 +35,7 @@ func DefaultPromptConfig() *PromptConfig {
 				----------------------------------------
 				ONLY JSON IS ALLOWED as an answer. No explanation or other text is allowed.
 `,
-				MaxWordsPerSentence,
+				maxWordsPerSentence,
 				headlinesLimit,
 			)
 		},
@@ -51,6 +51,6 @@ func DefaultPromptConfig() *PromptConfig {
 	}
 }
 
-type SummarisePromptFunc = func(headlinesLimit int) string
+type summarisePromptFunc = func(headlinesLimit int) string
 
-type FilterPromptFunc = func(newsJson string) string
+type filterPromptFunc = func(newsJson string) string

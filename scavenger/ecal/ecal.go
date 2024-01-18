@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	EconomicCalendarURL = "https://www.mql5.com/en/economic-calendar/content"
+	economicCalendarURL = "https://www.mql5.com/en/economic-calendar/content"
 )
 
 // EconomicCalendar is the struct for economics calendar fetcher.
@@ -41,7 +41,7 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 		// currencies=65743 - CHF, EUR, GBP, JPY, USD, CNY, INR
 		fmt.Sprintf("date_mode=1&from=%s&to=%s&importance=13&currencies=65743", f, t),
 	)
-	req, err := http.NewRequest(http.MethodPost, EconomicCalendarURL, data)
+	req, err := http.NewRequest(http.MethodPost, economicCalendarURL, data)
 	if err != nil {
 		return nil, err
 	}

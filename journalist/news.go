@@ -24,10 +24,10 @@ type News struct {
 	// TODO: Add creator field if possible
 }
 
-// NewNews creates a new News instance from the given parameters.
+// newNews creates a new News instance from the given parameters.
 // It sanitizes the title and description from HTML tags and styles.
 // It also generates the ID of the news by hashing the link, title, description and date.
-func NewNews(title, description, link, date, provider string) (*News, error) {
+func newNews(title, description, link, date, provider string) (*News, error) {
 	dateTime, err := utils.ParseDate(date)
 	if err != nil {
 		return nil, err
@@ -109,18 +109,8 @@ func (n NewsList) ToContentJSON() (string, error) {
 	return string(jsonData), nil
 }
 
-// FindByID finds news by its hash id (URL + title + description + date).
-func (n NewsList) FindByID(id string) *News {
-	for _, news := range n {
-		if news.ID == id {
-			return news
-		}
-	}
-	return nil
-}
-
-// FilterByKeywords returns only a list of news that contains at least one of the keywords.
-func (n NewsList) FilterByKeywords(keywords []string) NewsList {
+// filterByKeywords returns only a list of news that contains at least one of the keywords.
+func (n NewsList) filterByKeywords(keywords []string) NewsList {
 	var filteredNews NewsList
 	for _, n := range n {
 		if n.Contains(keywords) {
@@ -131,8 +121,8 @@ func (n NewsList) FilterByKeywords(keywords []string) NewsList {
 	return filteredNews
 }
 
-// FlagByKeywords sets IsSuspicious to true if the news contains at least one of the keywords.
-func (n NewsList) FlagByKeywords(keywords []string) {
+// flagByKeywords sets IsSuspicious to true if the news contains at least one of the keywords.
+func (n NewsList) flagByKeywords(keywords []string) {
 	for _, news := range n {
 		if news.Contains(keywords) {
 			news.IsSuspicious = true
@@ -140,9 +130,9 @@ func (n NewsList) FlagByKeywords(keywords []string) {
 	}
 }
 
-// MapIDs removes duplicates news by creating a map of ID hashes.
+// mapIDs removes duplicates news by creating a map of ID hashes.
 // Since same news can be fetched from multiple feeds, we need to filter them out.
-func (n NewsList) MapIDs() NewsList {
+func (n NewsList) mapIDs() NewsList {
 	filteredNews := make(NewsList, 0, len(n))
 
 	// Create a map of news ID to news

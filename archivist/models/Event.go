@@ -37,15 +37,15 @@ type Event struct {
 
 func (e *Event) Validate() error {
 	if len(e.ChannelID) > 64 {
-		return ErrChannelIDTooLong
+		return errChannelIDTooLong
 	}
 
 	if len(e.ProviderName) > 64 {
-		return ErrProviderNameTooLong
+		return errProviderNameTooLong
 	}
 
 	if len(e.Title) > 256 {
-		return ErrTitleTooLong
+		return errTitleTooLong
 	}
 
 	return nil

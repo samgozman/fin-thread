@@ -40,39 +40,39 @@ type News struct {
 
 func (n *News) Validate() error {
 	if len(n.ChannelID) > 64 {
-		return ErrChannelIDTooLong
+		return errChannelIDTooLong
 	}
 
 	if len(n.Hash) > 32 {
-		return ErrHashTooLong
+		return errHashTooLong
 	}
 
 	if len(n.PublicationID) > 64 {
-		return ErrPubIDTooLong
+		return errPubIDTooLong
 	}
 
 	if len(n.ProviderName) > 64 {
-		return ErrProviderNameTooLong
+		return errProviderNameTooLong
 	}
 
 	if len(n.URL) > 512 {
-		return ErrURLTooLong
+		return errURLTooLong
 	}
 
 	if len(n.OriginalTitle) > 512 {
-		return ErrOriginalTitleTooLong
+		return errOriginalTitleTooLong
 	}
 
 	if len(n.OriginalDesc) > 1024 {
-		return ErrOriginalDescTooLong
+		return errOriginalDescTooLong
 	}
 
 	if len(n.ComposedText) > 512 {
-		return ErrComposedTextTooLong
+		return errComposedTextTooLong
 	}
 
 	if n.OriginalDate.IsZero() {
-		return ErrOriginalDateEmpty
+		return errOriginalDateEmpty
 	}
 
 	return nil

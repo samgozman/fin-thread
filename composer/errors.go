@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	ErrEmptyRegexMatch = errors.New("empty regex match")
+	errEmptyRegexMatch = errors.New("empty regex match")
 )
 
 // ComposeError is an error that occurs during news composing process.

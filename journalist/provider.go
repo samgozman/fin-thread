@@ -36,7 +36,7 @@ func (r *RssProvider) Fetch(ctx context.Context, until time.Time) (NewsList, err
 
 	var news NewsList
 	for _, item := range feed.Items {
-		newsItem, err := NewNews(item.Title, item.Description, item.Link, item.Published, r.Name)
+		newsItem, err := newNews(item.Title, item.Description, item.Link, item.Published, r.Name)
 		if err != nil {
 			return nil, newErrProvider(r.Name, err.Error())
 		}

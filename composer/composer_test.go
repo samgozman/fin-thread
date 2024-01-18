@@ -27,7 +27,7 @@ type MockTogetherAIClient struct {
 	mock.Mock
 }
 
-func (m *MockTogetherAIClient) CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (*TogetherAIResponse, error) {
+func (m *MockTogetherAIClient) CreateChatCompletion(ctx context.Context, options togetherAIRequest) (*TogetherAIResponse, error) {
 	args := m.Called(ctx, options)
 	return args.Get(0).(*TogetherAIResponse), args.Error(1)
 }
@@ -125,7 +125,7 @@ func TestComposer_Compose(t *testing.T) {
 	}
 	for _, tt := range tests {
 		mockClient := new(MockOpenAiClient)
-		defConf := DefaultPromptConfig()
+		defConf := defaultPromptConfig()
 
 		// Set expectations for the mock client
 		if tt.wantErr {
@@ -169,7 +169,7 @@ func TestComposer_Compose(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &Composer{
 				OpenAiClient: mockClient,
-				Config:       DefaultPromptConfig(),
+				Config:       defaultPromptConfig(),
 			}
 			got, err := c.Compose(tt.args.ctx, tt.args.news)
 			if (err != nil) != tt.wantErr {
@@ -192,8 +192,8 @@ func TestComposer_Compose(t *testing.T) {
 
 func TestComposer_Summarise(t *testing.T) {
 	type fields struct {
-		OpenAiClient OpenAiClientInterface
-		Config       *PromptConfig
+		OpenAiClient openAiClientInterface
+		Config       *promptConfig
 	}
 	type args struct {
 		ctx            context.Context
@@ -246,11 +246,11 @@ func TestComposer_Summarise(t *testing.T) {
 	}
 	for _, tt := range tests {
 		mockClient := new(MockOpenAiClient)
-		defConf := DefaultPromptConfig()
+		defConf := defaultPromptConfig()
 
 		c := &Composer{
 			OpenAiClient: mockClient,
-			Config:       DefaultPromptConfig(),
+			Config:       defaultPromptConfig(),
 		}
 
 		// Set expectations for the mock client
@@ -374,7 +374,7 @@ func TestComposer_Filter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := new(MockTogetherAIClient)
-			defConf := DefaultPromptConfig()
+			defConf := defaultPromptConfig()
 
 			// Set expectations for the mock client
 			if tt.wantErr {
@@ -386,7 +386,7 @@ func TestComposer_Filter(t *testing.T) {
 
 				mockClient.On("CreateChatCompletion",
 					mock.Anything,
-					TogetherAIRequest{
+					togetherAIRequest{
 						Model:             "mistralai/Mixtral-8x7B-Instruct-v0.1",
 						Prompt:            defConf.FilterPromptInstruct(jsonNews),
 						MaxTokens:         2048,
@@ -409,7 +409,7 @@ func TestComposer_Filter(t *testing.T) {
 
 			c := &Composer{
 				TogetherAIClient: mockClient,
-				Config:           DefaultPromptConfig(),
+				Config:           defaultPromptConfig(),
 			}
 			got, err := c.Filter(tt.args.ctx, tt.args.news)
 			if (err != nil) != tt.wantErr {

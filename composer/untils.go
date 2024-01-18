@@ -20,7 +20,7 @@ func aiJSONStringFixer(str string) (string, error) {
 	re = regexp.MustCompile(`\[([\S\s]*)]`)
 	matches = re.FindString(str)
 	if matches == "" {
-		return "", newErr(ErrEmptyRegexMatch, "aiJSONStringFixer", "regexp.FindString").WithValue(str)
+		return "", newErr(errEmptyRegexMatch, "aiJSONStringFixer", "regexp.FindString").WithValue(str)
 	}
 
 	return matches, nil

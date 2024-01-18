@@ -12,18 +12,18 @@ import (
 	"net/http"
 )
 
-// OpenAiClientInterface is an interface for OpenAI API client.
-type OpenAiClientInterface interface {
+// openAiClientInterface is an interface for OpenAI API client.
+type openAiClientInterface interface {
 	CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (response openai.ChatCompletionResponse, err error)
 }
 
-// TogetherAIClientInterface is an interface for TogetherAI API client.
-type TogetherAIClientInterface interface {
-	CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (*TogetherAIResponse, error)
+// togetherAIClientInterface is an interface for TogetherAI API client.
+type togetherAIClientInterface interface {
+	CreateChatCompletion(ctx context.Context, options togetherAIRequest) (*TogetherAIResponse, error)
 }
 
-// TogetherAIRequest is a struct that contains options for TogetherAI API requests.
-type TogetherAIRequest struct {
+// togetherAIRequest is a struct that contains options for TogetherAI API requests.
+type togetherAIRequest struct {
 	Model             string   `json:"model"`
 	Prompt            string   `json:"prompt"`
 	MaxTokens         int      `json:"max_tokens"`
@@ -35,6 +35,8 @@ type TogetherAIRequest struct {
 }
 
 // TogetherAIResponse is a struct that contains response from TogetherAI API.
+//
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type TogetherAIResponse struct {
 	ID      string `json:"id"`
 	Choices []struct {
@@ -57,7 +59,7 @@ type TogetherAI struct {
 }
 
 // CreateChatCompletion creates a new chat completion request to TogetherAI API.
-func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options TogetherAIRequest) (*TogetherAIResponse, error) {
+func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options togetherAIRequest) (*TogetherAIResponse, error) {
 	bodyJSON, err := json.Marshal(options)
 	if err != nil {
 		return nil, err

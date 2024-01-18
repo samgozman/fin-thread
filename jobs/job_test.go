@@ -71,7 +71,7 @@ func Test_formatNewsWithComposedMeta(t *testing.T) {
 func TestJob_prepublishFilter(t *testing.T) {
 	type fields struct {
 		stocks  *stocks.StockMap
-		options *JobOptions
+		options *jobOptions
 	}
 	type args struct {
 		news []*models.News
@@ -98,7 +98,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 			name: "No filters",
 			fields: fields{
 				stocks:  nil,
-				options: &JobOptions{},
+				options: &jobOptions{},
 			},
 			args: args{
 				news: []*models.News{},
@@ -110,7 +110,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 			name: "Omit suspicious news",
 			fields: fields{
 				stocks: nil,
-				options: &JobOptions{
+				options: &jobOptions{
 					omitSuspicious: true,
 				},
 			},
@@ -144,7 +144,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 			name: "Omit news with empty tickers",
 			fields: fields{
 				stocks: nil,
-				options: &JobOptions{
+				options: &jobOptions{
 					omitEmptyMetaKeys: &omitKeyOptions{
 						emptyTickers: true,
 					},
@@ -182,7 +182,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 				stocks: &stocks.StockMap{
 					"AAPL": stocks.Stock{},
 				},
-				options: &JobOptions{
+				options: &jobOptions{
 					omitUnlistedStocks: true,
 				},
 			},
@@ -216,7 +216,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 			name: "Omit if all keys are empty",
 			fields: fields{
 				stocks: nil,
-				options: &JobOptions{
+				options: &jobOptions{
 					omitIfAllKeysEmpty: true,
 				},
 			},
@@ -250,7 +250,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 			name: "Invalid meta data",
 			fields: fields{
 				stocks:  nil,
-				options: &JobOptions{},
+				options: &jobOptions{},
 			},
 			args: args{
 				news: []*models.News{

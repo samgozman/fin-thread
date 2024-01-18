@@ -88,14 +88,14 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 		return nil, err
 	}
 
-	results = results.MapIDs()
+	results = results.mapIDs()
 
 	if len(j.filterKeys) > 0 {
-		results = results.FilterByKeywords(j.filterKeys)
+		results = results.filterByKeywords(j.filterKeys)
 	}
 
 	if len(j.flagKeys) > 0 {
-		results.FlagByKeywords(j.flagKeys)
+		results.flagByKeywords(j.flagKeys)
 	}
 
 	return results, errors.Join(e...)

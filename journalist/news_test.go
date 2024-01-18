@@ -72,13 +72,13 @@ func TestNewNews(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewNews(tt.args.title, tt.args.description, tt.args.link, tt.args.date, tt.args.providerName)
+			got, err := newNews(tt.args.title, tt.args.description, tt.args.link, tt.args.date, tt.args.providerName)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewNews() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("newNews() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewNews() = %v, want %v", got, tt.want)
+				t.Errorf("newNews() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -159,8 +159,8 @@ func TestNewsList_FilterByKeywords(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.n.FilterByKeywords(tt.args.keywords); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FilterByKeywords() = %v, want %v", got, tt.want)
+			if got := tt.n.filterByKeywords(tt.args.keywords); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("filterByKeywords() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -207,8 +207,8 @@ func TestNewsList_MapIDs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.n.MapIDs(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("MapIDs() = %v, want %v", got, tt.want)
+			if got := tt.n.mapIDs(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("mapIDs() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -251,7 +251,7 @@ func TestNewsList_FlagByKeywords(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.n.FlagByKeywords(tt.args.keywords)
+			tt.n.flagByKeywords(tt.args.keywords)
 			flaggedLen := 0
 			for _, n := range tt.n {
 				if n.IsSuspicious {
@@ -259,7 +259,7 @@ func TestNewsList_FlagByKeywords(t *testing.T) {
 				}
 			}
 			if flaggedLen != tt.wantFlaggedLen {
-				t.Errorf("FlagByKeywords() = %v, want %v", flaggedLen, tt.wantFlaggedLen)
+				t.Errorf("flagByKeywords() = %v, want %v", flaggedLen, tt.wantFlaggedLen)
 			}
 		})
 	}
