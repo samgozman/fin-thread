@@ -239,7 +239,21 @@ func (job *Job) Run() JobFunc {
 		}, nil)
 
 		span = tx.StartChild("publish")
-		publishedNews, err := job.publish(ctx, dbNews)
+		filteredNews, err := job.prepublishFilter(dbNews)
+		span.Finish()
+		if err != nil {
+			job.logger.Warn(fmt.Sprintf("[%s][prepublishFilter]", jobName), "error", err)
+			utils.CaptureSentryException("jobPrepublishFilterError", hub, err)
+			return
+		}
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "successful",
+			Message:  fmt.Sprintf("prepublishFilter returned %d news", len(filteredNews)),
+			Level:    sentry.LevelInfo,
+		}, nil)
+
+		span = tx.StartChild("publish")
+		publishedNews, err := job.publish(ctx, filteredNews)
 		span.Finish()
 		if err != nil {
 			job.logger.Warn(fmt.Sprintf("[%s][publish]", jobName), "error", err)
@@ -378,13 +392,11 @@ func (job *Job) saveNews(
 	return dbNews, nil
 }
 
-// TODO: refactor publish. Split into two multiple methods.
+// prepublishFilter final filter before publishing which will use all options and gathered info from previous steps.
+func (job *Job) prepublishFilter(news []*models.News) ([]*models.News, error) {
+	filteredNews := make([]*models.News, 0, len(news))
 
-// publish publishes the news to the channel and updates dbNews with PublicationID and PublishedAt fields.
-func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.News, error) {
-	updatedNews := make([]*models.News, 0, len(dbNews))
-
-	for _, n := range dbNews {
+	for _, n := range news {
 		// Skip suspicious news if needed
 		if n.IsSuspicious && job.options.omitSuspicious {
 			continue
@@ -425,12 +437,24 @@ func (job *Job) publish(ctx context.Context, dbNews []*models.News) ([]*models.N
 		}
 
 		// Omit if all keys are empty and omitIfAllKeysEmpty is set
-		if job.options.omitIfAllKeysEmpty {
-			if len(meta.Tickers) == 0 && len(meta.Markets) == 0 && len(meta.Hashtags) == 0 {
-				continue
-			}
+		if job.options.omitIfAllKeysEmpty &&
+			len(meta.Tickers) == 0 &&
+			len(meta.Markets) == 0 &&
+			len(meta.Hashtags) == 0 {
+			continue
 		}
 
+		filteredNews = append(filteredNews, n)
+	}
+
+	return filteredNews, nil
+}
+
+// publish publishes the news to the channel and updates dbNews with PublicationID and PublishedAt fields.
+func (job *Job) publish(ctx context.Context, news []*models.News) ([]*models.News, error) {
+	updatedNews := make([]*models.News, 0, len(news))
+
+	for _, n := range news {
 		// Format news
 		var formattedText string
 		if job.options.shouldComposeText {
