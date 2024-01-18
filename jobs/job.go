@@ -396,6 +396,7 @@ func (job *Job) saveNews(
 func (job *Job) prepublishFilter(news []*models.News) ([]*models.News, error) {
 	filteredNews := make([]*models.News, 0, len(news))
 
+NewsRange:
 	for _, n := range news {
 		// Skip suspicious news if needed
 		if n.IsSuspicious && job.options.omitSuspicious {
@@ -424,15 +425,10 @@ func (job *Job) prepublishFilter(news []*models.News) ([]*models.News, error) {
 
 		// Skip news with unlisted stocks if needed
 		if job.options.omitUnlistedStocks && job.stocks != nil && len(meta.Tickers) > 0 {
-			skip := false
 			for _, t := range meta.Tickers {
 				if _, ok := (*job.stocks)[t]; !ok {
-					skip = true
-					break
+					continue NewsRange
 				}
-			}
-			if skip {
-				continue
 			}
 		}
 
