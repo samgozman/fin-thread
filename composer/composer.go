@@ -6,17 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/samgozman/fin-thread/utils"
-	"strconv"
 	"time"
 
 	"github.com/samber/lo"
 	"github.com/samgozman/fin-thread/journalist"
 	"github.com/sashabaranov/go-openai"
-)
-
-var (
-	// prohibitedTickers holds tickers that will be omitted from the news. AI often wrongly uses them in the wrong sections.
-	prohibitedTickers = []string{"BTC", "ETH", "SPY", "QQQ", "NDX", "ETF", "DJI", "VIX"}
 )
 
 // TODO: refactor Composer to be able to choose provider for each method
@@ -95,23 +89,7 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 		return nil, newErr(err, "Compose", "json.Unmarshal").WithValue(matches)
 	}
 
-	// Remove prohibited tickers from array
 	for _, n := range fullComposedNews {
-		n.Tickers = lo.Filter(n.Tickers, func(t string, _ int) bool {
-			for _, pt := range prohibitedTickers {
-				if t == pt {
-					return false
-				}
-			}
-
-			// Remove tickers that starts from numbers
-			if _, err := strconv.Atoi(string(t[0])); err == nil {
-				return false
-			}
-
-			return true
-		})
-
 		// Fix unicode symbols in tickers
 		for i, t := range n.Tickers {
 			n.Tickers[i] = utils.ReplaceUnicodeSymbols(t)
