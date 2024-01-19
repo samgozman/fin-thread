@@ -306,6 +306,17 @@ func TestNews_Contains(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "contains none full words",
+			fields: fields{
+				Title:       "Some news about United States",
+				Description: "Read more about United States",
+			},
+			args: args{
+				keywords: []string{"ted"},
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
