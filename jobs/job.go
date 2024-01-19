@@ -156,129 +156,185 @@ func (job *Job) Run() JobFunc {
 			hub.Flush(2 * time.Second)
 		}()
 
-		span := tx.StartChild("GetLatestNews")
-		news, err := job.journalist.GetLatestNews(ctx, job.options.until)
-		span.Finish()
-		if err != nil {
-			job.logger.Info(fmt.Sprintf("[%s][GetLatestNews]", jobName), "error", err)
-			utils.CaptureSentryException("jobGetLatestNewsError", hub, err)
+		// Note: all functions are wrapped with sentry.Span for performance monitoring.
+		// Placing them in separate functions for better readability (experimental).
+
+		getLatestNews := func() journalist.NewsList {
+			span := tx.StartChild("GetLatestNews")
+			news, err := job.journalist.GetLatestNews(ctx, job.options.until)
+			span.Finish()
+			if err != nil {
+				job.logger.Info(fmt.Sprintf("[%s][GetLatestNews]", jobName), "error", err)
+				utils.CaptureSentryException("jobGetLatestNewsError", hub, err)
+			}
+
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  fmt.Sprintf("GetLatestNews returned %d news", len(news)),
+				Level:    sentry.LevelInfo,
+			}, nil)
+
+			return news
+		}
+		removeDuplicates := func(news journalist.NewsList) (journalist.NewsList, error) {
+			span := tx.StartChild("removeDuplicates")
+			news, err := job.removeDuplicates(ctx, news)
+			span.Finish()
+			if err != nil {
+				job.logger.Info(fmt.Sprintf("[%s][removeDuplicates]", jobName), "error", err)
+				utils.CaptureSentryException("jobRemoveDuplicatesError", hub, err)
+				return nil, err
+			}
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  fmt.Sprintf("removeDuplicates returned %d news", len(news)),
+				Level:    sentry.LevelInfo,
+			}, nil)
+
+			return news, nil
+		}
+		filterByComposer := func(news journalist.NewsList) (journalist.NewsList, error) {
+			span := tx.StartChild("filter")
+			news, err := job.composer.Filter(ctx, news)
+			span.Finish()
+			if err != nil {
+				job.logger.Info(fmt.Sprintf("[%s][filter]", jobName), "error", err)
+				utils.CaptureSentryException("jobComposerFilterError", hub, err)
+				return nil, err
+			}
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  fmt.Sprintf("filter returned %d news", len(news)),
+				Level:    sentry.LevelInfo,
+			}, nil)
+
+			return news, nil
+		}
+		composeNews := func(news journalist.NewsList) ([]*composer.ComposedNews, error) {
+			span := tx.StartChild("composeNews")
+			composedNews, err := job.composeNews(ctx, news)
+			span.Finish()
+			if err != nil {
+				job.logger.Warn(fmt.Sprintf("[%s][composeNews]", jobName), "error", err)
+				utils.CaptureSentryException("jobComposeNewsError", hub, err)
+				return nil, err
+			}
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  fmt.Sprintf("composeNews returned %d news", len(composedNews)),
+				Level:    sentry.LevelInfo,
+			}, nil)
+
+			return composedNews, nil
+		}
+		saveNews := func(news journalist.NewsList, composedNews []*composer.ComposedNews) ([]*models.News, error) {
+			span := tx.StartChild("saveNews")
+			dbNews, err := job.saveNews(ctx, news, composedNews)
+			span.Finish()
+			if err != nil {
+				job.logger.Warn(fmt.Sprintf("[%s][saveNews]", jobName), "error", err)
+				utils.CaptureSentryException("jobSaveNewsError", hub, err)
+				return nil, err
+			}
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  fmt.Sprintf("saveNews returned %d news", len(dbNews)),
+				Level:    sentry.LevelInfo,
+			}, nil)
+
+			return dbNews, nil
+		}
+		prepublishFilter := func(dbNews []*models.News) ([]*models.News, error) {
+			span := tx.StartChild("prepublishFilter")
+			filteredNews, err := job.prepublishFilter(dbNews)
+			span.Finish()
+			if err != nil {
+				job.logger.Warn(fmt.Sprintf("[%s][prepublishFilter]", jobName), "error", err)
+				utils.CaptureSentryException("jobPrepublishFilterError", hub, err)
+				return nil, err
+			}
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  fmt.Sprintf("prepublishFilter returned %d news", len(filteredNews)),
+				Level:    sentry.LevelInfo,
+			}, nil)
+
+			return filteredNews, nil
+		}
+		publishNews := func(filteredNews []*models.News) ([]*models.News, error) {
+			span := tx.StartChild("publishNews")
+			publishedNews, err := job.publish(ctx, filteredNews)
+			span.Finish()
+			if err != nil {
+				job.logger.Warn(fmt.Sprintf("[%s][publishNews]", jobName), "error", err)
+				utils.CaptureSentryException("jobPublishError", hub, err)
+				return nil, err
+			}
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  fmt.Sprintf("publishNews returned %d news", len(publishedNews)),
+				Level:    sentry.LevelInfo,
+			}, nil)
+
+			return publishedNews, nil
+		}
+		updateNews := func(publishedNews []*models.News) error {
+			span := tx.StartChild("updateNews")
+			err := job.updateNews(ctx, publishedNews)
+			span.Finish()
+			if err != nil {
+				job.logger.Warn(fmt.Sprintf("[%s][updateNews]", jobName), "error", err)
+				utils.CaptureSentryException("jobUpdateNewsError", hub, err)
+				return err
+			}
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  "updateNews finished",
+				Level:    sentry.LevelInfo,
+			}, nil)
+
+			return nil
 		}
 
-		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "successful",
-			Message:  fmt.Sprintf("GetLatestNews returned %d news", len(news)),
-			Level:    sentry.LevelInfo,
-		}, nil)
+		news := getLatestNews()
 		if len(news) == 0 {
 			return
 		}
 
-		span = tx.StartChild("removeDuplicates")
-		news, err = job.removeDuplicates(ctx, news)
-		span.Finish()
-		if err != nil {
-			job.logger.Info(fmt.Sprintf("[%s][removeDuplicates]", jobName), "error", err)
-			utils.CaptureSentryException("jobRemoveDuplicatesError", hub, err)
+		news, err := removeDuplicates(news)
+		if err != nil || len(news) == 0 {
 			return
 		}
-		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "successful",
-			Message:  fmt.Sprintf("removeDuplicates returned %d news", len(news)),
-			Level:    sentry.LevelInfo,
-		}, nil)
+
+		news, err = filterByComposer(news)
 		if len(news) == 0 {
 			return
 		}
 
-		span = tx.StartChild("filter")
-		news, err = job.composer.Filter(ctx, news)
-		span.Finish()
-		if err != nil {
-			job.logger.Info(fmt.Sprintf("[%s][filter]", jobName), "error", err)
-			utils.CaptureSentryException("jobComposerFilterError", hub, err)
-			return
-		}
-		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "successful",
-			Message:  fmt.Sprintf("filter returned %d news", len(news)),
-			Level:    sentry.LevelInfo,
-		}, nil)
-		if len(news) == 0 {
-			return
-		}
-
-		span = tx.StartChild("composeNews")
-		composedNews, err := job.composeNews(ctx, news)
-		span.Finish()
-		if err != nil {
-			job.logger.Warn(fmt.Sprintf("[%s][composeNews]", jobName), "error", err)
-			utils.CaptureSentryException("jobComposeNewsError", hub, err)
-			return
-		}
-		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "successful",
-			Message:  fmt.Sprintf("composeNews returned %d news", len(composedNews)),
-			Level:    sentry.LevelInfo,
-		}, nil)
+		composedNews, err := composeNews(news)
 		if len(composedNews) == 0 {
 			return
 		}
 
-		span = tx.StartChild("saveNews")
-		dbNews, err := job.saveNews(ctx, news, composedNews)
-		span.Finish()
-		if err != nil {
-			job.logger.Warn(fmt.Sprintf("[%s][saveNews]", jobName), "error", err)
-			utils.CaptureSentryException("jobSaveNewsError", hub, err)
+		dbNews, err := saveNews(news, composedNews)
+		if err != nil || len(dbNews) == 0 {
 			return
 		}
-		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "successful",
-			Message:  fmt.Sprintf("saveNews returned %d news", len(dbNews)),
-			Level:    sentry.LevelInfo,
-		}, nil)
 
-		span = tx.StartChild("publish")
-		filteredNews, err := job.prepublishFilter(dbNews)
-		span.Finish()
-		if err != nil {
-			job.logger.Warn(fmt.Sprintf("[%s][prepublishFilter]", jobName), "error", err)
-			utils.CaptureSentryException("jobPrepublishFilterError", hub, err)
+		filteredNews, err := prepublishFilter(dbNews)
+		if err != nil || len(filteredNews) == 0 {
 			return
 		}
-		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "successful",
-			Message:  fmt.Sprintf("prepublishFilter returned %d news", len(filteredNews)),
-			Level:    sentry.LevelInfo,
-		}, nil)
 
-		span = tx.StartChild("publish")
-		publishedNews, err := job.publish(ctx, filteredNews)
-		span.Finish()
-		if err != nil {
-			job.logger.Warn(fmt.Sprintf("[%s][publish]", jobName), "error", err)
-			utils.CaptureSentryException("jobPublishError", hub, err)
+		publishedNews, err := publishNews(filteredNews)
+		if err != nil || len(publishedNews) == 0 {
 			return
 		}
-		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "successful",
-			Message:  fmt.Sprintf("publish returned %d news", len(publishedNews)),
-			Level:    sentry.LevelInfo,
-		}, nil)
 
-		span = tx.StartChild("updateNews")
-		err = job.updateNews(ctx, publishedNews)
-		span.Finish()
+		err = updateNews(publishedNews)
 		if err != nil {
-			job.logger.Warn(fmt.Sprintf("[%s][updateNews]", jobName), "error", err)
-			utils.CaptureSentryException("jobUpdateNewsError", hub, err)
 			return
 		}
-		hub.AddBreadcrumb(&sentry.Breadcrumb{
-			Category: "successful",
-			Message:  "updateNews finished",
-			Level:    sentry.LevelInfo,
-		}, nil)
 	}
 }
 
