@@ -48,7 +48,7 @@ type summaryJobOptions struct {
 }
 
 // Run runs the Summary job. From if the time from which events should be processed.
-func (j *SummaryJob) Run(from time.Time) jobFunc {
+func (j *SummaryJob) Run(from time.Time) JobFunc {
 	return func() {
 		_ = retry.Do(func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

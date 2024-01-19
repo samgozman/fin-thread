@@ -134,7 +134,7 @@ func (job *Job) OmitUnlistedStocks() *Job {
 }
 
 // Run return job function that will be executed by the scheduler.
-func (job *Job) Run() jobFunc {
+func (job *Job) Run() JobFunc {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 		defer cancel()
@@ -525,8 +525,8 @@ func formatNewsWithComposedMeta(n models.News) string {
 	return result
 }
 
-// jobFunc is a type for job function that will be executed by the scheduler.
-type jobFunc func()
+// JobFunc is a type for job function that will be executed by the scheduler.
+type JobFunc func()
 
 // metaKey is a type for meta keys based on the keys from composer.ComposedMeta struct.
 type metaKey string

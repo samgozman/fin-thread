@@ -55,7 +55,7 @@ type CalendarJobOptions struct {
 
 // RunWeeklyCalendarJob creates events plan for the upcoming week and publishes them to the channel.
 // It should be run once a week on Monday.
-func (j *CalendarJob) RunWeeklyCalendarJob() jobFunc {
+func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 	return func() {
 		_ = retry.Do(func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
@@ -142,7 +142,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() jobFunc {
 }
 
 // RunCalendarUpdatesJob fetches "Actual" values for today's events and publishes updates to the channel.
-func (j *CalendarJob) RunCalendarUpdatesJob() jobFunc {
+func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 		defer cancel()
