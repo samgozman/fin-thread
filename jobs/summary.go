@@ -171,7 +171,7 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 			return nil
 		},
 			retry.Attempts(5),
-			retry.Delay(30*time.Minute),
+			retry.Delay(10*time.Minute),
 		)
 	}
 }
