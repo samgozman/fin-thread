@@ -82,6 +82,11 @@ func DefaultConfig() *Config {
 			"subscribe",
 			"ark invest",
 			"cathie wood",
+			"bitcoin",
+			"ethereum",
+			"btc",
+			"eth",
+			"dogecoin",
 		},
 		filterKeys: []string{
 			"European Union",
