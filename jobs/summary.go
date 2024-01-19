@@ -51,7 +51,7 @@ type summaryJobOptions struct {
 func (j *SummaryJob) Run(from time.Time) JobFunc {
 	return func() {
 		_ = retry.Do(func() error {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 			defer cancel()
 
 			tx := sentry.StartTransaction(ctx, "RunSummaryJob")
@@ -113,7 +113,7 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 			}
 
 			span = sentry.StartSpan(ctx, "Summarise", sentry.WithTransactionName("SummaryJob.Run"))
-			summarised, err := j.composer.Summarise(ctx, headlines, 20, 1024)
+			summarised, err := j.composer.Summarise(ctx, headlines, 20, 2048)
 			span.Finish()
 			if err != nil {
 				j.logger.Error("Error composing summary", err)
