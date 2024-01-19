@@ -24,7 +24,6 @@ type Env struct {
 type Config struct {
 	env                *Env     // Holds all the environment variables that are used in the app
 	suspiciousKeywords []string // Used to "flag" suspicious news by the journalist.Journalist
-	filterKeys         []string // Used to remove news by the journalist.Journalist if they don't contain any of these keys
 	rssProviders       struct {
 		marketJournalists []journalist.NewsProvider // Market news journalists
 		broadJournalists  []journalist.NewsProvider // Broad news journalists
@@ -102,17 +101,6 @@ func DefaultConfig() *Config {
 			"rsi",
 			"analysts say",
 			"analyst says",
-		},
-		filterKeys: []string{
-			"European Union",
-			"United States",
-			"United Kingdom",
-			"China",
-			"Germany",
-			"France",
-			"Japan",
-			"Italy",
-			"India",
 		},
 	}
 }
