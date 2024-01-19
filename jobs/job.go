@@ -307,12 +307,12 @@ func (job *Job) Run() JobFunc {
 		}
 
 		news, err = filterByComposer(news)
-		if len(news) == 0 {
+		if err != nil || len(news) == 0 {
 			return
 		}
 
 		composedNews, err := composeNews(news)
-		if len(composedNews) == 0 {
+		if err != nil || len(composedNews) == 0 {
 			return
 		}
 
