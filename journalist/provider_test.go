@@ -11,13 +11,9 @@ func TestRssProvider_Fetch(t *testing.T) {
 		Name string
 		URL  string
 	}
-	type args struct {
-		ctx context.Context
-	}
 	tests := []struct {
 		name    string
 		fields  fields
-		args    args
 		wantErr bool
 	}{
 		{
@@ -26,9 +22,6 @@ func TestRssProvider_Fetch(t *testing.T) {
 				Name: "test",
 				URL:  "https://www.nasdaq.com/feed/rssoutbound?category=Dividends",
 			},
-			args: args{
-				ctx: context.Background(),
-			},
 			wantErr: false,
 		},
 		{
@@ -36,9 +29,6 @@ func TestRssProvider_Fetch(t *testing.T) {
 			fields: fields{
 				Name: "test",
 				URL:  "https://google.com/",
-			},
-			args: args{
-				ctx: context.Background(),
 			},
 			wantErr: true,
 		},
@@ -49,7 +39,7 @@ func TestRssProvider_Fetch(t *testing.T) {
 				Name: tt.fields.Name,
 				URL:  tt.fields.URL,
 			}
-			ctx, cancel := context.WithTimeout(tt.args.ctx, 10*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			got, err := r.Fetch(ctx, time.Now().AddDate(0, 0, -3))
 			if (err != nil) != tt.wantErr {

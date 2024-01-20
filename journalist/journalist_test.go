@@ -10,13 +10,9 @@ func TestJournalist_GetLatestNews(t *testing.T) {
 	type fields struct {
 		providers []NewsProvider
 	}
-	type args struct {
-		ctx context.Context
-	}
 	tests := []struct {
 		name    string
 		fields  fields
-		args    args
 		wantErr bool
 	}{
 		{
@@ -26,9 +22,6 @@ func TestJournalist_GetLatestNews(t *testing.T) {
 					NewRssProvider("nasdaq:stocks", "https://www.nasdaq.com/feed/rssoutbound?category=Stocks"),
 					NewRssProvider("nasdaq:markets", "https://www.nasdaq.com/feed/rssoutbound?category=Markets"),
 				},
-			},
-			args: args{
-				ctx: context.Background(),
 			},
 			wantErr: false,
 		},
@@ -41,9 +34,6 @@ func TestJournalist_GetLatestNews(t *testing.T) {
 					NewRssProvider("nasdaq:invalid", "https://httpbin.org/delay/15"),
 				},
 			},
-			args: args{
-				ctx: context.Background(),
-			},
 			wantErr: true,
 		},
 	}
@@ -52,7 +42,7 @@ func TestJournalist_GetLatestNews(t *testing.T) {
 			j := &Journalist{
 				providers: tt.fields.providers,
 			}
-			ctx, cancel := context.WithTimeout(tt.args.ctx, 6*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 			defer cancel()
 			got, err := j.GetLatestNews(ctx, time.Now().AddDate(0, 0, -3))
 			if (err != nil) != tt.wantErr {
