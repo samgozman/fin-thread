@@ -61,7 +61,6 @@ func TestComposer_Compose(t *testing.T) {
 	}
 
 	type args struct {
-		ctx  context.Context
 		news journalist.NewsList
 	}
 	tests := []struct {
@@ -74,7 +73,6 @@ func TestComposer_Compose(t *testing.T) {
 		{
 			name: "Should pass and return correct composed jsonNews",
 			args: args{
-				ctx:  context.Background(),
 				news: news,
 			},
 			expectedFilteredNews: journalist.NewsList{news[0], news[1], news[2]},
@@ -106,7 +104,6 @@ func TestComposer_Compose(t *testing.T) {
 		{
 			name: "Should pass and return empty array correctly",
 			args: args{
-				ctx:  context.Background(),
 				news: journalist.NewsList{},
 			},
 			want:    []*ComposedNews{},
@@ -115,7 +112,6 @@ func TestComposer_Compose(t *testing.T) {
 		{
 			name: "Should return error if OpenAI fails",
 			args: args{
-				ctx:  context.Background(),
 				news: news,
 			},
 			expectedFilteredNews: journalist.NewsList{news[0], news[1]},
@@ -171,7 +167,7 @@ func TestComposer_Compose(t *testing.T) {
 				OpenAiClient: mockClient,
 				Config:       defaultPromptConfig(),
 			}
-			got, err := c.Compose(tt.args.ctx, tt.args.news)
+			got, err := c.Compose(context.Background(), tt.args.news)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Compose() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -196,7 +192,6 @@ func TestComposer_Summarise(t *testing.T) {
 		Config       *promptConfig
 	}
 	type args struct {
-		ctx            context.Context
 		headlines      []*Headline
 		headlinesLimit int
 		maxTokens      int
@@ -211,7 +206,6 @@ func TestComposer_Summarise(t *testing.T) {
 		{
 			name: "Should pass and return correct composed jsonNews",
 			args: args{
-				ctx: context.Background(),
 				headlines: []*Headline{
 					{
 						ID:   "1",
@@ -296,7 +290,7 @@ func TestComposer_Summarise(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.Summarise(tt.args.ctx, tt.args.headlines, tt.args.headlinesLimit, tt.args.maxTokens)
+			got, err := c.Summarise(context.Background(), tt.args.headlines, tt.args.headlinesLimit, tt.args.maxTokens)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Summarise() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -310,7 +304,6 @@ func TestComposer_Summarise(t *testing.T) {
 
 func TestComposer_Filter(t *testing.T) {
 	type args struct {
-		ctx  context.Context
 		news journalist.NewsList
 	}
 	tests := []struct {
@@ -322,7 +315,6 @@ func TestComposer_Filter(t *testing.T) {
 		{
 			name: "Should pass and return correct filtered news",
 			args: args{
-				ctx: context.Background(),
 				news: journalist.NewsList{
 					{
 						ID:           "1",
@@ -411,7 +403,7 @@ func TestComposer_Filter(t *testing.T) {
 				TogetherAIClient: mockClient,
 				Config:           defaultPromptConfig(),
 			}
-			got, err := c.Filter(tt.args.ctx, tt.args.news)
+			got, err := c.Filter(context.Background(), tt.args.news)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Filter() error = %v, wantErr %v", err, tt.wantErr)
 				return
