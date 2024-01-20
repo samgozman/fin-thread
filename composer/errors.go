@@ -19,16 +19,20 @@ type ComposeError struct {
 
 func (e *ComposeError) Error() string {
 	if e.Value != "" {
-		return fmt.Sprintf("[%s] error in %s: %s (value: %s)", e.FnName, e.Source, e.Err, e.Value)
+		return fmt.Errorf("[%s] error in %s: %w (value: %s)", e.FnName, e.Source, e.Err, e.Value).Error()
 	}
 
-	return fmt.Sprintf("[%s] error in %s: %s", e.FnName, e.Source, e.Err)
+	return fmt.Errorf("[%s] error in %s: %w", e.FnName, e.Source, e.Err).Error()
 }
 
 // WithValue sets the value that caused the error.
 func (e *ComposeError) WithValue(value string) *ComposeError {
 	e.Value = value
 	return e
+}
+
+func (e *ComposeError) Unwrap() error {
+	return e.Err
 }
 
 // newErr creates a new ComposeError instance with the given error and source.

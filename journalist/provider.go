@@ -31,14 +31,14 @@ func (r *RssProvider) Fetch(ctx context.Context, until time.Time) (NewsList, err
 	fp := gofeed.NewParser()
 	feed, err := fp.ParseURLWithContext(r.URL, ctx)
 	if err != nil {
-		return nil, newErrProvider(r.Name, err.Error())
+		return nil, newErrProvider(r.Name, err)
 	}
 
 	var news NewsList
 	for _, item := range feed.Items {
 		newsItem, err := newNews(item.Title, item.Description, item.Link, item.Published, r.Name)
 		if err != nil {
-			return nil, newErrProvider(r.Name, err.Error())
+			return nil, newErrProvider(r.Name, err)
 		}
 		news = append(news, newsItem)
 	}
