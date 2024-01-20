@@ -187,7 +187,7 @@ func Test_mapEventToDB(t *testing.T) {
 	}
 }
 
-func Test_formatEventUpdate(t *testing.T) {
+func Test_formatEventsUpdate(t *testing.T) {
 	type args struct {
 		country ecal.EconomicCalendarCountry
 		events  []*models.Event
@@ -360,8 +360,8 @@ func Test_formatEventUpdate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := formatEventUpdate(tt.args.country, tt.args.events); got != tt.want {
-				t.Errorf("formatEventUpdate() = %v, want %v", got, tt.want)
+			if got := formatEventsUpdate(tt.args.country, tt.args.events); got != tt.want {
+				t.Errorf("formatEventsUpdate() = %v, want %v", got, tt.want)
 			}
 		})
 	}

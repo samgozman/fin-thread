@@ -257,7 +257,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 
 		// Publish eventsDB to the channel
 		for country, events := range eventsByCountry {
-			m := formatEventUpdate(country, events)
+			m := formatEventsUpdate(country, events)
 			if m == "" {
 				continue
 			}
@@ -329,7 +329,7 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	return m.String()
 }
 
-func formatEventUpdate(country ecal.EconomicCalendarCountry, events []*models.Event) string {
+func formatEventsUpdate(country ecal.EconomicCalendarCountry, events []*models.Event) string {
 	// Handle nil event case
 	if len(events) == 0 {
 		return ""
@@ -350,52 +350,55 @@ func formatEventUpdate(country ecal.EconomicCalendarCountry, events []*models.Ev
 			m.WriteString("\n")
 		}
 
-		// Check if the event has a previous value or a forecast value
-		if event.Previous != "" || event.Forecast != "" {
-			actualNumber := utils.StrValueToFloat(event.Actual)
-
-			// Check for a change in actual value compared to previous value or forecast value
-			previousNumber := utils.StrValueToFloat(event.Previous)
-			forecastNumber := utils.StrValueToFloat(event.Forecast)
-
-			if (event.Previous != "" && actualNumber != previousNumber) ||
-				(event.Forecast != "" && actualNumber != forecastNumber) {
-				if event.Impact == ecal.EconomicCalendarImpactHigh {
-					m.WriteString("🔥 ")
-				} else {
-					m.WriteString("⚠️ ")
-				}
-			}
-		}
-
-		// Add event title and actual value in bold
-		m.WriteString(fmt.Sprintf("%s: *%s*", event.Title, event.Actual))
-
-		// For non-percentage events, add percentage change from previous value
-		if event.Previous != "" && !strings.Contains(event.Previous, "%") {
-			actualNumber := utils.StrValueToFloat(event.Actual)
-			previousNumber := utils.StrValueToFloat(event.Previous)
-			p := ((actualNumber / previousNumber) - 1) * 100
-
-			if p != math.Inf(1) && p != math.Inf(-1) {
-				if p > 0 {
-					m.WriteString(fmt.Sprintf(" (+%.2f%%)", p))
-				} else {
-					m.WriteString(fmt.Sprintf(" (%.2f%%)", p))
-				}
-			}
-		}
-
-		// Print forecast and previous values if they are not empty
-		if event.Forecast != "" {
-			m.WriteString(fmt.Sprintf(", forecast: %s", event.Forecast))
-		}
-		if event.Previous != "" {
-			m.WriteString(fmt.Sprintf(", last: %s", event.Previous))
-		}
+		// Add event
+		m.WriteString(formatEvent(event))
 	}
 
 	return m.String()
+}
+
+func formatEvent(event *models.Event) string {
+	var ev strings.Builder
+
+	actualNumber := utils.StrValueToFloat(event.Actual)
+	previousNumber := utils.StrValueToFloat(event.Previous)
+	forecastNumber := utils.StrValueToFloat(event.Forecast)
+
+	// Check for a change in actual value compared to previous value or forecast value
+	if (event.Previous != "" && actualNumber != previousNumber) ||
+		(event.Forecast != "" && actualNumber != forecastNumber) {
+		if event.Impact == ecal.EconomicCalendarImpactHigh {
+			ev.WriteString("🔥 ")
+		} else {
+			ev.WriteString("⚠️ ")
+		}
+	}
+
+	// Add event title and actual value in bold
+	ev.WriteString(fmt.Sprintf("%s: *%s*", event.Title, event.Actual))
+
+	// For non-percentage events, add percentage change from previous value
+	if event.Previous != "" && !strings.Contains(event.Previous, "%") {
+		p := ((actualNumber / previousNumber) - 1) * 100
+
+		if p != math.Inf(1) && p != math.Inf(-1) {
+			if p > 0 {
+				ev.WriteString(fmt.Sprintf(" (+%.2f%%)", p))
+			} else {
+				ev.WriteString(fmt.Sprintf(" (%.2f%%)", p))
+			}
+		}
+	}
+
+	// Print forecast and previous values if they are not empty
+	if event.Forecast != "" {
+		ev.WriteString(fmt.Sprintf(", forecast: %s", event.Forecast))
+	}
+	if event.Previous != "" {
+		ev.WriteString(fmt.Sprintf(", last: %s", event.Previous))
+	}
+
+	return ev.String()
 }
 
 // mapEventToDB maps calendar event to the database event instance.
