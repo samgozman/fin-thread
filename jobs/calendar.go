@@ -88,7 +88,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 				e := fmt.Errorf("[job-calendar] Error fetching events: %w", err)
 				j.logger.Error(e.Error())
 				utils.CaptureSentryException("calendarJobFetchError", hub, e)
-				return err
+				return e
 			}
 			hub.AddBreadcrumb(&sentry.Breadcrumb{
 				Category: "successful",
@@ -112,7 +112,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 					j.logger.Error(e.Error())
 					utils.CaptureSentryException("calendarJobPublishError", hub, e)
 					// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
-					return retry.Unrecoverable(e)
+					return retry.Unrecoverable(e) //nolint:wrapcheck
 				}
 			} else {
 				fmt.Println(m)
@@ -130,7 +130,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 				e := fmt.Errorf("[job-calendar] Error saving events: %w", err)
 				j.logger.Error(e.Error())
 				utils.CaptureSentryException("calendarJobSaveError", hub, e)
-				return retry.Unrecoverable(e)
+				return retry.Unrecoverable(e) //nolint:wrapcheck
 			}
 
 			return nil

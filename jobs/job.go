@@ -164,8 +164,9 @@ func (job *Job) Run() JobFunc {
 			news, err := job.journalist.GetLatestNews(ctx, job.options.until)
 			span.Finish()
 			if err != nil {
-				job.logger.Info(fmt.Sprintf("[%s][GetLatestNews]", jobName), "error", err)
-				utils.CaptureSentryException("jobGetLatestNewsError", hub, err)
+				e := fmt.Errorf("[%s][GetLatestNews]: %w", jobName, err)
+				job.logger.Info(e.Error())
+				utils.CaptureSentryException("jobGetLatestNewsError", hub, e)
 			}
 
 			hub.AddBreadcrumb(&sentry.Breadcrumb{
@@ -181,9 +182,10 @@ func (job *Job) Run() JobFunc {
 			news, err := job.removeDuplicates(ctx, news)
 			span.Finish()
 			if err != nil {
-				job.logger.Info(fmt.Sprintf("[%s][removeDuplicates]", jobName), "error", err)
-				utils.CaptureSentryException("jobRemoveDuplicatesError", hub, err)
-				return nil, err
+				e := fmt.Errorf("[%s][removeDuplicates]: %w", jobName, err)
+				job.logger.Info(e.Error())
+				utils.CaptureSentryException("jobRemoveDuplicatesError", hub, e)
+				return nil, e
 			}
 			hub.AddBreadcrumb(&sentry.Breadcrumb{
 				Category: "successful",
@@ -198,9 +200,10 @@ func (job *Job) Run() JobFunc {
 			news, err := job.composer.Filter(ctx, news)
 			span.Finish()
 			if err != nil {
-				job.logger.Info(fmt.Sprintf("[%s][filter]", jobName), "error", err)
-				utils.CaptureSentryException("jobComposerFilterError", hub, err)
-				return nil, err
+				e := fmt.Errorf("[%s][Filter]: %w", jobName, err)
+				job.logger.Info(e.Error())
+				utils.CaptureSentryException("jobComposerFilterError", hub, e)
+				return nil, e
 			}
 			hub.AddBreadcrumb(&sentry.Breadcrumb{
 				Category: "successful",

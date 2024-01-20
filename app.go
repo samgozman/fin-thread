@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/avast/retry-go"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-co-op/gocron/v2"
@@ -51,7 +52,7 @@ func (a *App) start() {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 		stockMap, err = scv.Screener.FetchFromNasdaq(ctx)
-		return err
+		return fmt.Errorf("error fetching stockMap: %w", err)
 	}, retry.Attempts(2), retry.Delay(5*time.Second))
 	if err != nil {
 		slog.Default().Error("[main] Error fetching stockMap:", err)

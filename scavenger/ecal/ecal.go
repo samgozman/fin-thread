@@ -43,7 +43,7 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 	)
 	req, err := http.NewRequest(http.MethodPost, economicCalendarURL, data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating calendar request: %w", err)
 	}
 	req = req.WithContext(ctx)
 	req.Header.Set("accept", "*/*")
@@ -54,7 +54,7 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 	client := http.DefaultClient
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error sending calendar request: %w", err)
 	}
 
 	if res.StatusCode != http.StatusOK {

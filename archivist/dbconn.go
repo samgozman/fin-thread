@@ -1,6 +1,7 @@
 package archivist
 
 import (
+	"fmt"
 	"github.com/cenkalti/backoff/v4"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -20,7 +21,7 @@ func connectToPG(dsn string) (*gorm.DB, error) {
 		}))
 		if err != nil {
 			slog.Info("[connectToPG] Postgres not yet ready...")
-			return nil, err
+			return nil, fmt.Errorf("failed to connect to Postgres: %w", err)
 		}
 		slog.Info("[connectToPG] Connected to Postgres!")
 		return conn, nil

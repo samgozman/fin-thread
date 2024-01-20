@@ -1,6 +1,7 @@
 package archivist
 
 import (
+	"fmt"
 	"github.com/samgozman/fin-thread/archivist/models"
 	"gorm.io/gorm"
 )
@@ -30,7 +31,7 @@ func NewArchivist(dsn string) (*Archivist, error) {
 	// TODO: Add migration tool later.
 	err = conn.AutoMigrate(&models.News{}, &models.Event{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to migrate schema: %w", err)
 	}
 
 	return &Archivist{

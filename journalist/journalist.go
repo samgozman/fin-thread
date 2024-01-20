@@ -3,6 +3,7 @@ package journalist
 import (
 	"context"
 	"errors"
+	"fmt"
 	"golang.org/x/sync/errgroup"
 	"sync"
 	"time"
@@ -78,7 +79,7 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 
 	// Wait for all goroutines to finish
 	if err := eg.Wait(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error fetching news: %w", err)
 	}
 
 	results = results.mapIDs()

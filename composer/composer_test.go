@@ -20,7 +20,7 @@ type MockOpenAiClient struct {
 
 func (m *MockOpenAiClient) CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (response openai.ChatCompletionResponse, err error) {
 	args := m.Called(ctx, req)
-	return args.Get(0).(openai.ChatCompletionResponse), args.Error(1)
+	return args.Get(0).(openai.ChatCompletionResponse), args.Error(1) //nolint:wrapcheck
 }
 
 type MockTogetherAIClient struct {
@@ -29,7 +29,7 @@ type MockTogetherAIClient struct {
 
 func (m *MockTogetherAIClient) CreateChatCompletion(ctx context.Context, options togetherAIRequest) (*TogetherAIResponse, error) {
 	args := m.Called(ctx, options)
-	return args.Get(0).(*TogetherAIResponse), args.Error(1)
+	return args.Get(0).(*TogetherAIResponse), args.Error(1) //nolint:wrapcheck
 }
 
 func TestComposer_Compose(t *testing.T) {

@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/avast/retry-go"
 	"github.com/getsentry/sentry-go"
@@ -74,14 +73,15 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 			news, err := j.archivist.Entities.News.FindAllUntilDate(ctx, from)
 			span.Finish()
 			if err != nil {
-				j.logger.Error("Error fetching news from the database", err)
+				e := fmt.Errorf("error fetching news from the database: %w", err)
+				j.logger.Error(e.Error())
 				hub.AddBreadcrumb(&sentry.Breadcrumb{
 					Category: "database",
 					Message:  "Error fetching news from the database",
 					Level:    sentry.LevelError,
 				}, nil)
-				utils.CaptureSentryException("jobSummaryNewsFindAllError", hub, err)
-				return err
+				utils.CaptureSentryException("jobSummaryNewsFindAllError", hub, e)
+				return e
 			}
 
 			// Find all events
@@ -89,14 +89,15 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 			events, err := j.archivist.Entities.Events.FindAllUntilDate(ctx, from)
 			span.Finish()
 			if err != nil {
-				j.logger.Error("Error fetching events from the database", err)
+				e := fmt.Errorf("error fetching events from the database: %w", err)
+				j.logger.Error(e.Error())
 				hub.AddBreadcrumb(&sentry.Breadcrumb{
 					Category: "database",
 					Message:  "Error fetching events from the database",
 					Level:    sentry.LevelError,
 				}, nil)
-				utils.CaptureSentryException("jobSummaryEventsFindAllError", hub, err)
-				return err
+				utils.CaptureSentryException("jobSummaryEventsFindAllError", hub, e)
+				return e
 			}
 
 			if len(events)+len(news) < 5 {
@@ -116,14 +117,15 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 			summarised, err := j.composer.Summarise(ctx, headlines, 20, 2048)
 			span.Finish()
 			if err != nil {
-				j.logger.Error("Error composing summary", err)
+				e := fmt.Errorf("error summarising news: %w", err)
+				j.logger.Error(e.Error())
 				hub.AddBreadcrumb(&sentry.Breadcrumb{
 					Category: "composer",
 					Message:  "Error composing summary",
 					Level:    sentry.LevelError,
 				}, nil)
-				utils.CaptureSentryException("jobSummaryComposerSummariseError", hub, err)
-				return err
+				utils.CaptureSentryException("jobSummaryComposerSummariseError", hub, e)
+				return e
 			}
 			if len(summarised) == 0 {
 				j.logger.Info("No summarised news")
@@ -156,15 +158,16 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 			_, err = j.publisher.Publish(message)
 			span.Finish()
 			if err != nil {
-				j.logger.Error("Error publishing summary", err)
+				e := fmt.Errorf("error publishing summary: %w", err)
+				j.logger.Error(e.Error())
 				hub.AddBreadcrumb(&sentry.Breadcrumb{
 					Category: "publisher",
 					Message:  "Error publishing summary",
 					Level:    sentry.LevelError,
 				}, nil)
-				utils.CaptureSentryException("jobSummaryPublishError", hub, err)
+				utils.CaptureSentryException("jobSummaryPublishError", hub, e)
 				// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
-				return retry.Unrecoverable(errors.New("publishing error"))
+				return retry.Unrecoverable(e) //nolint:wrapcheck
 			}
 
 			// TODO: Save or not to save summary to db?

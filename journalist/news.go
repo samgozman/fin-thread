@@ -30,7 +30,7 @@ type News struct {
 func newNews(title, description, link, date, provider string) (*News, error) {
 	dateTime, err := utils.ParseDate(date)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse date '%s': %w", date, err)
 	}
 
 	// Sanitize title and description, because they may contain HTML tags and styles
@@ -80,7 +80,7 @@ type NewsList []*News
 func (n NewsList) ToJSON() (string, error) {
 	jsonData, err := json.Marshal(n)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to marshal NewsList: %w", err)
 	}
 	return string(jsonData), nil
 }
@@ -104,7 +104,7 @@ func (n NewsList) ToContentJSON() (string, error) {
 
 	jsonData, err := json.Marshal(contentNews)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to marshal simpleNews: %w", err)
 	}
 	return string(jsonData), nil
 }
