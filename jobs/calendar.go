@@ -303,7 +303,7 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 		}
 
 		// Add event
-		country := ecal.EconomicCalendarCountryEmoji[e.Country]
+		country := ecal.GetCountryEmoji(e.Country)
 
 		// Print holiday events without time
 		if e.Impact == ecal.EconomicCalendarImpactHoliday {
@@ -339,8 +339,8 @@ func formatEventUpdate(country ecal.EconomicCalendarCountry, events []*models.Ev
 	var m strings.Builder
 
 	// Add country emoji and hashtag
-	countryEmoji := ecal.EconomicCalendarCountryEmoji[country]
-	countryHashtag := ecal.EconomicCalendarCountryHashtag[country]
+	countryEmoji := ecal.GetCountryEmoji(country)
+	countryHashtag := ecal.GetCountryHashtag(country)
 	m.WriteString(fmt.Sprintf("%s #%s\n", countryEmoji, countryHashtag))
 
 	// Iterate through events

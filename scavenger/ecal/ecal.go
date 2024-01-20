@@ -280,55 +280,62 @@ const (
 	EconomicCalendarUnitedStates  EconomicCalendarCountry = "United States"
 )
 
-var EconomicCalendarCountryHashtag = map[EconomicCalendarCountry]string{
-	EconomicCalendarAustralia:     "australia",
-	EconomicCalendarBrazil:        "brazil",
-	EconomicCalendarCanada:        "canada",
-	EconomicCalendarChina:         "china",
-	EconomicCalendarEuropeanUnion: "europe",
-	EconomicCalendarFrance:        "france",
-	EconomicCalendarGermany:       "germany",
-	EconomicCalendarHongKong:      "hongkong",
-	EconomicCalendarIndia:         "india",
-	EconomicCalendarItaly:         "italy",
-	EconomicCalendarJapan:         "japan",
-	EconomicCalendarMexico:        "mexico",
-	EconomicCalendarNewZealand:    "newzealand",
-	EconomicCalendarNorway:        "norway",
-	EconomicCalendarSingapore:     "singapore",
-	EconomicCalendarSouthAfrica:   "southafrica",
-	EconomicCalendarSouthKorea:    "southkorea",
-	EconomicCalendarSpain:         "spain",
-	EconomicCalendarSweden:        "sweden",
-	EconomicCalendarSwitzerland:   "switzerland",
-	EconomicCalendarUnitedKingdom: "uk",
-	EconomicCalendarUnitedStates:  "usa",
+// GetCountryHashtag returns the country hashtag for the specified country.
+func GetCountryHashtag(country EconomicCalendarCountry) string {
+	m := map[EconomicCalendarCountry]string{
+		EconomicCalendarAustralia:     "australia",
+		EconomicCalendarBrazil:        "brazil",
+		EconomicCalendarCanada:        "canada",
+		EconomicCalendarChina:         "china",
+		EconomicCalendarEuropeanUnion: "europe",
+		EconomicCalendarFrance:        "france",
+		EconomicCalendarGermany:       "germany",
+		EconomicCalendarHongKong:      "hongkong",
+		EconomicCalendarIndia:         "india",
+		EconomicCalendarItaly:         "italy",
+		EconomicCalendarJapan:         "japan",
+		EconomicCalendarMexico:        "mexico",
+		EconomicCalendarNewZealand:    "newzealand",
+		EconomicCalendarNorway:        "norway",
+		EconomicCalendarSingapore:     "singapore",
+		EconomicCalendarSouthAfrica:   "southafrica",
+		EconomicCalendarSouthKorea:    "southkorea",
+		EconomicCalendarSpain:         "spain",
+		EconomicCalendarSweden:        "sweden",
+		EconomicCalendarSwitzerland:   "switzerland",
+		EconomicCalendarUnitedKingdom: "uk",
+		EconomicCalendarUnitedStates:  "usa",
+	}
+	return m[country]
 }
 
-// EconomicCalendarCountryEmoji is the map of country code to emoji symbol.
-var EconomicCalendarCountryEmoji = map[EconomicCalendarCountry]string{
-	EconomicCalendarAustralia:     "🇦🇺",
-	EconomicCalendarBrazil:        "🇧🇷",
-	EconomicCalendarCanada:        "🇨🇦",
-	EconomicCalendarChina:         "🇨🇳",
-	EconomicCalendarEuropeanUnion: "🇪🇺",
-	EconomicCalendarFrance:        "🇫🇷",
-	EconomicCalendarGermany:       "🇩🇪",
-	EconomicCalendarHongKong:      "🇭🇰",
-	EconomicCalendarIndia:         "🇮🇳",
-	EconomicCalendarItaly:         "🇮🇹",
-	EconomicCalendarJapan:         "🇯🇵",
-	EconomicCalendarMexico:        "🇲🇽",
-	EconomicCalendarNewZealand:    "🇳🇿",
-	EconomicCalendarNorway:        "🇳🇴",
-	EconomicCalendarSingapore:     "🇸🇬",
-	EconomicCalendarSouthAfrica:   "🇿🇦",
-	EconomicCalendarSouthKorea:    "🇰🇷",
-	EconomicCalendarSpain:         "🇪🇸",
-	EconomicCalendarSweden:        "🇸🇪",
-	EconomicCalendarSwitzerland:   "🇨🇭",
-	EconomicCalendarUnitedKingdom: "🇬🇧",
-	EconomicCalendarUnitedStates:  "🇺🇸",
+// GetCountryEmoji returns the country emoji for the specified country.
+func GetCountryEmoji(country EconomicCalendarCountry) string {
+	m := map[EconomicCalendarCountry]string{
+		EconomicCalendarAustralia:     "🇦🇺",
+		EconomicCalendarBrazil:        "🇧🇷",
+		EconomicCalendarCanada:        "🇨🇦",
+		EconomicCalendarChina:         "🇨🇳",
+		EconomicCalendarEuropeanUnion: "🇪🇺",
+		EconomicCalendarFrance:        "🇫🇷",
+		EconomicCalendarGermany:       "🇩🇪",
+		EconomicCalendarHongKong:      "🇭🇰",
+		EconomicCalendarIndia:         "🇮🇳",
+		EconomicCalendarItaly:         "🇮🇹",
+		EconomicCalendarJapan:         "🇯🇵",
+		EconomicCalendarMexico:        "🇲🇽",
+		EconomicCalendarNewZealand:    "🇳🇿",
+		EconomicCalendarNorway:        "🇳🇴",
+		EconomicCalendarSingapore:     "🇸🇬",
+		EconomicCalendarSouthAfrica:   "🇿🇦",
+		EconomicCalendarSouthKorea:    "🇰🇷",
+		EconomicCalendarSpain:         "🇪🇸",
+		EconomicCalendarSweden:        "🇸🇪",
+		EconomicCalendarSwitzerland:   "🇨🇭",
+		EconomicCalendarUnitedKingdom: "🇬🇧",
+		EconomicCalendarUnitedStates:  "🇺🇸",
+	}
+	return m[country]
 }
 
 // EconomicCalendarImpact impact of the event on the market (low, medium, high, holiday, none).
