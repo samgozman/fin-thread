@@ -20,6 +20,19 @@ linters:
     - tenv
     - unparam
     - whitespace
+    - asasalint
+    - asciicheck
+    - bidichk
+    - containedctx
+    - contextcheck
+    - durationcheck
+    - gochecknoglobals
+    - goconst
+    - gocritic
+    - nestif
+    - nilerr
+    - sloglint
+    - wrapcheck
 
 linters-settings:
   gocyclo:
