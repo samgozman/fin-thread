@@ -40,7 +40,10 @@ jobs:
       - name: Generate API reference
         run: doc2go ./...
       - name: Upload pages
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-pages
+          path: _site
 
   publish:
     name: Publish website
