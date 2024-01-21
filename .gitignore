@@ -22,3 +22,5 @@
 
 # Environment variables
 *.env
+
+qodana.sarif.json
