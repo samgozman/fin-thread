@@ -9,6 +9,8 @@ Welcome to **FinThread**! FinThread is designed to aggregate financial news from
 analyze the content using the cutting edge in AI technology, and deliver concise and relevant news
 directly to your fingertips through [Telegram](https://t.me/finthread) public channel.
 
+![finthread](https://github.com/samgozman/fin-thread/assets/3392560/0d5ac8bf-8720-4116-a369-3f7b8e05cb24)
+
 ## Features
 
 - **News Aggregator**: Fetches financial news articles from a wide range of sources, ensuring comprehensive news feed.
