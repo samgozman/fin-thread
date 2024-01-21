@@ -1,4 +1,9 @@
 .env*
 *.md
 qodana.yaml
+qodana.sarif.json
 .github/*
+LICENSE
+Makefile
+docker-compose.yml
+coverage.txt
