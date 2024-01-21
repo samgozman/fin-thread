@@ -101,6 +101,14 @@ func DefaultConfig() *Config {
 			"rsi",
 			"analysts say",
 			"analyst says",
+			"retirement",
+			"retire",
+			"401k",
+			"pension",
+			"i",   // e.g. "I think"
+			"i'm", // e.g. "I'm thinking"
+			"me",  // e.g. "me and my friends"
+			"my",  // e.g. "my friends"
 		},
 	}
 }

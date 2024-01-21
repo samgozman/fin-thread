@@ -317,6 +317,17 @@ func TestNews_Contains(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "contains pronoun",
+			fields: fields{
+				Title:       "'I'm not a cat': Lawyer struggles with Zoom kitten filter during court case",
+				Description: "A lawyer in Texas has gone viral after accidentally appearing in court as a cat.",
+			},
+			args: args{
+				keywords: []string{"i'm"},
+			},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
