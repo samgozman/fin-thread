@@ -1,4 +1,4 @@
-name: Unit tests
+name: Unit tests and coverage
 
 on:
   pull_request:
@@ -24,4 +24,8 @@ jobs:
 
       - name: Run unit tests
         run: go test -v ./...
-        
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
