@@ -85,6 +85,10 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 		events = append(events, e)
 	}
 
+	if events == nil {
+		return nil, nil
+	}
+
 	// Need to remove events that are not in the specified date range.
 	// MQL5 API returns events for one extra day for some reason.
 	events = events.Distinct().FilterByDateRange(from, to)
