@@ -4,4 +4,4 @@ lint:
 
 # Test go files
 test:
-	go test -v ./...
+	go test -v ./... -race

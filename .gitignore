@@ -24,3 +24,4 @@
 *.env
 
 qodana.sarif.json
+coverage.txt

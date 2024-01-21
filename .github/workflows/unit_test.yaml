@@ -22,8 +22,8 @@ jobs:
       - name: Get dependencies
         run: go mod download
 
-      - name: Run unit tests
-        run: go test -v ./...
+      - name: Run unit tests with coverage
+        run: go test -v ./... -race -coverprofile=coverage.txt -covermode=atomic
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
