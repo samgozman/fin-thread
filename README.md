@@ -1,5 +1,8 @@
 # FinThread - News telegram bot powered by AI
 
+![Go](https://img.shields.io/badge/Go-%2300ADD8.svg?logo=go&logoColor=white)
+[![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/finthread)
+[![Go Doc](https://godoc.org/github.com/?status.svg)](https://samgozman.github.io/fin-thread/github.com/samgozman/fin-thread/)
 [![codecov](https://codecov.io/gh/samgozman/fin-thread/graph/badge.svg?token=G8YV1UZC03)](https://codecov.io/gh/samgozman/fin-thread)
 
 Welcome to **FinThread**! FinThread is designed to aggregate financial news from a plethora of sources,
@@ -38,15 +41,21 @@ Here is a quick guide on how to use FinThread if you want to run it yourself.
 
 The project is split into several entities:
 
-- **Journalist**: Journalists are responsible for fetching news from various sources.
+- **[Journalist](https://samgozman.github.io/fin-thread/github.com/samgozman/fin-thread/journalist/)**: Journalists are
+  responsible for fetching news from various sources.
   One journalist can have multiple Providers (like RSS feeds).
   Ideally, each journalist should be responsible for his own specific domain (like cryptocurrencies, stocks, etc.).
-- **Composer**: Composers are responsible for composing the news and filtering out irrelevant content using LLMs.
-- **Publisher**: Publishers are responsible for publishing the news to a specific channel.
-- **Archivist**: Archivists are responsible for saving the news in a database and retrieving it when needed.
-- **Scavenger**: Scavengers are responsible for fetching economic calendar events and other sources that need a custom
+- **[Composer](https://samgozman.github.io/fin-thread/github.com/samgozman/fin-thread/composer/)**: Composers are
+  responsible for composing the news and filtering out irrelevant content using LLMs.
+- **[Publisher](https://samgozman.github.io/fin-thread/github.com/samgozman/fin-thread/publisher/)**: Publishers are
+  responsible for publishing the news to a specific channel.
+- **[Archivist](https://samgozman.github.io/fin-thread/github.com/samgozman/fin-thread/archivist/)**: Archivists are
+  responsible for saving the news in a database and retrieving it when needed.
+- **[Scavenger](https://samgozman.github.io/fin-thread/github.com/samgozman/fin-thread/scavenger/)**: Scavengers are
+  responsible for fetching economic calendar events and other sources that need a custom
   implementation.
-- **Job**: Is a set of schedule-based tasks that are executed periodically.
+- **[Job](https://samgozman.github.io/fin-thread/github.com/samgozman/fin-thread/jobs/)**: Is a set of schedule-based
+  tasks that are executed periodically.
   Jobs combine all the above entities to achieve a specific goal.
 
 ### Configuration
