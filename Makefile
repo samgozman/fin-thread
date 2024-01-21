@@ -5,3 +5,6 @@ lint:
 # Test go files
 test:
 	go test -v ./... -race
+
+run:
+	docker compose up --build
