@@ -33,15 +33,14 @@ func ParseDate(dateString Datable) (time.Time, error) {
 		for _, layout := range layouts {
 			parsedTime, err = time.Parse(layout, dateString)
 			if err == nil {
-				break
+				return parsedTime.UTC(), nil
 			}
 		}
 
-		if parsedTime.IsZero() && err != nil {
-			return time.Time{}, fmt.Errorf("error parsing date: %s", dateString)
+		// If none of the layouts could parse the date string, return the last error
+		if err != nil {
+			return time.Time{}, fmt.Errorf("error parsing date: %s, error: %w", dateString, err)
 		}
-
-		return parsedTime.UTC(), err
 	case int:
 		timestamp = int64(dateString)
 	case int32:
@@ -50,7 +49,7 @@ func ParseDate(dateString Datable) (time.Time, error) {
 		timestamp = dateString
 
 	default:
-		return time.Time{}, fmt.Errorf("unknown type: %T of value %s", dateString, dateString)
+		return time.Time{}, fmt.Errorf("unknown type: %T of value %v", dateString, dateString)
 	}
 
 	if timestamp == 0 {
