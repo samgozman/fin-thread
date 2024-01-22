@@ -5,21 +5,21 @@ import (
 	"strings"
 )
 
-// Find first array group. This will fix most weird OpenAI bugs with broken JSON.
+// aiJSONStringFixer will fix the most weird OpenAI & Mistral bugs with a broken JSON array.
 func aiJSONStringFixer(str string) (string, error) {
 	// Often Mistral bug for empty arrays
 	if str == "[[]]" || strings.Contains(str, "[\\]") {
 		return "[]", nil
 	}
 
-	// Find first array group in the string [{...}]
+	// Find a first array group in the string [{...}]
 	re := regexp.MustCompile(`\[{([\S\s]*)}]`)
 	matches := re.FindString(str)
 	if matches != "" {
 		return matches, nil
 	}
 
-	// If not, try first array []
+	// If not, try a first array []
 	re = regexp.MustCompile(`\[([\S\s]*)]`)
 	matches = re.FindString(str)
 	if matches == "" {

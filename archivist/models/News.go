@@ -78,9 +78,9 @@ func (n *News) Validate() error {
 	return nil
 }
 
-// GenerateHash generates the hash of the news (URL + title + description + date).
+// GenerateHash generates the hash of the news (title + description).
 func (n *News) GenerateHash() {
-	h := md5.Sum([]byte(n.URL + n.OriginalTitle + n.OriginalDesc + n.OriginalDate.String()))
+	h := md5.Sum([]byte(n.OriginalTitle + n.OriginalDesc))
 	n.Hash = hex.EncodeToString(h[:])
 }
 
