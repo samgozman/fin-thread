@@ -9,7 +9,6 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -39,13 +38,6 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 	// Create request body with the specified date range
 	f := from.Format("2006-01-02T15:04:05")
 	t := to.Format("2006-01-02T15:04:05")
-
-	form := url.Values{}
-	form.Add("date_mode", "1")
-	form.Add("from", f)
-	form.Add("to", t)
-	form.Add("importance", "13")    // importance=13 - high impact, holidays and medium
-	form.Add("currencies", "65743") // currencies=65743 - CHF, EUR, GBP, JPY, USD, CNY, INR
 
 	payload := &bytes.Buffer{}
 	writer := multipart.NewWriter(payload)
