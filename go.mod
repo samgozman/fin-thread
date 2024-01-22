@@ -6,7 +6,7 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/getsentry/sentry-go v0.26.0
-	github.com/go-co-op/gocron/v2 v2.2.0
+	github.com/go-co-op/gocron/v2 v2.2.1
 	github.com/go-playground/validator/v10 v10.17.0
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/google/generative-ai-go v0.5.0
