@@ -6,10 +6,15 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
+type sentryHub interface {
+	CaptureException(exception error) *sentry.EventID
+	WithScope(callback func(scope *sentry.Scope))
+}
+
 // CaptureSentryException is a helper function that captures an exception with the given name and error.
 // The main purpose of this function is to rewrite the exception type to the given name.
 // In Sentry, the exception type is always the name of the error type, which is errors.*something* and is not very useful.
-func CaptureSentryException(name string, hub *sentry.Hub, err error) {
+func CaptureSentryException(name string, hub sentryHub, err error) {
 	errType := errorsLevelMatcher(err)
 	hub.WithScope(func(scope *sentry.Scope) {
 		scope.AddEventProcessor(func(e *sentry.Event, hint *sentry.EventHint) *sentry.Event {
