@@ -1,12 +1,15 @@
 package ecal
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/samgozman/fin-thread/utils"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -36,19 +39,33 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 	// Create request body with the specified date range
 	f := from.Format("2006-01-02T15:04:05")
 	t := to.Format("2006-01-02T15:04:05")
-	data := strings.NewReader(
-		// importance=13 - high impact, holidays and medium
-		// currencies=65743 - CHF, EUR, GBP, JPY, USD, CNY, INR
-		fmt.Sprintf("date_mode=1&from=%s&to=%s&importance=13&currencies=65743", f, t),
-	)
-	req, err := http.NewRequest(http.MethodPost, economicCalendarURL, data)
+
+	form := url.Values{}
+	form.Add("date_mode", "1")
+	form.Add("from", f)
+	form.Add("to", t)
+	form.Add("importance", "13")    // importance=13 - high impact, holidays and medium
+	form.Add("currencies", "65743") // currencies=65743 - CHF, EUR, GBP, JPY, USD, CNY, INR
+
+	payload := &bytes.Buffer{}
+	writer := multipart.NewWriter(payload)
+	_ = writer.WriteField("date_mode", "1")
+	_ = writer.WriteField("from", f)
+	_ = writer.WriteField("to", t)
+	_ = writer.WriteField("importance", "13")    // importance=13 - high impact, holidays and medium
+	_ = writer.WriteField("currencies", "65743") // currencies=65743 - CHF, EUR, GBP, JPY, USD, CNY, INR
+	err := writer.Close()
+	if err != nil {
+		return nil, fmt.Errorf("error closing multipart writer: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, economicCalendarURL, payload)
 	if err != nil {
 		return nil, fmt.Errorf("error creating calendar request: %w", err)
 	}
 	req = req.WithContext(ctx)
-	req.Header.Set("accept", "*/*")
-	req.Header.Set("content-type", "application/x-www-form-urlencoded")
-	req.Header.Set("x-requested-with", "XMLHttpRequest")
+	req.Header.Add("x-requested-with", "XMLHttpRequest")
+	req.Header.Set("content-type", writer.FormDataContentType())
 	req.Header.Set("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 
 	client := http.DefaultClient
