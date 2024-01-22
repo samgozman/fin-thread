@@ -83,6 +83,11 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 				utils.CaptureSentryException("jobSummaryNewsFindAllError", hub, e)
 				return e
 			}
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  fmt.Sprintf("News.FindAllUntilDate returned %d news", len(news)),
+				Level:    sentry.LevelInfo,
+			}, nil)
 
 			// Find all events
 			span = sentry.StartSpan(ctx, "Events.FindAllUntilDate", sentry.WithTransactionName("SummaryJob.Run"))
@@ -100,8 +105,19 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 				return e
 			}
 
-			if len(events)+len(news) < 5 {
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  fmt.Sprintf("Events.FindAllUntilDate returned %d events", len(events)),
+				Level:    sentry.LevelInfo,
+			}, nil)
+
+			if sum := len(events) + len(news); sum < 5 {
 				j.logger.Info("No news or events to process (or total < 5)")
+				hub.AddBreadcrumb(&sentry.Breadcrumb{
+					Category: "successful",
+					Message:  fmt.Sprintf("Sum of news & events = %d, which is below summary threshold (5). ", sum),
+					Level:    sentry.LevelDebug,
+				}, nil)
 				return nil
 			}
 
@@ -137,6 +153,12 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 				return nil
 			}
 
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  fmt.Sprintf("composer.Summarise returned %d headlines", len(summarised)),
+				Level:    sentry.LevelInfo,
+			}, nil)
+
 			message := formatSummary(summarised, from)
 			if message == "" {
 				j.logger.Info("No summary message")
@@ -169,6 +191,12 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 				// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
 				return retry.Unrecoverable(e) //nolint:wrapcheck
 			}
+
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  "Summary published successfully",
+				Level:    sentry.LevelInfo,
+			}, nil)
 
 			// TODO: Save or not to save summary to db?
 			return nil
