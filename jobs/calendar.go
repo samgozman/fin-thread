@@ -114,6 +114,12 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 					// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
 					return retry.Unrecoverable(e) //nolint:wrapcheck
 				}
+
+				hub.AddBreadcrumb(&sentry.Breadcrumb{
+					Category: "successful",
+					Message:  "Calendar published successfully",
+					Level:    sentry.LevelInfo,
+				}, nil)
 			} else {
 				fmt.Println(m)
 			}
@@ -132,6 +138,12 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 				utils.CaptureSentryException("calendarJobSaveError", hub, e)
 				return retry.Unrecoverable(e) //nolint:wrapcheck
 			}
+
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  fmt.Sprintf("Events.Create saved %d events", len(mappedEvents)),
+				Level:    sentry.LevelInfo,
+			}, nil)
 
 			return nil
 		},
@@ -249,6 +261,12 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 			}
 		}
 
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "successful",
+			Message:  fmt.Sprintf("Events.Update updated %d events", len(updatedEventsDB)),
+			Level:    sentry.LevelInfo,
+		}, nil)
+
 		// Group events by country
 		eventsByCountry := make(map[ecal.EconomicCalendarCountry][]*models.Event)
 		for _, e := range updatedEventsDB {
@@ -277,6 +295,12 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 				return
 			}
 		}
+
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Category: "successful",
+			Message:  fmt.Sprintf("TelegramPublisher.Publish published %d events", len(eventsByCountry)),
+			Level:    sentry.LevelInfo,
+		}, nil)
 	}
 }
 
