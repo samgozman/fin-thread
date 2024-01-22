@@ -19,6 +19,7 @@ type Env struct {
 	StockSymbols      string `mapstructure:"STOCK_SYMBOLS" validate:"required"`
 	MarketJournalists string `mapstructure:"MARKET_JOURNALISTS" validate:"required,json"`
 	BroadJournalists  string `mapstructure:"BROAD_JOURNALISTS" validate:"required,json"`
+	ServerName        string `mapstructure:"SERVER_NAME"`
 }
 
 type Config struct {

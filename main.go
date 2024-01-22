@@ -22,6 +22,7 @@ func main() {
 		StockSymbols:      os.Getenv("STOCK_SYMBOLS"),
 		MarketJournalists: os.Getenv("MARKET_JOURNALISTS"),
 		BroadJournalists:  os.Getenv("BROAD_JOURNALISTS"),
+		ServerName:        os.Getenv("SERVER_NAME"),
 	}
 	validate := validator.New()
 	if err := validate.Struct(env); err != nil {
@@ -34,6 +35,7 @@ func main() {
 		EnableTracing:      true,
 		TracesSampleRate:   1.0, // There are not many transactions, so we can afford to send all of them
 		ProfilesSampleRate: 1.0, // Same here
+		ServerName:         env.ServerName,
 	})
 	if err != nil {
 		l.Error("[main] Error initializing Sentry:", err)
