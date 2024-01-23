@@ -23,7 +23,6 @@ type CalendarJob struct {
 	archivist         *archivist.Archivist         // archivist that will save news to the database
 	logger            *slog.Logger                 // special logger for the job
 	providerName      string                       // name of the job provider
-	options           *CalendarJobOptions          // options for the job
 }
 
 func NewCalendarJob(
@@ -38,19 +37,7 @@ func NewCalendarJob(
 		archivist:         archivist,
 		logger:            slog.Default(),
 		providerName:      providerName,
-		options:           &CalendarJobOptions{},
 	}
-}
-
-// Publish will set the job to publish events to the channel.
-func (j *CalendarJob) Publish(b bool) *CalendarJob {
-	j.options.shouldPublish = b
-	return j
-}
-
-// CalendarJobOptions is the struct that contains options for the calendar job.
-type CalendarJobOptions struct {
-	shouldPublish bool // if true, will publish news to the channel. Else: will just print them to the console (for development)
 }
 
 // RunWeeklyCalendarJob creates events plan for the upcoming week and publishes them to the channel.
@@ -102,27 +89,23 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 			// Format events to the text
 			m := formatWeeklyEvents(events)
 
-			if j.options.shouldPublish {
-				// Publish events to the channel
-				span = tx.StartChild("TelegramPublisher.Publish")
-				_, err = j.publisher.Publish(m)
-				span.Finish()
-				if err != nil {
-					e := fmt.Errorf("[job-calendar] Error publishing events: %w", err)
-					j.logger.Error(e.Error())
-					utils.CaptureSentryException("calendarJobPublishError", hub, e)
-					// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
-					return retry.Unrecoverable(e) //nolint:wrapcheck
-				}
-
-				hub.AddBreadcrumb(&sentry.Breadcrumb{
-					Category: "successful",
-					Message:  "Calendar published successfully",
-					Level:    sentry.LevelInfo,
-				}, nil)
-			} else {
-				fmt.Println(m)
+			// Publish events to the channel
+			span = tx.StartChild("TelegramPublisher.Publish")
+			_, err = j.publisher.Publish(m)
+			span.Finish()
+			if err != nil {
+				e := fmt.Errorf("[job-calendar] Error publishing events: %w", err)
+				j.logger.Error(e.Error())
+				utils.CaptureSentryException("calendarJobPublishError", hub, e)
+				// Note: Unrecoverable error, because Telegram API often hangs up, but somehow publishes the message
+				return retry.Unrecoverable(e) //nolint:wrapcheck
 			}
+
+			hub.AddBreadcrumb(&sentry.Breadcrumb{
+				Category: "successful",
+				Message:  "Calendar published successfully",
+				Level:    sentry.LevelInfo,
+			}, nil)
 
 			mappedEvents := make([]*models.Event, 0, len(events))
 			for _, e := range events {
@@ -277,11 +260,6 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		for country, events := range eventsByCountry {
 			m := formatEventsUpdate(country, events)
 			if m == "" {
-				continue
-			}
-
-			if !j.options.shouldPublish {
-				fmt.Println(m)
 				continue
 			}
 

@@ -19,7 +19,6 @@ type SummaryJob struct {
 	publisher *publisher.TelegramPublisher // publisher that will publish news to the channel
 	archivist *archivist.Archivist         // archivist that will save news to the database
 	logger    *slog.Logger                 // special logger for the job
-	options   *summaryJobOptions           // options for the job
 }
 
 func NewSummaryJob(
@@ -32,18 +31,7 @@ func NewSummaryJob(
 		publisher: publisher,
 		archivist: archivist,
 		logger:    slog.Default(),
-		options:   &summaryJobOptions{},
 	}
-}
-
-// Publish sets the flag that will publish summary to the channel. Else: will just print them to the console (for development).
-func (j *SummaryJob) Publish(b bool) *SummaryJob {
-	j.options.shouldPublish = b
-	return j
-}
-
-type summaryJobOptions struct {
-	shouldPublish bool // if true, will publish news to the channel. Else: will just print them to the console (for development)
 }
 
 // Run runs the Summary job. From if the time from which events should be processed.
@@ -167,11 +155,6 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 					Message:  "No summary message",
 					Level:    sentry.LevelDebug,
 				}, nil)
-				return nil
-			}
-
-			if !j.options.shouldPublish {
-				fmt.Println(message)
 				return nil
 			}
 

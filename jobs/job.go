@@ -40,7 +40,6 @@ type jobOptions struct {
 	shouldComposeText  bool            // if true, will compose text for the article using OpenAI. If false, will use original title and description
 	shouldSaveToDB     bool            // if true, will save all news to the database
 	shouldRemoveClones bool            // if true, will remove duplicated news found in the DB. Note: requires shouldSaveToDB to be true
-	shouldPublish      bool            // if true, will publish news to the channel. Else: will just print them to the console (for development)
 }
 
 // NewJob creates a new Job instance.
@@ -118,12 +117,6 @@ func (job *Job) RemoveClones() *Job {
 // SaveToDB sets the flag that will save all news to the database.
 func (job *Job) SaveToDB() *Job {
 	job.options.shouldSaveToDB = true
-	return job
-}
-
-// Publish sets the flag that will publish news to the channel. Else: will print them to the console (for development).
-func (job *Job) Publish(b bool) *Job {
-	job.options.shouldPublish = b
 	return job
 }
 
@@ -516,12 +509,6 @@ func (job *Job) publish(ctx context.Context, news []*models.News) ([]*models.New
 			formattedText = formatNewsWithComposedMeta(*n)
 		} else {
 			formattedText = n.OriginalTitle + "\n" + n.OriginalDesc
-		}
-
-		// If shouldPublish is false, just print the news to the console
-		if !job.options.shouldPublish {
-			fmt.Println(formattedText)
-			continue
 		}
 
 		span := sentry.StartSpan(ctx, "Publish", sentry.WithTransactionName("Job.publish"))

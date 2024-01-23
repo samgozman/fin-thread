@@ -23,7 +23,11 @@ type App struct {
 }
 
 func (a *App) start() {
-	telegramPublisher, err := publisher.NewTelegramPublisher(a.cnf.env.TelegramChannelID, a.cnf.env.TelegramBotToken)
+	telegramPublisher, err := publisher.NewTelegramPublisher(
+		a.cnf.env.TelegramChannelID,
+		a.cnf.env.TelegramBotToken,
+		a.cnf.env.ShouldPublish,
+	)
 	if err != nil {
 		slog.Default().Error("[main] Error creating Telegram telegramPublisher:", err)
 		panic(err)
@@ -72,8 +76,7 @@ func (a *App) start() {
 		OmitUnlistedStocks().
 		RemoveClones().
 		ComposeText().
-		SaveToDB().
-		Publish(a.cnf.env.ShouldPublish)
+		SaveToDB()
 
 	broadJob := jobs.NewJob(composerEntity, telegramPublisher, archivistEntity, broadNews, stockMap).
 		FetchUntil(time.Now().Add(-4 * time.Minute)).
@@ -82,8 +85,7 @@ func (a *App) start() {
 		OmitUnlistedStocks().
 		RemoveClones().
 		ComposeText().
-		SaveToDB().
-		Publish(a.cnf.env.ShouldPublish)
+		SaveToDB()
 
 	// Sentry hub for fatal errors
 	hub := sentry.CurrentHub().Clone()
@@ -141,7 +143,7 @@ func (a *App) start() {
 		telegramPublisher,
 		archivistEntity,
 		"mql5-calendar",
-	).Publish(a.cnf.env.ShouldPublish)
+	)
 
 	_, err = s.NewJob(
 		gocron.CronJob("0 6 * * 1", false), // every Monday at 6:00
@@ -178,7 +180,7 @@ func (a *App) start() {
 		composerEntity,
 		telegramPublisher,
 		archivistEntity,
-	).Publish(a.cnf.env.ShouldPublish)
+	)
 	_, err = s.NewJob(
 		// TODO: Use holidays calendar to avoid unnecessary runs
 		gocron.CronJob("0 14 * * 1-5", false), // every weekday at 14:00 UTC (market opens at 14:30 UTC)

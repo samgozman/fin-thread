@@ -7,22 +7,29 @@ import (
 )
 
 type TelegramPublisher struct {
-	ChannelID string // Telegram channel id (e.g. @my_channel)
-	BotAPI    *tgbotapi.BotAPI
+	ChannelID     string // Telegram channel id (e.g. @my_channel)
+	BotAPI        *tgbotapi.BotAPI
+	ShouldPublish bool // If false, will print the message to the console (for development)
 }
 
-func NewTelegramPublisher(channelID, token string) (*TelegramPublisher, error) {
+func NewTelegramPublisher(channelID string, token string, shouldPublish bool) (*TelegramPublisher, error) {
 	b, e := tgbotapi.NewBotAPI(token)
 	if e != nil {
 		return nil, fmt.Errorf("failed to create Telegram bot: %w", e)
 	}
 	return &TelegramPublisher{
-		ChannelID: channelID,
-		BotAPI:    b,
+		ChannelID:     channelID,
+		BotAPI:        b,
+		ShouldPublish: shouldPublish,
 	}, nil
 }
 
 func (t *TelegramPublisher) Publish(msg string) (pubID string, err error) {
+	if !t.ShouldPublish {
+		fmt.Println(msg)
+		return "", nil
+	}
+
 	tgMsg := tgbotapi.NewMessageToChannel(t.ChannelID, msg)
 	tgMsg.ParseMode = tgbotapi.ModeMarkdown
 	tgMsg.DisableWebPagePreview = true
