@@ -119,8 +119,11 @@ func (edb *EventsDB) FindRecentEventsWithoutValue(ctx context.Context) ([]*Event
 // FindAllUntilDate finds all events between time.Now until the provided date.
 func (edb *EventsDB) FindAllUntilDate(ctx context.Context, until time.Time) ([]*Event, error) {
 	var events []*Event
-	// Where date_time is between now and until
-	res := edb.Conn.WithContext(ctx).Where("date_time BETWEEN ? AND ?", until, time.Now()).Find(&events)
+	// Where date_time is between now and until and actual is not empty
+	res := edb.Conn.WithContext(ctx).
+		Where("date_time BETWEEN ? AND ?", until, time.Now()).
+		Where("actual != ?", "").
+		Find(&events)
 	if res.Error != nil {
 		return nil, res.Error
 	}
