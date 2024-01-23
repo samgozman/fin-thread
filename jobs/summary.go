@@ -37,8 +37,8 @@ func NewSummaryJob(
 }
 
 // Publish sets the flag that will publish summary to the channel. Else: will just print them to the console (for development).
-func (j *SummaryJob) Publish() *SummaryJob {
-	j.options.shouldPublish = true
+func (j *SummaryJob) Publish(b bool) *SummaryJob {
+	j.options.shouldPublish = b
 	return j
 }
 

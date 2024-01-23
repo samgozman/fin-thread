@@ -23,6 +23,7 @@ func main() {
 		MarketJournalists: os.Getenv("MARKET_JOURNALISTS"),
 		BroadJournalists:  os.Getenv("BROAD_JOURNALISTS"),
 		ServerName:        os.Getenv("SERVER_NAME"),
+		ShouldPublish:     os.Getenv("SHOULD_PUBLISH") == "true",
 	}
 	validate := validator.New()
 	if err := validate.Struct(env); err != nil {

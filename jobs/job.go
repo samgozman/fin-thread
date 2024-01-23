@@ -121,9 +121,9 @@ func (job *Job) SaveToDB() *Job {
 	return job
 }
 
-// Publish sets the flag that will publish news to the channel. Else: will just print them to the console (for development).
-func (job *Job) Publish() *Job {
-	job.options.shouldPublish = true
+// Publish sets the flag that will publish news to the channel. Else: will print them to the console (for development).
+func (job *Job) Publish(b bool) *Job {
+	job.options.shouldPublish = b
 	return job
 }
 

@@ -20,6 +20,7 @@ type Env struct {
 	MarketJournalists string `mapstructure:"MARKET_JOURNALISTS" validate:"required,json"`
 	BroadJournalists  string `mapstructure:"BROAD_JOURNALISTS" validate:"required,json"`
 	ServerName        string `mapstructure:"SERVER_NAME"`
+	ShouldPublish     bool   `mapstructure:"SHOULD_PUBLISH" validate:"boolean"`
 }
 
 type Config struct {

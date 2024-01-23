@@ -43,8 +43,8 @@ func NewCalendarJob(
 }
 
 // Publish will set the job to publish events to the channel.
-func (j *CalendarJob) Publish() *CalendarJob {
-	j.options.shouldPublish = true
+func (j *CalendarJob) Publish(b bool) *CalendarJob {
+	j.options.shouldPublish = b
 	return j
 }
 

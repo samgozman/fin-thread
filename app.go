@@ -73,7 +73,7 @@ func (a *App) start() {
 		RemoveClones().
 		ComposeText().
 		SaveToDB().
-		Publish()
+		Publish(a.cnf.env.ShouldPublish)
 
 	broadJob := jobs.NewJob(composerEntity, telegramPublisher, archivistEntity, broadNews, stockMap).
 		FetchUntil(time.Now().Add(-4 * time.Minute)).
@@ -83,7 +83,7 @@ func (a *App) start() {
 		RemoveClones().
 		ComposeText().
 		SaveToDB().
-		Publish()
+		Publish(a.cnf.env.ShouldPublish)
 
 	// Sentry hub for fatal errors
 	hub := sentry.CurrentHub().Clone()
@@ -141,7 +141,7 @@ func (a *App) start() {
 		telegramPublisher,
 		archivistEntity,
 		"mql5-calendar",
-	).Publish()
+	).Publish(a.cnf.env.ShouldPublish)
 
 	_, err = s.NewJob(
 		gocron.CronJob("0 6 * * 1", false), // every Monday at 6:00
@@ -178,7 +178,7 @@ func (a *App) start() {
 		composerEntity,
 		telegramPublisher,
 		archivistEntity,
-	).Publish()
+	).Publish(a.cnf.env.ShouldPublish)
 	_, err = s.NewJob(
 		// TODO: Use holidays calendar to avoid unnecessary runs
 		gocron.CronJob("0 14 * * 1-5", false), // every weekday at 14:00 UTC (market opens at 14:30 UTC)
