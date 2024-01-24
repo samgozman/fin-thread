@@ -111,6 +111,7 @@ func DefaultConfig() *Config {
 			"i'm", // e.g. "I'm thinking"
 			"me",  // e.g. "me and my friends"
 			"my",  // e.g. "my friends"
+			"?",   // Question mark in the title is usually a bad sign (clickbait)
 		},
 	}
 }
