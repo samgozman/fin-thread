@@ -111,7 +111,8 @@ func DefaultConfig() *Config {
 			"i'm", // e.g. "I'm thinking"
 			"me",  // e.g. "me and my friends"
 			"my",  // e.g. "my friends"
-			"?",   // Question mark in the title is usually a bad sign (clickbait)
+			// TODO: Need to find a way to check also for stop symbols. \b \b is a word boundary, but it doesn't work for symbols.
+			// "?",   // Question mark in the title is usually a bad sign (clickbait)
 		},
 	}
 }
