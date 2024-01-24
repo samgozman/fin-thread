@@ -151,6 +151,7 @@ func TestComposer_Compose(t *testing.T) {
 				TopP:             1,
 				FrequencyPenalty: 0,
 				PresencePenalty:  0,
+				Stop:             []string{"#"},
 			}).Return(openai.ChatCompletionResponse{
 				Choices: []openai.ChatCompletionChoice{
 					{
