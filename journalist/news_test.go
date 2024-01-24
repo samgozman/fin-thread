@@ -84,8 +84,6 @@ func TestNewNews(t *testing.T) {
 	}
 }
 
-// TODO: Add tests for ToJSON and ToContentJSON
-
 func TestNewsList_FilterByKeywords(t *testing.T) {
 	type args struct {
 		keywords []string
@@ -337,6 +335,98 @@ func TestNews_Contains(t *testing.T) {
 			}
 			if got := n.Contains(tt.args.keywords); got != tt.want {
 				t.Errorf("Contains() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNewsList_ToJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		n       NewsList
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "valid news list",
+			n: NewsList{
+				{
+					ID:          "id1",
+					Title:       "Some news about United States",
+					Description: "Read more about United States",
+				},
+				{
+					ID:           "id2",
+					Title:        "Some news about kek",
+					Description:  "Read more about kek",
+					IsSuspicious: true,
+				},
+			},
+			want:    `[{"ID":"id1","Title":"Some news about United States","Description":"Read more about United States","Link":"","Date":"0001-01-01T00:00:00Z","ProviderName":"","IsSuspicious":false},{"ID":"id2","Title":"Some news about kek","Description":"Read more about kek","Link":"","Date":"0001-01-01T00:00:00Z","ProviderName":"","IsSuspicious":true}]`,
+			wantErr: false,
+		},
+		{
+			name:    "empty news list",
+			n:       NewsList{},
+			want:    `[]`,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.n.ToJSON()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ToJSON() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("ToJSON() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNewsList_ToContentJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		n       NewsList
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "valid news list",
+			n: NewsList{
+				{
+					ID:          "id1",
+					Title:       "Some news about United States",
+					Description: "Read more about United States",
+				},
+				{
+					ID:           "id2",
+					Title:        "Some news about kek",
+					Description:  "Read more about kek",
+					IsSuspicious: true,
+				},
+			},
+			want:    `[{"id":"id1","title":"Some news about United States","description":"Read more about United States"},{"id":"id2","title":"Some news about kek","description":"Read more about kek"}]`,
+			wantErr: false,
+		},
+		{
+			name:    "empty news list",
+			n:       NewsList{},
+			want:    `[]`,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.n.ToContentJSON()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ToContentJSON() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("ToContentJSON() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
