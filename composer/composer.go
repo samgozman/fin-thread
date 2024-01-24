@@ -72,6 +72,7 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 			TopP:             1,
 			FrequencyPenalty: 0,
 			PresencePenalty:  0,
+			Stop:             []string{"#"}, // Stop on hashtags in text
 		},
 	)
 	if err != nil {
