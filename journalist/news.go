@@ -71,7 +71,7 @@ func (n *News) Contains(keywords []string) bool {
 
 		var pattern string
 		// Check that the keyword contains only symbols (for lagging by symbols feature)
-		if m := symbolsMatcherRe.MatchString(k); m {
+		if symbolsMatcherRe.MatchString(k) {
 			pattern = ke // Don't add word boundaries if the keyword contains only symbols
 		} else {
 			pattern = fmt.Sprintf("\\b%s\\b", ke)
