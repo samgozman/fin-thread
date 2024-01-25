@@ -300,7 +300,7 @@ func TestNews_Contains(t *testing.T) {
 				Description: "Read more about United States",
 			},
 			args: args{
-				keywords: []string{"kek"},
+				keywords: []string{"kek", "?"},
 			},
 			want: false,
 		},
@@ -323,6 +323,17 @@ func TestNews_Contains(t *testing.T) {
 			},
 			args: args{
 				keywords: []string{"i'm"},
+			},
+			want: true,
+		},
+		{
+			name: "contains symbol",
+			fields: fields{
+				Title:       "Some news about United States or not?",
+				Description: "Read more about United States",
+			},
+			args: args{
+				keywords: []string{"?"},
 			},
 			want: true,
 		},

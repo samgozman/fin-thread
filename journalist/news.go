@@ -64,9 +64,21 @@ func newNews(title, description, link, date, provider string) (*News, error) {
 }
 
 func (n *News) Contains(keywords []string) bool {
+	symbolsMatcherRe := regexp.MustCompile("^[^a-zA-Z0-9]*$")
+
 	for _, k := range keywords {
+		ke := strings.ToLower(regexp.QuoteMeta(k))
+
+		var pattern string
+		// Check that the keyword contains only symbols (for lagging by symbols feature)
+		if m := symbolsMatcherRe.MatchString(k); m {
+			pattern = ke // Don't add word boundaries if the keyword contains only symbols
+		} else {
+			pattern = fmt.Sprintf("\\b%s\\b", ke)
+		}
+
 		s := strings.ToLower(fmt.Sprintf("%s %s", n.Title, n.Description))
-		match, _ := regexp.MatchString(fmt.Sprintf("\\b%s\\b", strings.ToLower(k)), s)
+		match, _ := regexp.MatchString(pattern, s)
 		if match {
 			return true
 		}
