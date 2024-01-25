@@ -88,6 +88,7 @@ func DefaultConfig() *Config {
 			"btc",
 			"eth",
 			"dogecoin",
+			"nft",
 			"technical charts",
 			"technical chart",
 			"technical analysis",
