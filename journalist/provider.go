@@ -36,6 +36,11 @@ func (r *RssProvider) Fetch(ctx context.Context, until time.Time) (NewsList, err
 
 	var news NewsList
 	for _, item := range feed.Items {
+		// Skip news with empty required fields. Note: description can be empty.
+		if item.Title == "" || item.Link == "" || item.Published == "" {
+			continue
+		}
+
 		newsItem, err := newNews(item.Title, item.Description, item.Link, item.Published, r.Name)
 		if err != nil {
 			return nil, newErrProvider(r.Name, err)

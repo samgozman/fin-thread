@@ -340,28 +340,50 @@ func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) 
 		return nil, nil
 	}
 
+	txName := sentry.WithTransactionName("Job.removeDuplicates")
+	span := sentry.StartSpan(ctx, "FindAllByHashes", txName)
+
 	hashes := make([]string, len(news))
 	for i, n := range news {
 		hashes[i] = n.ID
 	}
 
-	span := sentry.StartSpan(ctx, "FindAllByHashes", sentry.WithTransactionName("Job.removeDuplicates"))
 	// TODO: Replace with ExistsByHashes
-	exists, err := job.archivist.Entities.News.FindAllByHashes(ctx, hashes)
+	existsByHash, err := job.archivist.Entities.News.FindAllByHashes(ctx, hashes)
 	span.Finish()
 	if err != nil {
 		return nil, fmt.Errorf("[Job.removeDuplicates][News.FindAllByHashes]: %w", err)
 	}
-	existedHashes := make([]string, len(exists))
-	for i, n := range exists {
+
+	span = sentry.StartSpan(ctx, "FindAllByUrls", txName)
+
+	urls := make([]string, len(news))
+	for i, n := range news {
+		hashes[i] = n.Link
+	}
+
+	existsByURL, err := job.archivist.Entities.News.FindAllByUrls(ctx, urls)
+	if err != nil {
+		return nil, fmt.Errorf("[Job.removeDuplicates][News.FindAllByUrls]: %w", err)
+	}
+
+	span.Finish()
+
+	// Create array of hashes and urls of existed news for convenience
+	existedHashes := make([]string, len(existsByHash))
+	for i, n := range existsByHash {
 		existedHashes[i] = n.Hash
+	}
+	existedUrls := make([]string, len(existsByURL))
+	for i, n := range existsByURL {
+		existedUrls[i] = n.Hash
 	}
 
 	var result journalist.NewsList
 
 	// create array without duplicates
 	for _, n := range news {
-		if !slices.Contains(existedHashes, n.ID) {
+		if !slices.Contains(existedHashes, n.ID) && !slices.Contains(existedUrls, n.Link) {
 			result = append(result, n)
 		}
 	}
