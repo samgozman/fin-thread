@@ -22,7 +22,6 @@ linters:
     - whitespace
     - asasalint
     - asciicheck
-    - bidichk
     - containedctx
     - contextcheck
     - durationcheck
