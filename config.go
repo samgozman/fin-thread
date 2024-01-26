@@ -113,6 +113,10 @@ func DefaultConfig() *Config {
 			"me",  // e.g. "me and my friends"
 			"my",  // e.g. "my friends"
 			"?",   // Question mark in the title is usually a bad sign (clickbait)
+			"if you",
+			"your money",
+			"your portfolio",
+			"your investments",
 		},
 	}
 }
