@@ -117,6 +117,11 @@ func DefaultConfig() *Config {
 			"your money",
 			"your portfolio",
 			"your investments",
+			"this analyst",
+			"one analyst",
+			"some analysts",
+			"one expert",
+			"some experts",
 		},
 	}
 }
