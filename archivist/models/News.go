@@ -145,6 +145,17 @@ func (db *NewsDB) FindAllByHashes(ctx context.Context, hashes []string) ([]*News
 	return n, nil
 }
 
+// FindAllByUrls finds news by its URL.
+func (db *NewsDB) FindAllByUrls(ctx context.Context, urls []string) ([]*News, error) {
+	var n []*News
+	res := db.Conn.WithContext(ctx).Where("url IN ?", urls).Find(&n)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return n, nil
+}
+
 // FindAllUntilDate finds all news until the provided published date.
 func (db *NewsDB) FindAllUntilDate(ctx context.Context, until time.Time) ([]*News, error) {
 	var n []*News
