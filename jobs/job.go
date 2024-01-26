@@ -359,7 +359,7 @@ func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) 
 
 	urls := make([]string, len(news))
 	for i, n := range news {
-		hashes[i] = n.Link
+		urls[i] = n.Link
 	}
 
 	existsByURL, err := job.archivist.Entities.News.FindAllByUrls(ctx, urls)
