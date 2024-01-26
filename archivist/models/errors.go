@@ -13,4 +13,5 @@ var (
 	errComposedTextTooLong  = errors.New("composed_text is too long")
 	errOriginalDateEmpty    = errors.New("original_date is empty")
 	errTitleTooLong         = errors.New("title is too long")
+	errURLEmpty             = errors.New("url is empty")
 )
