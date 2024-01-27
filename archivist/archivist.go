@@ -1,7 +1,7 @@
 package archivist
 
 import (
-	"fmt"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"gorm.io/gorm"
 )
 
@@ -23,14 +23,14 @@ type Archivist struct {
 func NewArchivist(dsn string) (*Archivist, error) {
 	conn, err := connectToPG(dsn)
 	if err != nil {
-		return nil, err
+		return nil, newError(errlvl.FATAL, err)
 	}
 
 	// Migrate the schema automatically for now.
 	// TODO: Add migration tool later.
 	err = conn.AutoMigrate(&News{}, &Event{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to migrate schema: %w", err)
+		return nil, newError(errlvl.FATAL, errFailedMigration, err)
 	}
 
 	return &Archivist{
