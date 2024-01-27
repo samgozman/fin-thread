@@ -12,6 +12,7 @@ const (
 	INFO
 	WARN
 	ERROR
+	FATAL
 )
 
 // ErrorLevel is a type that represents the severity of an error in the application.
@@ -24,6 +25,7 @@ var (
 	ErrInfo  ErrorLevel = errors.New("[INFO]")  // ErrInfo is returned when the global level is set to INFO.
 	ErrWarn  ErrorLevel = errors.New("[WARN]")  // ErrWarn is returned when the global level is set to WARN.
 	ErrError ErrorLevel = errors.New("[ERROR]") // ErrError is returned when the global level is set to ERROR.
+	ErrFatal ErrorLevel = errors.New("[FATAL]") // ErrFatal is returned when the global level is set to FATAL.
 )
 
 // Wrap wraps the given error with the given level.
@@ -41,6 +43,8 @@ func Wrap(err error, level Lvl) error {
 		return fmt.Errorf("%w %w", ErrWarn, err)
 	case ERROR:
 		return fmt.Errorf("%w %w", ErrError, err)
+	case FATAL:
+		return fmt.Errorf("%w %w", ErrFatal, err)
 	default:
 		return fmt.Errorf("%w %w", ErrError, err)
 	}
@@ -48,5 +52,5 @@ func Wrap(err error, level Lvl) error {
 
 // hasLevel checks if the given error has a level ser already.
 func hasLevel(err error) bool {
-	return errors.Is(err, ErrDebug) || errors.Is(err, ErrInfo) || errors.Is(err, ErrWarn) || errors.Is(err, ErrError)
+	return errors.Is(err, ErrDebug) || errors.Is(err, ErrInfo) || errors.Is(err, ErrWarn) || errors.Is(err, ErrError) || errors.Is(err, ErrFatal)
 }

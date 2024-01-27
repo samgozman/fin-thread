@@ -84,6 +84,13 @@ func Test_hasLevel(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "error with fatal level",
+			args: args{
+				err: fmt.Errorf("%w %w", ErrFatal, errors.New("test")),
+			},
+			want: true,
+		},
+		{
 			name: "error without level",
 			args: args{
 				err: errors.New("test"),
