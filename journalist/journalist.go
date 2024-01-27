@@ -2,6 +2,7 @@ package journalist
 
 import (
 	"context"
+	"errors"
 	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"golang.org/x/sync/errgroup"
 	"sync"
@@ -87,5 +88,5 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 		results.flagByKeywords(j.flagKeys)
 	}
 
-	return results, newError(errlvl.INFO, e...)
+	return results, errors.Join(e...)
 }
