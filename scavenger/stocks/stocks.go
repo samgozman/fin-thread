@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"io"
 	"net/http"
 	"strings"
@@ -36,7 +37,7 @@ func (f *Screener) FetchFromNasdaq(ctx context.Context) (*StockMap, error) {
 	url := "https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=25&offset=0&download=true"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error creating request to fetch stocks from nasdaq: %w", err)
+		return nil, errlvl.Wrap(fmt.Errorf("error creating request to fetch stocks from nasdaq: %w", err), errlvl.ERROR)
 	}
 	req = req.WithContext(ctx)
 	req.Header.Set("accept", "application/json")
@@ -45,7 +46,7 @@ func (f *Screener) FetchFromNasdaq(ctx context.Context) (*StockMap, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req) //nolint:bodyclose
 	if err != nil {
-		return nil, fmt.Errorf("error fetching stocks from nasdaq: %w", err)
+		return nil, errlvl.Wrap(fmt.Errorf("error fetching stocks from nasdaq: %w", err), errlvl.WARN)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -56,7 +57,7 @@ func (f *Screener) FetchFromNasdaq(ctx context.Context) (*StockMap, error) {
 
 	var respParsed nasdaqScreenerResponse
 	if err := json.NewDecoder(resp.Body).Decode(&respParsed); err != nil {
-		return nil, fmt.Errorf("error parsing response from nasdaq: %w", err)
+		return nil, errlvl.Wrap(fmt.Errorf("error parsing response from nasdaq: %w", err), errlvl.ERROR)
 	}
 
 	stockMap := make(StockMap)
