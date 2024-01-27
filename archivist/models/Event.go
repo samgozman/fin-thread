@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/samgozman/fin-thread/composer"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"github.com/samgozman/fin-thread/scavenger/ecal"
 	"gorm.io/gorm"
 	"time"
@@ -37,15 +38,15 @@ type Event struct {
 
 func (e *Event) Validate() error {
 	if len(e.ChannelID) > 64 {
-		return errChannelIDTooLong
+		return newError(errlvl.INFO, errChannelIDTooLong)
 	}
 
 	if len(e.ProviderName) > 64 {
-		return errProviderNameTooLong
+		return newError(errlvl.INFO, errProviderNameTooLong)
 	}
 
 	if len(e.Title) > 256 {
-		return errTitleTooLong
+		return newError(errlvl.INFO, errTitleTooLong)
 	}
 
 	return nil
@@ -57,7 +58,7 @@ func (e *Event) BeforeCreate(_ *gorm.DB) error {
 	}
 
 	if err := e.Validate(); err != nil {
-		return err
+		return newError(errlvl.INFO, errEventValidation, err)
 	}
 
 	return nil
@@ -65,7 +66,7 @@ func (e *Event) BeforeCreate(_ *gorm.DB) error {
 
 func (e *Event) BeforeUpdate(_ *gorm.DB) error {
 	if err := e.Validate(); err != nil {
-		return err
+		return newError(errlvl.INFO, errEventValidation, err)
 	}
 
 	return nil
@@ -82,7 +83,7 @@ func (e *Event) ToHeadline() *composer.Headline {
 func (edb *EventsDB) Create(ctx context.Context, e []*Event) error {
 	res := edb.Conn.WithContext(ctx).Create(e)
 	if res.Error != nil {
-		return res.Error
+		return newError(errlvl.ERROR, errEventCreation, res.Error)
 	}
 
 	return nil
@@ -91,7 +92,7 @@ func (edb *EventsDB) Create(ctx context.Context, e []*Event) error {
 func (edb *EventsDB) Update(ctx context.Context, e *Event) error {
 	res := edb.Conn.WithContext(ctx).Where("id = ?", e.ID).Updates(e)
 	if res.Error != nil {
-		return res.Error
+		return newError(errlvl.ERROR, errEventUpdate, res.Error)
 	}
 
 	return nil
@@ -110,7 +111,7 @@ func (edb *EventsDB) FindRecentEventsWithoutValue(ctx context.Context) ([]*Event
 		Find(&events)
 
 	if res.Error != nil {
-		return nil, res.Error
+		return nil, newError(errlvl.ERROR, errFindRecentEvents, res.Error)
 	}
 
 	return events, nil
@@ -125,7 +126,7 @@ func (edb *EventsDB) FindAllUntilDate(ctx context.Context, until time.Time) ([]*
 		Where("actual != ?", "").
 		Find(&events)
 	if res.Error != nil {
-		return nil, res.Error
+		return nil, newError(errlvl.ERROR, errFindUntilEvents, res.Error)
 	}
 
 	return events, nil
