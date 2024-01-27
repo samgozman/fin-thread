@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/samgozman/fin-thread/archivist"
-	"github.com/samgozman/fin-thread/archivist/models"
 	"github.com/samgozman/fin-thread/composer"
 	"github.com/samgozman/fin-thread/journalist"
 	"github.com/samgozman/fin-thread/publisher"
@@ -223,7 +222,7 @@ func (job *Job) Run() JobFunc {
 
 			return composedNews, nil
 		}
-		saveNews := func(news journalist.NewsList, composedNews []*composer.ComposedNews) ([]*models.News, error) {
+		saveNews := func(news journalist.NewsList, composedNews []*composer.ComposedNews) ([]*archivist.News, error) {
 			span := tx.StartChild("saveNews")
 			dbNews, err := job.saveNews(ctx, news, composedNews)
 			span.Finish()
@@ -240,7 +239,7 @@ func (job *Job) Run() JobFunc {
 
 			return dbNews, nil
 		}
-		prepublishFilter := func(dbNews []*models.News) ([]*models.News, error) {
+		prepublishFilter := func(dbNews []*archivist.News) ([]*archivist.News, error) {
 			span := tx.StartChild("prepublishFilter")
 			filteredNews, err := job.prepublishFilter(dbNews)
 			span.Finish()
@@ -257,7 +256,7 @@ func (job *Job) Run() JobFunc {
 
 			return filteredNews, nil
 		}
-		publishNews := func(filteredNews []*models.News) ([]*models.News, error) {
+		publishNews := func(filteredNews []*archivist.News) ([]*archivist.News, error) {
 			span := tx.StartChild("publishNews")
 			publishedNews, err := job.publish(ctx, filteredNews)
 			span.Finish()
@@ -274,7 +273,7 @@ func (job *Job) Run() JobFunc {
 
 			return publishedNews, nil
 		}
-		updateNews := func(publishedNews []*models.News) error {
+		updateNews := func(publishedNews []*archivist.News) error {
 			span := tx.StartChild("updateNews")
 			err := job.updateNews(ctx, publishedNews)
 			span.Finish()
@@ -412,7 +411,7 @@ func (job *Job) saveNews(
 	ctx context.Context,
 	news journalist.NewsList,
 	composedNews []*composer.ComposedNews,
-) ([]*models.News, error) {
+) ([]*archivist.News, error) {
 	if !job.options.shouldSaveToDB {
 		return nil, nil
 	}
@@ -427,9 +426,9 @@ func (job *Job) saveNews(
 		composedNewsMap[n.ID] = n
 	}
 
-	dbNews := make([]*models.News, len(news))
+	dbNews := make([]*archivist.News, len(news))
 	for i, n := range news {
-		dbNews[i] = &models.News{
+		dbNews[i] = &archivist.News{
 			Hash:          n.ID,
 			ChannelID:     job.publisher.ChannelID,
 			ProviderName:  n.ProviderName,
@@ -467,8 +466,8 @@ func (job *Job) saveNews(
 }
 
 // prepublishFilter final filter before publishing which will use all options and gathered info from previous steps.
-func (job *Job) prepublishFilter(news []*models.News) ([]*models.News, error) {
-	filteredNews := make([]*models.News, 0, len(news))
+func (job *Job) prepublishFilter(news []*archivist.News) ([]*archivist.News, error) {
+	filteredNews := make([]*archivist.News, 0, len(news))
 
 NewsRange:
 	for _, n := range news {
@@ -521,8 +520,8 @@ NewsRange:
 }
 
 // publish publishes the news to the channel and updates dbNews with PublicationID and PublishedAt fields.
-func (job *Job) publish(ctx context.Context, news []*models.News) ([]*models.News, error) {
-	updatedNews := make([]*models.News, 0, len(news))
+func (job *Job) publish(ctx context.Context, news []*archivist.News) ([]*archivist.News, error) {
+	updatedNews := make([]*archivist.News, 0, len(news))
 
 	for _, n := range news {
 		// Format news
@@ -553,7 +552,7 @@ func (job *Job) publish(ctx context.Context, news []*models.News) ([]*models.New
 }
 
 // updateNews updates news in the database.
-func (job *Job) updateNews(ctx context.Context, dbNews []*models.News) error {
+func (job *Job) updateNews(ctx context.Context, dbNews []*archivist.News) error {
 	if !job.options.shouldSaveToDB {
 		return nil
 	}
@@ -572,7 +571,7 @@ func (job *Job) updateNews(ctx context.Context, dbNews []*models.News) error {
 	return nil
 }
 
-func formatNewsWithComposedMeta(n models.News) string {
+func formatNewsWithComposedMeta(n archivist.News) string {
 	if n.MetaData == nil {
 		return n.ComposedText
 	}

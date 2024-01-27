@@ -1,4 +1,4 @@
-package models
+package archivist
 
 import (
 	"errors"
@@ -30,6 +30,7 @@ var (
 	errNewsFindUntil        = errors.New("failed to find news until the given date")
 )
 
+// Error is a custom error type that contains the severity level of the error.
 type Error struct {
 	// severity level of the error
 	level errlvl.Lvl
@@ -37,6 +38,7 @@ type Error struct {
 	errs []error
 }
 
+// Error returns the string representation of the error.
 func (e *Error) Error() string {
 	return errlvl.Wrap(errors.Join(e.errs...), e.level).Error()
 }

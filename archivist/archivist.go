@@ -2,14 +2,13 @@ package archivist
 
 import (
 	"fmt"
-	"github.com/samgozman/fin-thread/archivist/models"
 	"gorm.io/gorm"
 )
 
 // entities is a struct that contains all the entities that Archivist is responsible for.
 type entities struct {
-	News   *models.NewsDB
-	Events *models.EventsDB
+	News   *NewsDB
+	Events *EventsDB
 }
 
 // Archivist is responsible for storing and retrieving data from the database.
@@ -29,7 +28,7 @@ func NewArchivist(dsn string) (*Archivist, error) {
 
 	// Migrate the schema automatically for now.
 	// TODO: Add migration tool later.
-	err = conn.AutoMigrate(&models.News{}, &models.Event{})
+	err = conn.AutoMigrate(&News{}, &Event{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to migrate schema: %w", err)
 	}
@@ -37,8 +36,8 @@ func NewArchivist(dsn string) (*Archivist, error) {
 	return &Archivist{
 		db: conn,
 		Entities: &entities{
-			News:   models.NewNewsDB(conn),
-			Events: models.NewEventsDB(conn),
+			News:   NewNewsDB(conn),
+			Events: NewEventsDB(conn),
 		},
 	}, nil
 }

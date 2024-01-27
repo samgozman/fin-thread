@@ -6,7 +6,6 @@ import (
 	"github.com/avast/retry-go"
 	"github.com/getsentry/sentry-go"
 	"github.com/samgozman/fin-thread/archivist"
-	"github.com/samgozman/fin-thread/archivist/models"
 	"github.com/samgozman/fin-thread/publisher"
 	"github.com/samgozman/fin-thread/scavenger/ecal"
 	"github.com/samgozman/fin-thread/utils"
@@ -107,7 +106,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 				Level:    sentry.LevelInfo,
 			}, nil)
 
-			mappedEvents := make([]*models.Event, 0, len(events))
+			mappedEvents := make([]*archivist.Event, 0, len(events))
 			for _, e := range events {
 				mappedEvents = append(mappedEvents, mapEventToDB(e, j.publisher.ChannelID, j.providerName))
 			}
@@ -206,13 +205,13 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		}
 
 		// Update eventsDB with actual values
-		var updatedEventsDB []*models.Event
+		var updatedEventsDB []*archivist.Event
 		for _, e := range eventsDB {
 			for _, ce := range calendarEvents {
 				if e.Country != ce.Country || e.Currency != ce.Currency || e.Title != ce.Title || ce.Actual == "" {
 					continue
 				}
-				ev := &models.Event{
+				ev := &archivist.Event{
 					ID:           e.ID,
 					ChannelID:    e.ChannelID,
 					ProviderName: e.ProviderName,
@@ -251,7 +250,7 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 		}, nil)
 
 		// Group events by country
-		eventsByCountry := make(map[ecal.EconomicCalendarCountry][]*models.Event)
+		eventsByCountry := make(map[ecal.EconomicCalendarCountry][]*archivist.Event)
 		for _, e := range updatedEventsDB {
 			eventsByCountry[e.Country] = append(eventsByCountry[e.Country], e)
 		}
@@ -331,7 +330,7 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	return m.String()
 }
 
-func formatEventsUpdate(country ecal.EconomicCalendarCountry, events []*models.Event) string {
+func formatEventsUpdate(country ecal.EconomicCalendarCountry, events []*archivist.Event) string {
 	// Handle nil event case
 	if len(events) == 0 {
 		return ""
@@ -359,7 +358,7 @@ func formatEventsUpdate(country ecal.EconomicCalendarCountry, events []*models.E
 	return m.String()
 }
 
-func formatEvent(event *models.Event) string {
+func formatEvent(event *archivist.Event) string {
 	var ev strings.Builder
 
 	actualNumber := utils.StrValueToFloat(event.Actual)
@@ -406,7 +405,7 @@ func formatEvent(event *models.Event) string {
 // mapEventToDB maps calendar event to the database event instance.
 // One crucial thing is that we use actual date if event time is available.
 // There is no need to store 2 event dates in the database.
-func mapEventToDB(e *ecal.EconomicCalendarEvent, channelID, providerName string) *models.Event {
+func mapEventToDB(e *ecal.EconomicCalendarEvent, channelID, providerName string) *archivist.Event {
 	// use actual date if event time is available
 	var dt time.Time
 	if e.EventTime.After(e.DateTime) {
@@ -414,7 +413,7 @@ func mapEventToDB(e *ecal.EconomicCalendarEvent, channelID, providerName string)
 	} else {
 		dt = e.DateTime
 	}
-	return &models.Event{
+	return &archivist.Event{
 		ChannelID:    channelID,
 		ProviderName: providerName,
 		DateTime:     dt,
