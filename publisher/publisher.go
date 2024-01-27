@@ -3,6 +3,7 @@ package publisher
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"strconv"
 )
 
@@ -15,7 +16,7 @@ type TelegramPublisher struct {
 func NewTelegramPublisher(channelID string, token string, shouldPublish bool) (*TelegramPublisher, error) {
 	b, e := tgbotapi.NewBotAPI(token)
 	if e != nil {
-		return nil, fmt.Errorf("failed to create Telegram bot: %w", e)
+		return nil, errlvl.Wrap(fmt.Errorf("failed to create Telegram bot: %w", e), errlvl.ERROR)
 	}
 	return &TelegramPublisher{
 		ChannelID:     channelID,
@@ -36,7 +37,7 @@ func (t *TelegramPublisher) Publish(msg string) (pubID string, err error) {
 
 	m, err := t.BotAPI.Send(tgMsg)
 	if err != nil {
-		return "", fmt.Errorf("failed to send message to Telegram: %w", err)
+		return "", errlvl.Wrap(fmt.Errorf("failed to send message to Telegram: %w", err), errlvl.ERROR)
 	}
 	return strconv.Itoa(m.MessageID), nil
 }

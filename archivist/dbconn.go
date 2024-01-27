@@ -3,6 +3,7 @@ package archivist
 import (
 	"fmt"
 	"github.com/cenkalti/backoff/v4"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log/slog"
@@ -27,7 +28,7 @@ func connectToPG(dsn string) (*gorm.DB, error) {
 		return conn, nil
 	}, bf)
 	if err != nil {
-		return nil, err
+		return nil, newError(errlvl.FATAL, err)
 	}
 
 	return db, nil

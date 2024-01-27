@@ -1,4 +1,4 @@
-package models
+package archivist
 
 import (
 	"github.com/google/uuid"

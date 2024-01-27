@@ -3,7 +3,7 @@ package jobs
 import (
 	"encoding/json"
 	"github.com/google/uuid"
-	"github.com/samgozman/fin-thread/archivist/models"
+	"github.com/samgozman/fin-thread/archivist"
 	"github.com/samgozman/fin-thread/composer"
 	"github.com/samgozman/fin-thread/scavenger/stocks"
 	"reflect"
@@ -12,7 +12,7 @@ import (
 
 func Test_formatNewsWithComposedMeta(t *testing.T) {
 	type args struct {
-		n models.News
+		n archivist.News
 	}
 	d1, _ := json.Marshal(composer.ComposedMeta{
 		Tickers: []string{"AAPL"},
@@ -28,7 +28,7 @@ func Test_formatNewsWithComposedMeta(t *testing.T) {
 		{
 			name: "test1",
 			args: args{
-				n: models.News{
+				n: archivist.News{
 					ID:           uuid.New(),
 					ComposedText: "Some AAPL news about AAPL stock.",
 					MetaData:     d1,
@@ -39,7 +39,7 @@ func Test_formatNewsWithComposedMeta(t *testing.T) {
 		{
 			name: "test2",
 			args: args{
-				n: models.News{
+				n: archivist.News{
 					ID:           uuid.New(),
 					ComposedText: "Some N1N2N3 news about some stock.",
 					MetaData:     nil,
@@ -50,7 +50,7 @@ func Test_formatNewsWithComposedMeta(t *testing.T) {
 		{
 			name: "multiple tickers",
 			args: args{
-				n: models.News{
+				n: archivist.News{
 					ID:           uuid.New(),
 					ComposedText: "Some AAPL news about with MSFT stock.",
 					MetaData:     d2,
@@ -74,7 +74,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 		options *jobOptions
 	}
 	type args struct {
-		news []*models.News
+		news []*archivist.News
 	}
 
 	d1, _ := json.Marshal(composer.ComposedMeta{
@@ -91,7 +91,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    []*models.News
+		want    []*archivist.News
 		wantErr bool
 	}{
 		{
@@ -101,9 +101,9 @@ func TestJob_prepublishFilter(t *testing.T) {
 				options: &jobOptions{},
 			},
 			args: args{
-				news: []*models.News{},
+				news: []*archivist.News{},
 			},
-			want:    []*models.News{},
+			want:    []*archivist.News{},
 			wantErr: false,
 		},
 		{
@@ -115,7 +115,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 				},
 			},
 			args: args{
-				news: []*models.News{
+				news: []*archivist.News{
 					{
 						ID:           uuid.New(),
 						ComposedText: "Some AAPL news about AAPL stock.",
@@ -130,7 +130,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 					},
 				},
 			},
-			want: []*models.News{
+			want: []*archivist.News{
 				{
 					ID:           okID,
 					ComposedText: "Some other AAPL news.",
@@ -151,7 +151,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 				},
 			},
 			args: args{
-				news: []*models.News{
+				news: []*archivist.News{
 					{
 						ID:           uuid.New(),
 						ComposedText: "Some AAPL news without meta.",
@@ -166,7 +166,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 					},
 				},
 			},
-			want: []*models.News{
+			want: []*archivist.News{
 				{
 					ID:           okID,
 					ComposedText: "Some other AAPL news.",
@@ -187,7 +187,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 				},
 			},
 			args: args{
-				news: []*models.News{
+				news: []*archivist.News{
 					{
 						ID:           okID,
 						ComposedText: "Some AAPL news without meta.",
@@ -202,7 +202,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 					},
 				},
 			},
-			want: []*models.News{
+			want: []*archivist.News{
 				{
 					ID:           okID,
 					ComposedText: "Some AAPL news without meta.",
@@ -221,7 +221,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 				},
 			},
 			args: args{
-				news: []*models.News{
+				news: []*archivist.News{
 					{
 						ID:           uuid.New(),
 						ComposedText: "Some AAPL news without meta.",
@@ -236,7 +236,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 					},
 				},
 			},
-			want: []*models.News{
+			want: []*archivist.News{
 				{
 					ID:           okID,
 					ComposedText: "Some other AAPL news.",
@@ -253,7 +253,7 @@ func TestJob_prepublishFilter(t *testing.T) {
 				options: &jobOptions{},
 			},
 			args: args{
-				news: []*models.News{
+				news: []*archivist.News{
 					{
 						ID:           uuid.New(),
 						ComposedText: "Some AAPL news without meta.",

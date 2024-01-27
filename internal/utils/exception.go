@@ -3,7 +3,7 @@ package utils
 import (
 	"errors"
 	"github.com/getsentry/sentry-go"
-	"github.com/mmcdole/gofeed"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 )
 
 type sentryHub interface {
@@ -31,8 +31,16 @@ func CaptureSentryException(name string, hub sentryHub, err error) {
 // errorsLevelMatcher is a helper function that returns the Sentry level for the given error.
 func errorsLevelMatcher(err error) sentry.Level {
 	switch {
-	case errors.Is(err, gofeed.ErrFeedTypeNotDetected):
+	case errors.Is(err, errlvl.ErrError):
+		return sentry.LevelError
+	case errors.Is(err, errlvl.ErrFatal):
+		return sentry.LevelFatal
+	case errors.Is(err, errlvl.ErrWarn):
 		return sentry.LevelWarning
+	case errors.Is(err, errlvl.ErrInfo):
+		return sentry.LevelInfo
+	case errors.Is(err, errlvl.ErrDebug):
+		return sentry.LevelDebug
 	case err == nil:
 		return sentry.LevelDebug
 	default:

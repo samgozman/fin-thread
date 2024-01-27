@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/samgozman/fin-thread/utils"
+	"github.com/samgozman/fin-thread/internal/utils"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"time"
 
 	"github.com/samber/lo"
@@ -49,7 +50,7 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 	// Convert news to JSON
 	jsonNews, err := todayNews.ToContentJSON()
 	if err != nil {
-		return nil, newErr(err, "Compose", "NewsList.ToContentJSON")
+		return nil, newError(err, errlvl.ERROR, "Compose", "NewsList.ToContentJSON")
 	}
 
 	// Compose news
@@ -76,18 +77,18 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 		},
 	)
 	if err != nil {
-		return nil, newErr(err, "Compose", "OpenAiClient.CreateChatCompletion")
+		return nil, newError(err, errlvl.WARN, "Compose", "OpenAiClient.CreateChatCompletion")
 	}
 
 	matches, err := aiJSONStringFixer(resp.Choices[0].Message.Content)
 	if err != nil {
-		return nil, newErr(err, "Compose", "aiJSONStringFixer")
+		return nil, newError(err, errlvl.ERROR, "Compose", "aiJSONStringFixer")
 	}
 
 	var fullComposedNews []*ComposedNews
 	err = json.Unmarshal([]byte(matches), &fullComposedNews)
 	if err != nil {
-		return nil, newErr(err, "Compose", "json.Unmarshal").WithValue(matches)
+		return nil, newError(err, errlvl.ERROR, "Compose", "json.Unmarshal").WithValue(matches)
 	}
 
 	for _, n := range fullComposedNews {
@@ -122,7 +123,7 @@ func (c *Composer) Summarise(ctx context.Context, headlines []*Headline, headlin
 
 	jsonHeadlines, err := json.Marshal(headlines)
 	if err != nil {
-		return nil, newErr(err, "Summarise", "json.Marshal headlines").WithValue(fmt.Sprintf("%+v", headlines))
+		return nil, newError(err, errlvl.ERROR, "Summarise", "json.Marshal headlines").WithValue(fmt.Sprintf("%+v", headlines))
 	}
 
 	resp, err := c.OpenAiClient.CreateChatCompletion(
@@ -147,18 +148,18 @@ func (c *Composer) Summarise(ctx context.Context, headlines []*Headline, headlin
 		},
 	)
 	if err != nil {
-		return nil, newErr(err, "Summarise", "OpenAiClient.CreateChatCompletion")
+		return nil, newError(err, errlvl.WARN, "Summarise", "OpenAiClient.CreateChatCompletion")
 	}
 
 	matches, err := aiJSONStringFixer(resp.Choices[0].Message.Content)
 	if err != nil {
-		return nil, newErr(err, "Summarise", "aiJSONStringFixer")
+		return nil, newError(err, errlvl.ERROR, "Summarise", "aiJSONStringFixer")
 	}
 
 	var h []*SummarisedHeadline
 	err = json.Unmarshal([]byte(matches), &h)
 	if err != nil {
-		return nil, newErr(err, "Summarise", "json.Unmarshal").WithValue(resp.Choices[0].Message.Content)
+		return nil, newError(err, errlvl.ERROR, "Summarise", "json.Unmarshal").WithValue(resp.Choices[0].Message.Content)
 	}
 
 	return h, nil
@@ -172,7 +173,7 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 
 	jsonNews, err := news.ToContentJSON()
 	if err != nil {
-		return nil, newErr(err, "Filter", "ToContentJSON").WithValue(fmt.Sprintf("%+v", news))
+		return nil, newError(err, errlvl.ERROR, "Filter", "ToContentJSON").WithValue(fmt.Sprintf("%+v", news))
 	}
 
 	resp, err := c.TogetherAIClient.CreateChatCompletion(
@@ -189,18 +190,18 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 		},
 	)
 	if err != nil {
-		return nil, newErr(err, "Filter", "TogetherAIClient.CreateChatCompletion")
+		return nil, newError(err, errlvl.WARN, "Filter", "TogetherAIClient.CreateChatCompletion")
 	}
 
 	matches, err := aiJSONStringFixer(resp.Choices[0].Text)
 	if err != nil {
-		return nil, newErr(err, "Filter", "aiJSONStringFixer")
+		return nil, newError(err, errlvl.ERROR, "Filter", "aiJSONStringFixer")
 	}
 
 	var filteredAi journalist.NewsList
 	err = json.Unmarshal([]byte(matches), &filteredAi)
 	if err != nil {
-		return nil, newErr(err, "Filter", "json.Unmarshal").WithValue(resp.Choices[0].Text)
+		return nil, newError(err, errlvl.ERROR, "Filter", "json.Unmarshal").WithValue(resp.Choices[0].Text)
 	}
 
 	// Map AI response back to the original news list

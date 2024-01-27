@@ -1,6 +1,7 @@
 package composer
 
 import (
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"regexp"
 	"strings"
 )
@@ -23,7 +24,7 @@ func aiJSONStringFixer(str string) (string, error) {
 	re = regexp.MustCompile(`\[([\S\s]*)]`)
 	matches = re.FindString(str)
 	if matches == "" {
-		return "", newErr(errEmptyRegexMatch, "aiJSONStringFixer", "regexp.FindString").WithValue(str)
+		return "", newError(errEmptyRegexMatch, errlvl.ERROR, "aiJSONStringFixer", "regexp.FindString").WithValue(str)
 	}
 
 	return matches, nil

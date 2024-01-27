@@ -1,7 +1,7 @@
 package jobs
 
 import (
-	"github.com/samgozman/fin-thread/archivist/models"
+	"github.com/samgozman/fin-thread/archivist"
 	"github.com/samgozman/fin-thread/scavenger/ecal"
 	"reflect"
 	"testing"
@@ -123,7 +123,7 @@ func Test_mapEventToDB(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *models.Event
+		want *archivist.Event
 	}{
 		{
 			name: "case 1 - event time is after event date",
@@ -140,7 +140,7 @@ func Test_mapEventToDB(t *testing.T) {
 				channelID:    "channel-id",
 				providerName: "provider-name",
 			},
-			want: &models.Event{
+			want: &archivist.Event{
 				ChannelID:    "channel-id",
 				ProviderName: "provider-name",
 				DateTime:     time.Date(2023, time.April, 10, 13, 0, 0, 0, time.UTC),
@@ -166,7 +166,7 @@ func Test_mapEventToDB(t *testing.T) {
 				channelID:    "channel-id",
 				providerName: "provider-name",
 			},
-			want: &models.Event{
+			want: &archivist.Event{
 				ChannelID:    "channel-id",
 				ProviderName: "provider-name",
 				DateTime:     time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
@@ -190,7 +190,7 @@ func Test_mapEventToDB(t *testing.T) {
 func Test_formatEventsUpdate(t *testing.T) {
 	type args struct {
 		country ecal.EconomicCalendarCountry
-		events  []*models.Event
+		events  []*archivist.Event
 	}
 	tests := []struct {
 		name string
@@ -201,7 +201,7 @@ func Test_formatEventsUpdate(t *testing.T) {
 			name: "case 1 - event with previous value",
 			args: args{
 				country: ecal.EconomicCalendarUnitedStates,
-				events: []*models.Event{
+				events: []*archivist.Event{
 					{
 						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
 						Country:  ecal.EconomicCalendarUnitedStates,
@@ -220,7 +220,7 @@ func Test_formatEventsUpdate(t *testing.T) {
 			name: "case 2 - event without previous value or forecast",
 			args: args{
 				country: ecal.EconomicCalendarEuropeanUnion,
-				events: []*models.Event{
+				events: []*archivist.Event{
 					{
 						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
 						Country:  ecal.EconomicCalendarEuropeanUnion,
@@ -237,7 +237,7 @@ func Test_formatEventsUpdate(t *testing.T) {
 			name: "case 3 - with multiplier",
 			args: args{
 				country: ecal.EconomicCalendarUnitedStates,
-				events: []*models.Event{
+				events: []*archivist.Event{
 					{
 						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
 						Country:  ecal.EconomicCalendarUnitedStates,
@@ -256,7 +256,7 @@ func Test_formatEventsUpdate(t *testing.T) {
 			name: "case 4 - with multiplier and negative value",
 			args: args{
 				country: ecal.EconomicCalendarUnitedStates,
-				events: []*models.Event{
+				events: []*archivist.Event{
 					{
 						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
 						Country:  ecal.EconomicCalendarUnitedStates,
@@ -275,7 +275,7 @@ func Test_formatEventsUpdate(t *testing.T) {
 			name: "case 5 - with zero values",
 			args: args{
 				country: ecal.EconomicCalendarUnitedStates,
-				events: []*models.Event{
+				events: []*archivist.Event{
 					{
 						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
 						Country:  ecal.EconomicCalendarUnitedStates,
@@ -294,7 +294,7 @@ func Test_formatEventsUpdate(t *testing.T) {
 			name: "case 6 - with medium impact event",
 			args: args{
 				country: ecal.EconomicCalendarUnitedStates,
-				events: []*models.Event{
+				events: []*archivist.Event{
 					{
 						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
 						Country:  ecal.EconomicCalendarUnitedStates,
@@ -313,7 +313,7 @@ func Test_formatEventsUpdate(t *testing.T) {
 			name: "case 7 - with grouped events",
 			args: args{
 				country: ecal.EconomicCalendarUnitedStates,
-				events: []*models.Event{
+				events: []*archivist.Event{
 					{
 						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
 						Country:  ecal.EconomicCalendarUnitedStates,
@@ -342,7 +342,7 @@ func Test_formatEventsUpdate(t *testing.T) {
 			name: "case 8 - with money events",
 			args: args{
 				country: ecal.EconomicCalendarGermany,
-				events: []*models.Event{
+				events: []*archivist.Event{
 					{
 						DateTime: time.Date(2023, time.April, 10, 12, 0, 0, 0, time.UTC),
 						Country:  ecal.EconomicCalendarGermany,

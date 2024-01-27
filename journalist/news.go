@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/samgozman/fin-thread/utils"
+	"github.com/samgozman/fin-thread/internal/utils"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"html"
 	"regexp"
 	"strings"
@@ -30,7 +31,7 @@ type News struct {
 func newNews(title, description, link, date, provider string) (*News, error) {
 	dateTime, err := utils.ParseDate(date)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse date '%s': %w", date, err)
+		return nil, newError(errlvl.ERROR, fmt.Errorf("failed to parse date '%s'", date), err)
 	}
 
 	// Sanitize title and description, because they may contain HTML tags and styles
@@ -92,7 +93,7 @@ type NewsList []*News
 func (n NewsList) ToJSON() (string, error) {
 	jsonData, err := json.Marshal(n)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal NewsList: %w", err)
+		return "", newError(errlvl.ERROR, errMarshalNewsList, err)
 	}
 	return string(jsonData), nil
 }
@@ -116,7 +117,7 @@ func (n NewsList) ToContentJSON() (string, error) {
 
 	jsonData, err := json.Marshal(contentNews)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal simpleNews: %w", err)
+		return "", newError(errlvl.ERROR, errMarshalSimpleNews, err)
 	}
 	return string(jsonData), nil
 }

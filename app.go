@@ -8,12 +8,12 @@ import (
 	"github.com/go-co-op/gocron/v2"
 	"github.com/samgozman/fin-thread/archivist"
 	"github.com/samgozman/fin-thread/composer"
+	"github.com/samgozman/fin-thread/internal/utils"
 	"github.com/samgozman/fin-thread/jobs"
 	"github.com/samgozman/fin-thread/journalist"
 	"github.com/samgozman/fin-thread/publisher"
 	"github.com/samgozman/fin-thread/scavenger"
 	"github.com/samgozman/fin-thread/scavenger/stocks"
-	"github.com/samgozman/fin-thread/utils"
 	"log/slog"
 	"time"
 )

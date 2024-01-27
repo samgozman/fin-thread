@@ -3,7 +3,7 @@ package journalist
 import (
 	"context"
 	"errors"
-	"fmt"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"golang.org/x/sync/errgroup"
 	"sync"
 	"time"
@@ -79,7 +79,7 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 
 	// Wait for all goroutines to finish
 	if err := eg.Wait(); err != nil {
-		return nil, fmt.Errorf("error fetching news: %w", err)
+		return nil, newError(errlvl.ERROR, errFetchingNews, err)
 	}
 
 	results = results.mapIDs()

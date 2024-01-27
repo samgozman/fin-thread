@@ -110,7 +110,7 @@ func TestComposer_Compose(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Should return error if OpenAI fails",
+			name: "Should return error if OpenAI client returns error",
 			args: args{
 				news: news,
 			},

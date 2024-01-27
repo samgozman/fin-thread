@@ -5,7 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/samgozman/fin-thread/utils"
+	"github.com/samgozman/fin-thread/internal/utils"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -28,11 +29,11 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 	}
 
 	if from.After(to) {
-		return nil, fmt.Errorf("invalid date range: from %v, to %v", from, to)
+		return nil, errlvl.Wrap(fmt.Errorf("invalid date range: from %v, to %v", from, to), errlvl.ERROR)
 	}
 
 	if to.Sub(from) > 7*24*time.Hour {
-		return nil, fmt.Errorf("invalid date range (more than 7 days): from %v, to %v", from, to)
+		return nil, errlvl.Wrap(fmt.Errorf("invalid date range (more than 7 days): from %v, to %v", from, to), errlvl.ERROR)
 	}
 
 	// Create request body with the specified date range
@@ -48,12 +49,12 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 	_ = writer.WriteField("currencies", "65743") // currencies=65743 - CHF, EUR, GBP, JPY, USD, CNY, INR
 	err := writer.Close()
 	if err != nil {
-		return nil, fmt.Errorf("error closing multipart writer: %w", err)
+		return nil, errlvl.Wrap(fmt.Errorf("error closing multipart writer: %w", err), errlvl.ERROR)
 	}
 
 	req, err := http.NewRequest(http.MethodPost, economicCalendarURL, payload)
 	if err != nil {
-		return nil, fmt.Errorf("error creating calendar request: %w", err)
+		return nil, errlvl.Wrap(fmt.Errorf("error creating calendar request: %w", err), errlvl.ERROR)
 	}
 	req = req.WithContext(ctx)
 	req.Header.Add("x-requested-with", "XMLHttpRequest")
@@ -63,33 +64,33 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 	client := http.DefaultClient
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error sending calendar request: %w", err)
+		return nil, errlvl.Wrap(fmt.Errorf("error sending calendar request: %w", err), errlvl.ERROR)
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid status code error: %d, value %s", res.StatusCode, res.Status)
+		return nil, errlvl.Wrap(fmt.Errorf("invalid status code error: %d, value %s", res.StatusCode, res.Status), errlvl.ERROR)
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response body: %w", err)
+		return nil, errlvl.Wrap(fmt.Errorf("error reading response body: %w", err), errlvl.ERROR)
 	}
 	err = res.Body.Close()
 	if err != nil {
-		return nil, fmt.Errorf("error closing response body: %w", err)
+		return nil, errlvl.Wrap(fmt.Errorf("error closing response body: %w", err), errlvl.ERROR)
 	}
 
 	// Unmarshal the response
 	var mql5Events []mql5Calendar
 	if err := json.Unmarshal(body, &mql5Events); err != nil {
-		return nil, fmt.Errorf("error unmarshalling response body: %w", err)
+		return nil, errlvl.Wrap(fmt.Errorf("error unmarshalling response body: %w", err), errlvl.ERROR)
 	}
 
 	var events EconomicCalendarEvents
 	for _, event := range mql5Events {
 		e, err := parseEvent(event)
 		if err != nil {
-			return nil, err
+			return nil, errlvl.Wrap(err, errlvl.ERROR)
 		}
 		events = append(events, e)
 	}
@@ -110,24 +111,24 @@ func (c *EconomicCalendar) Fetch(ctx context.Context, from, to time.Time) (Econo
 func parseEvent(event mql5Calendar) (*EconomicCalendarEvent, error) {
 	currency, err := parseCurrency(event)
 	if err != nil {
-		return nil, err
+		return nil, errlvl.Wrap(err, errlvl.ERROR)
 	}
 
 	country := parseCountry(event)
 
 	impact, err := parseImpact(event)
 	if err != nil {
-		return nil, err
+		return nil, errlvl.Wrap(err, errlvl.ERROR)
 	}
 
 	// Parse dates
 	dt, err := utils.ParseDate(event.FullDate)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing date: %w, value %v", err, event.FullDate)
+		return nil, errlvl.Wrap(fmt.Errorf("error parsing date: %w, value %v", err, event.FullDate), errlvl.ERROR)
 	}
 	et, err := utils.ParseDate(event.ReleaseDate)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing date: %w, value %v", err, event.ReleaseDate)
+		return nil, errlvl.Wrap(fmt.Errorf("error parsing date: %w, value %v", err, event.ReleaseDate), errlvl.ERROR)
 	}
 
 	e := &EconomicCalendarEvent{
@@ -161,7 +162,7 @@ func parseImpact(event mql5Calendar) (EconomicCalendarImpact, error) {
 			impact = EconomicCalendarImpactNone
 		}
 	default:
-		return "", fmt.Errorf("unknown impact: %s", event.Importance)
+		return "", errlvl.Wrap(fmt.Errorf("unknown impact: %s", event.Importance), errlvl.ERROR)
 	}
 	return impact, nil
 }
@@ -245,7 +246,7 @@ func parseCurrency(event mql5Calendar) (EconomicCalendarCurrency, error) {
 	case "ALL":
 		currency = EconomicCalendarALL
 	default:
-		return "", fmt.Errorf("unknown currency: %s", event.CurrencyCode)
+		return "", errlvl.Wrap(fmt.Errorf("unknown currency: %s", event.CurrencyCode), errlvl.ERROR)
 	}
 	return currency, nil
 }

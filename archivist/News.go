@@ -1,4 +1,4 @@
-package models
+package archivist
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/samgozman/fin-thread/composer"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"time"
@@ -40,43 +41,43 @@ type News struct {
 
 func (n *News) Validate() error {
 	if len(n.ChannelID) > 64 {
-		return errChannelIDTooLong
+		return newError(errlvl.INFO, errChannelIDTooLong)
 	}
 
 	if len(n.Hash) > 32 {
-		return errHashTooLong
+		return newError(errlvl.INFO, errHashTooLong)
 	}
 
 	if len(n.PublicationID) > 64 {
-		return errPubIDTooLong
+		return newError(errlvl.INFO, errPubIDTooLong)
 	}
 
 	if len(n.ProviderName) > 64 {
-		return errProviderNameTooLong
+		return newError(errlvl.INFO, errProviderNameTooLong)
 	}
 
 	if n.URL == "" {
-		return errURLEmpty
+		return newError(errlvl.INFO, errURLEmpty)
 	}
 
 	if len(n.URL) > 512 {
-		return errURLTooLong
+		return newError(errlvl.INFO, errURLTooLong)
 	}
 
 	if len(n.OriginalTitle) > 512 {
-		return errOriginalTitleTooLong
+		return newError(errlvl.INFO, errOriginalTitleTooLong)
 	}
 
 	if len(n.OriginalDesc) > 1024 {
-		return errOriginalDescTooLong
+		return newError(errlvl.INFO, errOriginalDescTooLong)
 	}
 
 	if len(n.ComposedText) > 512 {
-		return errComposedTextTooLong
+		return newError(errlvl.INFO, errComposedTextTooLong)
 	}
 
 	if n.OriginalDate.IsZero() {
-		return errOriginalDateEmpty
+		return newError(errlvl.INFO, errOriginalDateEmpty)
 	}
 
 	return nil
@@ -102,7 +103,7 @@ func (n *News) BeforeCreate(*gorm.DB) error {
 
 	err := n.Validate()
 	if err != nil {
-		return err
+		return newError(errlvl.INFO, errNewsValidation, err)
 	}
 
 	return nil
@@ -119,7 +120,7 @@ func (n *News) ToHeadline() *composer.Headline {
 func (db *NewsDB) Create(ctx context.Context, n []*News) error {
 	res := db.Conn.WithContext(ctx).Create(&n)
 	if res.Error != nil {
-		return res.Error
+		return newError(errlvl.ERROR, errNewsCreation, res.Error)
 	}
 
 	return nil
@@ -128,7 +129,7 @@ func (db *NewsDB) Create(ctx context.Context, n []*News) error {
 func (db *NewsDB) Update(ctx context.Context, n *News) error {
 	res := db.Conn.WithContext(ctx).Where("hash = ?", n.Hash).Updates(n)
 	if res.Error != nil {
-		return res.Error
+		return newError(errlvl.ERROR, errNewsUpdate, res.Error)
 	}
 
 	return nil
@@ -139,7 +140,7 @@ func (db *NewsDB) FindAllByHashes(ctx context.Context, hashes []string) ([]*News
 	var n []*News
 	res := db.Conn.WithContext(ctx).Where("hash IN ?", hashes).Find(&n)
 	if res.Error != nil {
-		return nil, res.Error
+		return nil, newError(errlvl.ERROR, errNewsFindAllByHash, res.Error)
 	}
 
 	return n, nil
@@ -150,7 +151,7 @@ func (db *NewsDB) FindAllByUrls(ctx context.Context, urls []string) ([]*News, er
 	var n []*News
 	res := db.Conn.WithContext(ctx).Where("url IN ?", urls).Find(&n)
 	if res.Error != nil {
-		return nil, res.Error
+		return nil, newError(errlvl.ERROR, errNewsFindAllByUrls, res.Error)
 	}
 
 	return n, nil
@@ -161,7 +162,7 @@ func (db *NewsDB) FindAllUntilDate(ctx context.Context, until time.Time) ([]*New
 	var n []*News
 	res := db.Conn.WithContext(ctx).Where("published_at >= ?", until).Find(&n)
 	if res.Error != nil {
-		return nil, res.Error
+		return nil, newError(errlvl.ERROR, errNewsFindUntil, res.Error)
 	}
 
 	return n, nil

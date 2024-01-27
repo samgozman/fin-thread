@@ -3,7 +3,7 @@ package utils
 import (
 	"errors"
 	"github.com/getsentry/sentry-go"
-	"github.com/mmcdole/gofeed"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"github.com/stretchr/testify/mock"
 	"testing"
 )
@@ -63,13 +63,6 @@ func Test_errorsLevelMatcher(t *testing.T) {
 		want sentry.Level
 	}{
 		{
-			name: "Test with gofeed.ErrFeedTypeNotDetected",
-			args: args{
-				err: gofeed.ErrFeedTypeNotDetected,
-			},
-			want: sentry.LevelWarning,
-		},
-		{
 			name: "Test with nil error",
 			args: args{
 				err: nil,
@@ -82,6 +75,41 @@ func Test_errorsLevelMatcher(t *testing.T) {
 				err: errors.New("generic error"),
 			},
 			want: sentry.LevelError,
+		},
+		{
+			name: "Test with ErrError",
+			args: args{
+				err: errlvl.ErrError,
+			},
+			want: sentry.LevelError,
+		},
+		{
+			name: "Test with ErrFatal",
+			args: args{
+				err: errlvl.ErrFatal,
+			},
+			want: sentry.LevelFatal,
+		},
+		{
+			name: "Test with ErrWarn",
+			args: args{
+				err: errlvl.ErrWarn,
+			},
+			want: sentry.LevelWarning,
+		},
+		{
+			name: "Test with ErrInfo",
+			args: args{
+				err: errlvl.ErrInfo,
+			},
+			want: sentry.LevelInfo,
+		},
+		{
+			name: "Test with ErrDebug",
+			args: args{
+				err: errlvl.ErrDebug,
+			},
+			want: sentry.LevelDebug,
 		},
 	}
 	for _, tt := range tests {
