@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/generative-ai-go/genai"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"github.com/sashabaranov/go-openai"
 	"google.golang.org/api/option"
 	"io"
@@ -67,7 +68,12 @@ func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options togetherA
 
 	req, err := http.NewRequestWithContext(ctx, "POST", t.URL, bytes.NewBuffer(bodyJSON))
 	if err != nil {
-		return nil, fmt.Errorf("error creating request to TogetherAI API: %w", err)
+		return nil, newError(
+			fmt.Errorf("error creating request: %w", err),
+			errlvl.ERROR,
+			"TogetherAI.CreateChatCompletion",
+			"NewRequestWithContext",
+		)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+t.APIKey)
@@ -76,7 +82,12 @@ func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options togetherA
 	client := &http.Client{}
 	resp, err := client.Do(req) //nolint:bodyclose
 	if err != nil {
-		return nil, fmt.Errorf("error sending request to TogetherAI API: %w", err)
+		return nil, newError(
+			fmt.Errorf("error sending request: %w", err),
+			errlvl.ERROR,
+			"TogetherAI.CreateChatCompletion",
+			"client.Do",
+		)
 	}
 
 	defer func(Body io.ReadCloser) {
@@ -89,7 +100,12 @@ func (t *TogetherAI) CreateChatCompletion(ctx context.Context, options togetherA
 	var response TogetherAIResponse
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding response from TogetherAI API: %w. Response: %v", err, resp.Body)
+		return nil, newError(
+			fmt.Errorf("error decoding response: %w", err),
+			errlvl.ERROR,
+			"TogetherAI.CreateChatCompletion",
+			"json.NewDecoder",
+		)
 	}
 
 	return &response, nil
@@ -151,7 +167,12 @@ func (g *GoogleGemini) CreateChatCompletion(ctx context.Context, req GoogleGemin
 
 	resp, err := model.GenerateContent(ctx, genai.Text(req.Prompt))
 	if err != nil {
-		return nil, fmt.Errorf("error generating content Google Gemini: %w", err)
+		return nil, newError(
+			fmt.Errorf("error generating content: %w", err),
+			errlvl.ERROR,
+			"GoogleGemini.CreateChatCompletion",
+			"model.GenerateContent",
+		)
 	}
 
 	return resp, nil
