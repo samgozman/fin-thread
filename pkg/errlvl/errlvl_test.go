@@ -17,12 +17,44 @@ func TestWrap(t *testing.T) {
 		wantLevel ErrorLevel
 	}{
 		{
-			name: "wrap error with level",
+			name: "wrap error with info level",
 			args: args{
 				err:   errors.New("test"),
 				level: INFO,
 			},
 			wantLevel: ErrInfo,
+		},
+		{
+			name: "wrap error with warn level",
+			args: args{
+				err:   errors.New("test"),
+				level: WARN,
+			},
+			wantLevel: ErrWarn,
+		},
+		{
+			name: "wrap error with error level",
+			args: args{
+				err:   errors.New("test"),
+				level: ERROR,
+			},
+			wantLevel: ErrError,
+		},
+		{
+			name: "wrap error with debug level",
+			args: args{
+				err:   errors.New("test"),
+				level: DEBUG,
+			},
+			wantLevel: ErrDebug,
+		},
+		{
+			name: "wrap error with fatal level",
+			args: args{
+				err:   errors.New("test"),
+				level: FATAL,
+			},
+			wantLevel: ErrFatal,
 		},
 		{
 			name: "wrap joined errors",
