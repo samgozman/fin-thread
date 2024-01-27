@@ -373,7 +373,7 @@ func TestNewsList_ToJSON(t *testing.T) {
 					IsSuspicious: true,
 				},
 			},
-			want:    `[{"ID":"id1","Title":"Some news about United States","Description":"Read more about United States","Link":"","Date":"0001-01-01T00:00:00Z","ProviderName":"","IsSuspicious":false},{"ID":"id2","Title":"Some news about kek","Description":"Read more about kek","Link":"","Date":"0001-01-01T00:00:00Z","ProviderName":"","IsSuspicious":true}]`,
+			want:    `[{"ID":"id1","Title":"Some news about United States","Description":"Read more about United States","Link":"","Date":"0001-01-01T00:00:00Z","providerName":"","IsSuspicious":false},{"ID":"id2","Title":"Some news about kek","Description":"Read more about kek","Link":"","Date":"0001-01-01T00:00:00Z","providerName":"","IsSuspicious":true}]`,
 			wantErr: false,
 		},
 		{

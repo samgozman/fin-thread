@@ -68,7 +68,7 @@ func TestRssProvider_Fetch(t *testing.T) {
 					return
 				}
 				if news.ProviderName != tt.fields.Name {
-					t.Errorf("RssProvider.Fetch() news.ProviderName = %v, want %v", news.ProviderName, tt.fields.Name)
+					t.Errorf("RssProvider.Fetch() news.providerName = %v, want %v", news.ProviderName, tt.fields.Name)
 					return
 				}
 			}

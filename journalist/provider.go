@@ -2,6 +2,8 @@ package journalist
 
 import (
 	"context"
+	"errors"
+	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"time"
 
 	"github.com/mmcdole/gofeed"
@@ -31,7 +33,11 @@ func (r *RssProvider) Fetch(ctx context.Context, until time.Time) (NewsList, err
 	fp := gofeed.NewParser()
 	feed, err := fp.ParseURLWithContext(r.URL, ctx)
 	if err != nil {
-		return nil, newErrProvider(r.Name, err)
+		if errors.Is(err, gofeed.ErrFeedTypeNotDetected) {
+			return nil, newError(errlvl.INFO, err).WithProvider(r.Name)
+		}
+
+		return nil, newError(errlvl.ERROR, err).WithProvider(r.Name)
 	}
 
 	var news NewsList
@@ -43,7 +49,7 @@ func (r *RssProvider) Fetch(ctx context.Context, until time.Time) (NewsList, err
 
 		newsItem, err := newNews(item.Title, item.Description, item.Link, item.Published, r.Name)
 		if err != nil {
-			return nil, newErrProvider(r.Name, err)
+			return nil, newError(errlvl.INFO, err).WithProvider(r.Name)
 		}
 		news = append(news, newsItem)
 	}
