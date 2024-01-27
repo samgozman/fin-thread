@@ -52,5 +52,18 @@ func Wrap(err error, level Lvl) error {
 
 // hasLevel checks if the given error has a level ser already.
 func hasLevel(err error) bool {
-	return errors.Is(err, ErrDebug) || errors.Is(err, ErrInfo) || errors.Is(err, ErrWarn) || errors.Is(err, ErrError) || errors.Is(err, ErrFatal)
+	switch {
+	case errors.Is(err, ErrDebug):
+		return true
+	case errors.Is(err, ErrInfo):
+		return true
+	case errors.Is(err, ErrWarn):
+		return true
+	case errors.Is(err, ErrError):
+		return true
+	case errors.Is(err, ErrFatal):
+		return true
+	}
+
+	return false
 }
