@@ -16,7 +16,7 @@ type TelegramPublisher struct {
 func NewTelegramPublisher(channelID string, token string, shouldPublish bool) (*TelegramPublisher, error) {
 	b, e := tgbotapi.NewBotAPI(token)
 	if e != nil {
-		return nil, newError(errlvl.ERROR, fmt.Errorf("failed to create Telegram bot"), e)
+		return nil, errlvl.Wrap(fmt.Errorf("failed to create Telegram bot: %w", e), errlvl.ERROR)
 	}
 	return &TelegramPublisher{
 		ChannelID:     channelID,
@@ -37,7 +37,7 @@ func (t *TelegramPublisher) Publish(msg string) (pubID string, err error) {
 
 	m, err := t.BotAPI.Send(tgMsg)
 	if err != nil {
-		return "", newError(errlvl.ERROR, fmt.Errorf("failed to send message to Telegram channel"), err)
+		return "", errlvl.Wrap(fmt.Errorf("failed to send message to Telegram: %w", err), errlvl.ERROR)
 	}
 	return strconv.Itoa(m.MessageID), nil
 }
