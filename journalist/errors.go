@@ -20,18 +20,26 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	err := errors.Join(e.errs...)
+	return e.getWrappedError().Error()
+}
 
-	if e.providerName != "" {
-		return errlvl.Wrap(fmt.Errorf("provider %s: %w", e.providerName, err), e.level).Error()
-	}
-
-	return errlvl.Wrap(err, e.level).Error()
+func (e *Error) Unwrap() error {
+	return e.getWrappedError()
 }
 
 func (e *Error) WithProvider(providerName string) *Error {
 	e.providerName = providerName
 	return e
+}
+
+func (e *Error) getWrappedError() error {
+	err := errors.Join(e.errs...)
+
+	if e.providerName != "" {
+		return errlvl.Wrap(fmt.Errorf("provider %s: %w", e.providerName, err), e.level)
+	}
+
+	return errlvl.Wrap(err, e.level)
 }
 
 // newError creates a new Error instance.
