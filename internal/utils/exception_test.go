@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/samgozman/fin-thread/pkg/errlvl"
 	"github.com/stretchr/testify/mock"
@@ -53,7 +54,34 @@ func TestCaptureSentryException(t *testing.T) {
 	}
 }
 
+type customError struct {
+	// severity level of the error
+	level errlvl.Lvl
+	// errors stack (preferably generic error + the real error)
+	err error
+}
+
+func (e *customError) Error() string {
+	return errlvl.Wrap(e.err, e.level).Error()
+}
+
+func (e *customError) Unwrap() error {
+	return errlvl.Wrap(e.err, e.level)
+}
+
+func newError(lvl errlvl.Lvl, err error) *customError {
+	return &customError{
+		level: lvl,
+		err:   err,
+	}
+}
+
 func Test_errorsLevelMatcher(t *testing.T) {
+	normalErr := errors.New("normal error")
+	archivistErr := newError(errlvl.INFO, normalErr)
+	joinedErr := errors.Join(errors.New("some other error"), archivistErr)
+	formattedErr := fmt.Errorf("[customError]: %w", joinedErr)
+
 	type args struct {
 		err error
 	}
@@ -111,11 +139,18 @@ func Test_errorsLevelMatcher(t *testing.T) {
 			},
 			want: sentry.LevelDebug,
 		},
+		{
+			name: "Test with difficult error wrapped in customError",
+			args: args{
+				err: formattedErr,
+			},
+			want: sentry.LevelInfo,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := errorsLevelMatcher(tt.args.err); got != tt.want {
-				t.Errorf("errorsLevelMatcher() = %v, want %v", got, tt.want)
+				t.Errorf("errorsLevelMatcher() = %v, want %v. Error: %s", got, tt.want, tt.args.err.Error())
 			}
 		})
 	}
