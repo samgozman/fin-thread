@@ -41,43 +41,43 @@ type News struct {
 
 func (n *News) Validate() error {
 	if len(n.ChannelID) > 64 {
-		return newError(errlvl.INFO, errChannelIDTooLong)
+		return newError(errlvl.INFO, errChannelIDTooLong, nil)
 	}
 
 	if len(n.Hash) > 32 {
-		return newError(errlvl.INFO, errHashTooLong)
+		return newError(errlvl.INFO, errHashTooLong, nil)
 	}
 
 	if len(n.PublicationID) > 64 {
-		return newError(errlvl.INFO, errPubIDTooLong)
+		return newError(errlvl.INFO, errPubIDTooLong, nil)
 	}
 
 	if len(n.ProviderName) > 64 {
-		return newError(errlvl.INFO, errProviderNameTooLong)
+		return newError(errlvl.INFO, errProviderNameTooLong, nil)
 	}
 
 	if n.URL == "" {
-		return newError(errlvl.INFO, errURLEmpty)
+		return newError(errlvl.INFO, errURLEmpty, nil)
 	}
 
 	if len(n.URL) > 512 {
-		return newError(errlvl.INFO, errURLTooLong)
+		return newError(errlvl.INFO, errURLTooLong, nil)
 	}
 
 	if len(n.OriginalTitle) > 512 {
-		return newError(errlvl.INFO, errOriginalTitleTooLong)
+		return newError(errlvl.INFO, errOriginalTitleTooLong, nil)
 	}
 
 	if len(n.OriginalDesc) > 1024 {
-		return newError(errlvl.INFO, errOriginalDescTooLong)
+		return newError(errlvl.INFO, errOriginalDescTooLong, nil)
 	}
 
 	if len(n.ComposedText) > 512 {
-		return newError(errlvl.INFO, errComposedTextTooLong)
+		return newError(errlvl.INFO, errComposedTextTooLong, nil)
 	}
 
 	if n.OriginalDate.IsZero() {
-		return newError(errlvl.INFO, errOriginalDateEmpty)
+		return newError(errlvl.INFO, errOriginalDateEmpty, nil)
 	}
 
 	return nil
