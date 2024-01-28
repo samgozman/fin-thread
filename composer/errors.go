@@ -20,11 +20,19 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
+	return e.getWrappedError().Error()
+}
+
+func (e *Error) Unwrap() error {
+	return e.getWrappedError()
+}
+
+func (e *Error) getWrappedError() error {
 	if e.value != "" {
-		return errlvl.Wrap(fmt.Errorf("[%s] error in %s: %w (value: %s)", e.fnName, e.source, e.err, e.value), e.level).Error()
+		return errlvl.Wrap(fmt.Errorf("[%s] error in %s: %w (value: %s)", e.fnName, e.source, e.err, e.value), e.level)
 	}
 
-	return errlvl.Wrap(fmt.Errorf("[%s] error in %s: %w", e.fnName, e.source, e.err), e.level).Error()
+	return errlvl.Wrap(fmt.Errorf("[%s] error in %s: %w", e.fnName, e.source, e.err), e.level)
 }
 
 // WithValue sets the value that caused the error.
