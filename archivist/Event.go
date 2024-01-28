@@ -38,15 +38,15 @@ type Event struct {
 
 func (e *Event) Validate() error {
 	if len(e.ChannelID) > 64 {
-		return newError(errlvl.INFO, errChannelIDTooLong)
+		return newError(errlvl.INFO, errChannelIDTooLong, nil)
 	}
 
 	if len(e.ProviderName) > 64 {
-		return newError(errlvl.INFO, errProviderNameTooLong)
+		return newError(errlvl.INFO, errProviderNameTooLong, nil)
 	}
 
 	if len(e.Title) > 256 {
-		return newError(errlvl.INFO, errTitleTooLong)
+		return newError(errlvl.INFO, errTitleTooLong, nil)
 	}
 
 	return nil

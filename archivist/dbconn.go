@@ -28,7 +28,7 @@ func connectToPG(dsn string) (*gorm.DB, error) {
 		return conn, nil
 	}, bf)
 	if err != nil {
-		return nil, newError(errlvl.FATAL, err)
+		return nil, newError(errlvl.FATAL, errFailedConnection, err)
 	}
 
 	return db, nil

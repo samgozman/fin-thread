@@ -23,7 +23,7 @@ type Archivist struct {
 func NewArchivist(dsn string) (*Archivist, error) {
 	conn, err := connectToPG(dsn)
 	if err != nil {
-		return nil, newError(errlvl.FATAL, err)
+		return nil, err
 	}
 
 	// Migrate the schema automatically for now.

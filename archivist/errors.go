@@ -5,53 +5,44 @@ import (
 	"github.com/samgozman/fin-thread/pkg/errlvl"
 )
 
+// archivistError is a service-level error type.
+type archivistError error
+
 var (
-	errChannelIDTooLong     = errors.New("channel_id is too long")
-	errHashTooLong          = errors.New("hash is too long")
-	errPubIDTooLong         = errors.New("publication_id is too long")
-	errProviderNameTooLong  = errors.New("provider_name is too long")
-	errURLTooLong           = errors.New("url is too long")
-	errOriginalTitleTooLong = errors.New("original_title is too long")
-	errOriginalDescTooLong  = errors.New("original_desc is too long")
-	errComposedTextTooLong  = errors.New("composed_text is too long")
-	errOriginalDateEmpty    = errors.New("original_date is empty")
-	errTitleTooLong         = errors.New("title is too long")
-	errURLEmpty             = errors.New("url is empty")
-	errEventValidation      = errors.New("event validation failed")
-	errEventCreation        = errors.New("event creation failed")
-	errEventUpdate          = errors.New("event update failed")
-	errFindRecentEvents     = errors.New("failed to find recent events")
-	errFindUntilEvents      = errors.New("failed to find events until the given date")
-	errNewsValidation       = errors.New("news validation failed")
-	errNewsCreation         = errors.New("news creation failed")
-	errNewsUpdate           = errors.New("news update failed")
-	errNewsFindAllByHash    = errors.New("failed to find news by hash")
-	errNewsFindAllByUrls    = errors.New("failed to find news by urls")
-	errNewsFindUntil        = errors.New("failed to find news until the given date")
-	errFailedMigration      = errors.New("failed to migrate schema")
+	errChannelIDTooLong     archivistError = errors.New("channel_id is too long")
+	errHashTooLong          archivistError = errors.New("hash is too long")
+	errPubIDTooLong         archivistError = errors.New("publication_id is too long")
+	errProviderNameTooLong  archivistError = errors.New("provider_name is too long")
+	errURLTooLong           archivistError = errors.New("url is too long")
+	errOriginalTitleTooLong archivistError = errors.New("original_title is too long")
+	errOriginalDescTooLong  archivistError = errors.New("original_desc is too long")
+	errComposedTextTooLong  archivistError = errors.New("composed_text is too long")
+	errOriginalDateEmpty    archivistError = errors.New("original_date is empty")
+	errTitleTooLong         archivistError = errors.New("title is too long")
+	errURLEmpty             archivistError = errors.New("url is empty")
+	errEventValidation      archivistError = errors.New("event validation failed")
+	errEventCreation        archivistError = errors.New("event creation failed")
+	errEventUpdate          archivistError = errors.New("event update failed")
+	errFindRecentEvents     archivistError = errors.New("failed to find recent events")
+	errFindUntilEvents      archivistError = errors.New("failed to find events until the given date")
+	errNewsValidation       archivistError = errors.New("news validation failed")
+	errNewsCreation         archivistError = errors.New("news creation failed")
+	errNewsUpdate           archivistError = errors.New("news update failed")
+	errNewsFindAllByHash    archivistError = errors.New("failed to find news by hash")
+	errNewsFindAllByUrls    archivistError = errors.New("failed to find news by urls")
+	errNewsFindUntil        archivistError = errors.New("failed to find news until the given date")
+	errFailedMigration      archivistError = errors.New("failed to migrate schema")
+	errFailedConnection     archivistError = errors.New("failed to connect to database")
 )
 
-// Error is a custom error type that contains the severity level of the error.
-type Error struct {
-	// severity level of the error
-	level errlvl.Lvl
-	// errors stack (preferably generic error + the real error)
-	errs []error
-}
-
-// Error returns the string representation of the error.
-func (e *Error) Error() string {
-	if len(e.errs) == 1 {
-		return errlvl.Wrap(e.errs[0], e.level).Error()
+// newError creates a wrapped error instance with the given errors.
+func newError(lvl errlvl.Lvl, genericErr archivistError, err error) error {
+	var wrappedErr error
+	if err != nil {
+		wrappedErr = errlvl.Wrap(errors.Join(genericErr, err), lvl)
+	} else {
+		wrappedErr = errlvl.Wrap(genericErr, lvl)
 	}
 
-	return errlvl.Wrap(errors.Join(e.errs...), e.level).Error()
-}
-
-// newError creates a new Error instance with the given errors.
-func newError(lvl errlvl.Lvl, errs ...error) *Error {
-	return &Error{
-		level: lvl,
-		errs:  errs,
-	}
+	return wrappedErr
 }
