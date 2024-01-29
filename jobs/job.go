@@ -382,9 +382,15 @@ func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) 
 
 	// create array without duplicates
 	for _, n := range news {
-		if !slices.Contains(existedHashes, n.ID) && !slices.Contains(existedUrls, n.Link) {
-			result = append(result, n)
+		if slices.Contains(existedHashes, n.ID) {
+			continue
 		}
+
+		if slices.Contains(existedUrls, n.Link) {
+			continue
+		}
+
+		result = append(result, n)
 	}
 
 	return result, nil
