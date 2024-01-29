@@ -85,7 +85,7 @@ func (j *CalendarJob) RunDailyCalendarJob() JobFunc {
 			}
 
 			// Format events to the text
-			m := formatWeeklyEvents(events)
+			m := formatDailyEvents(events)
 
 			// Publish events to the channel
 			span = tx.StartChild("TelegramPublisher.Publish")
@@ -280,8 +280,8 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 	}
 }
 
-// formatWeeklyEvents formats events to the text for publishing to the telegram channel.
-func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
+// formatDailyEvents formats events to the text for publishing to the telegram channel.
+func formatDailyEvents(events ecal.EconomicCalendarEvents) string {
 	// Handle empty events case
 	if len(events) == 0 {
 		return ""
@@ -290,18 +290,10 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	var m strings.Builder
 
 	// Build header
-	m.WriteString("📅 Economic calendar for the upcoming week\n\n")
+	m.WriteString("📅 Economic calendar for today\n\n")
 
-	latestDateStr := ""
 	// Iterate through events
 	for _, e := range events {
-		// Add events group date
-		dt := e.DateTime.Format("Monday, January 02")
-		if dt != latestDateStr {
-			latestDateStr = dt
-			m.WriteString(fmt.Sprintf("*%s*\n", dt))
-		}
-
 		// Add event
 		country := ecal.GetCountryEmoji(e.Country)
 
@@ -324,7 +316,7 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	}
 
 	// Build footer
-	m.WriteString("*All times are in UTC*\n#calendar #economy")
+	m.WriteString("*Time is in UTC*\n#calendar #economy")
 
 	return m.String()
 }
