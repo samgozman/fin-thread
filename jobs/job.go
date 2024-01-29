@@ -375,7 +375,7 @@ func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) 
 	}
 	existedUrls := make([]string, len(existsByURL))
 	for i, n := range existsByURL {
-		existedUrls[i] = n.Hash
+		existedUrls[i] = n.URL
 	}
 
 	var result journalist.NewsList
