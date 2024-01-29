@@ -39,16 +39,16 @@ func NewCalendarJob(
 	}
 }
 
-// RunWeeklyCalendarJob creates events plan for the upcoming week and publishes them to the channel.
-// It should be run once a week on Monday.
-func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
+// RunDailyCalendarJob creates events plan for the upcoming day and publishes them to the channel.
+// It should be run every business day.
+func (j *CalendarJob) RunDailyCalendarJob() JobFunc {
 	return func() {
 		_ = retry.Do(func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 			defer cancel()
-			j.logger.Info("[calendar] Running weekly plan")
+			j.logger.Info("[calendar] Running daily plan")
 
-			tx := sentry.StartTransaction(ctx, "RunWeeklyCalendarJob")
+			tx := sentry.StartTransaction(ctx, "RunDailyCalendarJob")
 			tx.Op = "job-calendar"
 
 			// Sentry performance monitoring
@@ -58,15 +58,13 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 				ctx = sentry.SetHubOnContext(ctx, hub)
 			}
 
-			defer func() {
-				tx.Finish()
-				hub.Flush(2 * time.Second)
-			}()
+			defer tx.Finish()
+			defer hub.Flush(2 * time.Second)
+			defer hub.Recover(nil)
 
-			// Create events plan for the upcoming week
-			// from should be always a Monday of the current week
-			from := time.Now().Truncate(24 * time.Hour).Add(-time.Duration(time.Now().Weekday()-time.Monday) * 24 * time.Hour)
-			to := from.Add(6 * 24 * time.Hour).Add(23 * time.Hour).Add(59 * time.Minute).Add(59 * time.Second)
+			// Create events plan for the current day
+			from := time.Now().Truncate(24 * time.Hour)
+			to := from.Add(23 * time.Hour).Add(59 * time.Minute).Add(59 * time.Second)
 			span := tx.StartChild("EconomicCalendar.Fetch")
 			events, err := j.calendarScavenger.Fetch(ctx, from, to)
 			span.Finish()
@@ -86,7 +84,7 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 			}
 
 			// Format events to the text
-			m := formatWeeklyEvents(events)
+			m := formatDailyEvents(events)
 
 			// Publish events to the channel
 			span = tx.StartChild("TelegramPublisher.Publish")
@@ -151,10 +149,9 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 			ctx = sentry.SetHubOnContext(ctx, hub)
 		}
 
-		defer func() {
-			tx.Finish()
-			hub.Flush(2 * time.Second)
-		}()
+		defer tx.Finish()
+		defer hub.Flush(2 * time.Second)
+		defer hub.Recover(nil)
 
 		// Fetch eventsDB for today from the database
 		span := tx.StartChild("Archivist.FindRecentEventsWithoutValue")
@@ -281,8 +278,8 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 	}
 }
 
-// formatWeeklyEvents formats events to the text for publishing to the telegram channel.
-func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
+// formatDailyEvents formats events to the text for publishing to the telegram channel.
+func formatDailyEvents(events ecal.EconomicCalendarEvents) string {
 	// Handle empty events case
 	if len(events) == 0 {
 		return ""
@@ -291,18 +288,10 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	var m strings.Builder
 
 	// Build header
-	m.WriteString("📅 Economic calendar for the upcoming week\n\n")
+	m.WriteString("📅 Economic calendar for today\n\n")
 
-	latestDateStr := ""
 	// Iterate through events
 	for _, e := range events {
-		// Add events group date
-		dt := e.DateTime.Format("Monday, January 02")
-		if dt != latestDateStr {
-			latestDateStr = dt
-			m.WriteString(fmt.Sprintf("*%s*\n", dt))
-		}
-
 		// Add event
 		country := ecal.GetCountryEmoji(e.Country)
 
@@ -325,7 +314,7 @@ func formatWeeklyEvents(events ecal.EconomicCalendarEvents) string {
 	}
 
 	// Build footer
-	m.WriteString("*All times are in UTC*\n#calendar #economy")
+	m.WriteString("*Time is in UTC*\n#calendar #economy")
 
 	return m.String()
 }

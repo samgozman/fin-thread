@@ -54,6 +54,18 @@ func (j *Journalist) GetLatestNews(ctx context.Context, until time.Time) (NewsLi
 		eg.Go(func() error {
 			c, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
+			defer func() {
+				if r := recover(); r != nil {
+					err, ok := r.(error)
+					if !ok {
+						err = errPanicUnknown
+					}
+
+					mu.Lock()
+					defer mu.Unlock()
+					e = append(e, errors.Join(errPanicGetLatestNews, err))
+				}
+			}()
 
 			result, err := j.providers[id].Fetch(c, until)
 			if err != nil {

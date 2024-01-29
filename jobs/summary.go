@@ -51,10 +51,9 @@ func (j *SummaryJob) Run(from time.Time) JobFunc {
 				ctx = sentry.SetHubOnContext(ctx, hub)
 			}
 
-			defer func() {
-				tx.Finish()
-				hub.Flush(2 * time.Second)
-			}()
+			defer tx.Finish()
+			defer hub.Flush(2 * time.Second)
+			defer hub.Recover(nil)
 
 			// Fetch news from the database
 			span := sentry.StartSpan(ctx, "News.FindAllUntilDate", sentry.WithTransactionName("SummaryJob.Run"))

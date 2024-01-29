@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func Test_formatWeeklyEvents(t *testing.T) {
+func Test_formatDailyEvents(t *testing.T) {
 	type args struct {
 		// Note: events should be sorted by date in ascending order
 		events ecal.EconomicCalendarEvents
@@ -53,8 +53,8 @@ func Test_formatWeeklyEvents(t *testing.T) {
 						Previous:  "1.8%",
 					},
 					{
-						DateTime:  time.Date(2023, time.April, 11, 12, 0, 0, 0, time.UTC),
-						EventTime: time.Date(2023, time.April, 11, 12, 0, 0, 0, time.UTC),
+						DateTime:  time.Date(2023, time.April, 10, 15, 0, 0, 0, time.UTC),
+						EventTime: time.Date(2023, time.April, 10, 16, 0, 0, 0, time.UTC),
 						Country:   ecal.EconomicCalendarUnitedStates,
 						Currency:  ecal.EconomicCalendarUSD,
 						Impact:    ecal.EconomicCalendarImpactHigh,
@@ -63,8 +63,8 @@ func Test_formatWeeklyEvents(t *testing.T) {
 						Previous:  "6.8%",
 					},
 					{
-						DateTime:  time.Date(2023, time.April, 11, 12, 0, 0, 0, time.UTC),
-						EventTime: time.Date(2023, time.April, 11, 13, 0, 0, 0, time.UTC),
+						DateTime:  time.Date(2023, time.April, 10, 16, 0, 0, 0, time.UTC),
+						EventTime: time.Date(2023, time.April, 10, 17, 0, 0, 0, time.UTC),
 						Country:   ecal.EconomicCalendarUnitedStates,
 						Currency:  ecal.EconomicCalendarUSD,
 						Impact:    ecal.EconomicCalendarImpactHigh,
@@ -72,8 +72,8 @@ func Test_formatWeeklyEvents(t *testing.T) {
 						Forecast:  "1.0%",
 					},
 					{
-						DateTime:  time.Date(2023, time.April, 12, 00, 0, 0, 0, time.UTC),
-						EventTime: time.Date(2023, time.April, 12, 23, 59, 0, 0, time.UTC),
+						DateTime:  time.Date(2023, time.April, 10, 17, 0, 0, 0, time.UTC),
+						EventTime: time.Date(2023, time.April, 10, 18, 59, 0, 0, time.UTC),
 						Country:   ecal.EconomicCalendarUnitedStates,
 						Currency:  ecal.EconomicCalendarUSD,
 						Impact:    ecal.EconomicCalendarImpactHoliday,
@@ -83,17 +83,14 @@ func Test_formatWeeklyEvents(t *testing.T) {
 					},
 				},
 			},
-			want: "📅 Economic calendar for the upcoming week\n\n" +
-				"*Monday, April 10*\n" +
+			want: "📅 Economic calendar for today\n\n" +
 				"🇺🇸 12:00 CPI Announcement, forecast: 2.9%, last: 2.8%\n" +
 				"🇺🇸 12:00 Some other event, forecast: 2.9%, last: 2.8%\n" +
 				"🇪🇺 12:00 Some woke event, forecast: 1.3%, last: 1.8%\n" +
-				"*Tuesday, April 11*\n" +
-				"🇺🇸 12:00 Inflation Announcement, forecast: 6.9%, last: 6.8%\n" +
-				"🇺🇸 12:00 Some other event, forecast: 1.0%\n" +
-				"*Wednesday, April 12*\n" +
+				"🇺🇸 15:00 Inflation Announcement, forecast: 6.9%, last: 6.8%\n" +
+				"🇺🇸 16:00 Some other event, forecast: 1.0%\n" +
 				"🇺🇸 Some holiday\n" +
-				"*All times are in UTC*\n" +
+				"*Time is in UTC*\n" +
 				"#calendar #economy",
 		},
 		{
@@ -106,9 +103,9 @@ func Test_formatWeeklyEvents(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := formatWeeklyEvents(tt.args.events)
+			got := formatDailyEvents(tt.args.events)
 			if got != tt.want {
-				t.Errorf("formatWeeklyEvents() = %v, want %v", got, tt.want)
+				t.Errorf("formatDailyEvents() = %v, want %v", got, tt.want)
 			}
 		})
 	}
