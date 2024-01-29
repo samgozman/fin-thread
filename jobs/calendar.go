@@ -39,16 +39,16 @@ func NewCalendarJob(
 	}
 }
 
-// RunWeeklyCalendarJob creates events plan for the upcoming week and publishes them to the channel.
-// It should be run once a week on Monday.
-func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
+// RunDailyCalendarJob creates events plan for the upcoming day and publishes them to the channel.
+// It should be run every business day.
+func (j *CalendarJob) RunDailyCalendarJob() JobFunc {
 	return func() {
 		_ = retry.Do(func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 			defer cancel()
-			j.logger.Info("[calendar] Running weekly plan")
+			j.logger.Info("[calendar] Running daily plan")
 
-			tx := sentry.StartTransaction(ctx, "RunWeeklyCalendarJob")
+			tx := sentry.StartTransaction(ctx, "RunDailyCalendarJob")
 			tx.Op = "job-calendar"
 
 			// Sentry performance monitoring
@@ -63,10 +63,9 @@ func (j *CalendarJob) RunWeeklyCalendarJob() JobFunc {
 				hub.Flush(2 * time.Second)
 			}()
 
-			// Create events plan for the upcoming week
-			// from should be always a Monday of the current week
-			from := time.Now().Truncate(24 * time.Hour).Add(-time.Duration(time.Now().Weekday()-time.Monday) * 24 * time.Hour)
-			to := from.Add(6 * 24 * time.Hour).Add(23 * time.Hour).Add(59 * time.Minute).Add(59 * time.Second)
+			// Create events plan for the current day
+			from := time.Now().Truncate(24 * time.Hour)
+			to := from.Add(23 * time.Hour).Add(59 * time.Minute).Add(59 * time.Second)
 			span := tx.StartChild("EconomicCalendar.Fetch")
 			events, err := j.calendarScavenger.Fetch(ctx, from, to)
 			span.Finish()

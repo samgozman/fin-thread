@@ -146,8 +146,8 @@ func (a *App) start() {
 	)
 
 	_, err = s.NewJob(
-		gocron.CronJob("0 6 * * 1", false), // every Monday at 6:00
-		gocron.NewTask(calJob.RunWeeklyCalendarJob()),
+		gocron.CronJob("0 4 * * 1-5", false), // every weekday at 4:00 UTC
+		gocron.NewTask(calJob.RunDailyCalendarJob()),
 		gocron.WithName("scheduler for Calendar"),
 	)
 	if err != nil {
