@@ -93,6 +93,7 @@ func (a *App) start() {
 		scope.SetLevel(sentry.LevelFatal)
 	})
 	defer hub.Flush(2 * time.Second)
+	defer hub.Recover(nil)
 
 	s, err := gocron.NewScheduler()
 	if err != nil {

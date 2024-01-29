@@ -58,10 +58,9 @@ func (j *CalendarJob) RunDailyCalendarJob() JobFunc {
 				ctx = sentry.SetHubOnContext(ctx, hub)
 			}
 
-			defer func() {
-				tx.Finish()
-				hub.Flush(2 * time.Second)
-			}()
+			defer tx.Finish()
+			defer hub.Flush(2 * time.Second)
+			defer hub.Recover(nil)
 
 			// Create events plan for the current day
 			from := time.Now().Truncate(24 * time.Hour)
@@ -150,10 +149,9 @@ func (j *CalendarJob) RunCalendarUpdatesJob() JobFunc {
 			ctx = sentry.SetHubOnContext(ctx, hub)
 		}
 
-		defer func() {
-			tx.Finish()
-			hub.Flush(2 * time.Second)
-		}()
+		defer tx.Finish()
+		defer hub.Flush(2 * time.Second)
+		defer hub.Recover(nil)
 
 		// Fetch eventsDB for today from the database
 		span := tx.StartChild("Archivist.FindRecentEventsWithoutValue")

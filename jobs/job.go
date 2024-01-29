@@ -143,10 +143,9 @@ func (job *Job) Run() JobFunc {
 			ctx = sentry.SetHubOnContext(ctx, hub)
 		}
 
-		defer func() {
-			tx.Finish()
-			hub.Flush(2 * time.Second)
-		}()
+		defer tx.Finish()
+		defer hub.Flush(2 * time.Second)
+		defer hub.Recover(nil)
 
 		// Note: all functions are wrapped with sentry.Span for performance monitoring.
 		// Placing them in separate functions for better readability (experimental).

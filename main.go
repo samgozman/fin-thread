@@ -43,6 +43,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer sentry.Flush(2 * time.Second)
+	defer sentry.Recover()
 
 	cnf, err := NewConfig(&env)
 	if err != nil {
