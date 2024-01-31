@@ -122,6 +122,12 @@ func DefaultConfig() *Config {
 			"some analysts",
 			"one expert",
 			"some experts",
+			"husband",
+			"wife",
+			"spouse",
+			"marriage",
+			"divorce",
+			"woke",
 		},
 	}
 }
