@@ -115,6 +115,18 @@ func (n NewsList) ToContentJSON() (string, error) {
 	return string(jsonData), nil
 }
 
+// RemoveFlagged returns a new NewsList without the flagged (IsFiltered, IsSuspicious) news.
+func (n NewsList) RemoveFlagged() NewsList {
+	var news NewsList
+	for _, n := range n {
+		if !n.IsFiltered && !n.IsSuspicious {
+			news = append(news, n)
+		}
+	}
+
+	return news
+}
+
 // filterByKeywords returns only a list of news that contains at least one of the keywords.
 func (n NewsList) filterByKeywords(keywords []string) NewsList {
 	var filteredNews NewsList

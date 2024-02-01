@@ -41,6 +41,8 @@ func TestComposer_Compose(t *testing.T) {
 			Link:         "https://www.cnbc.com/",
 			Date:         time.Now().UTC(),
 			ProviderName: "cnbc",
+			IsSuspicious: true,
+			IsFiltered:   false,
 		},
 		{
 			ID:           "2",
@@ -49,6 +51,8 @@ func TestComposer_Compose(t *testing.T) {
 			Link:         "https://www.cnbc.com/",
 			Date:         time.Now().UTC(),
 			ProviderName: "cnbc",
+			IsSuspicious: false,
+			IsFiltered:   false,
 		},
 		{
 			ID:           "3",
@@ -57,6 +61,8 @@ func TestComposer_Compose(t *testing.T) {
 			Link:         "https://www.cnbc.com/",
 			Date:         time.Now().UTC(),
 			ProviderName: "cnbc",
+			IsSuspicious: false,
+			IsFiltered:   false,
 		},
 	}
 
@@ -128,7 +134,7 @@ func TestComposer_Compose(t *testing.T) {
 			mockError := errors.New("some error")
 			mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(openai.ChatCompletionResponse{}, mockError)
 		} else {
-			jsonNews, _ := tt.expectedFilteredNews.ToContentJSON()
+			jsonNews, _ := tt.expectedFilteredNews.RemoveFlagged().ToContentJSON()
 
 			// Break the JSON to test the fix for OpenAI frequent bug (with extra closing bracket and some other stuff)
 			wantNewsJSON, _ := json.MarshalIndent(tt.want, "", "  ")
@@ -325,6 +331,7 @@ func TestComposer_Filter(t *testing.T) {
 						Date:         time.Now().UTC(),
 						ProviderName: "cnbc",
 						IsFiltered:   false,
+						IsSuspicious: true,
 					},
 					{
 						ID:           "2",
@@ -334,6 +341,7 @@ func TestComposer_Filter(t *testing.T) {
 						Date:         time.Now().UTC(),
 						ProviderName: "cnbc",
 						IsFiltered:   false,
+						IsSuspicious: false,
 					},
 					{
 						ID:           "3",
@@ -343,6 +351,7 @@ func TestComposer_Filter(t *testing.T) {
 						Date:         time.Now().UTC(),
 						ProviderName: "cnbc",
 						IsFiltered:   false,
+						IsSuspicious: false,
 					},
 				},
 			},
@@ -355,6 +364,7 @@ func TestComposer_Filter(t *testing.T) {
 					Date:         time.Now().UTC(),
 					ProviderName: "cnbc",
 					IsFiltered:   false,
+					IsSuspicious: true,
 				},
 				{
 					ID:           "2",
@@ -364,6 +374,7 @@ func TestComposer_Filter(t *testing.T) {
 					Date:         time.Now().UTC(),
 					ProviderName: "cnbc",
 					IsFiltered:   true,
+					IsSuspicious: false,
 				},
 				{
 					ID:           "3",
@@ -373,6 +384,7 @@ func TestComposer_Filter(t *testing.T) {
 					Date:         time.Now().UTC(),
 					ProviderName: "cnbc",
 					IsFiltered:   false,
+					IsSuspicious: false,
 				},
 			},
 			wantErr: false,
@@ -388,8 +400,8 @@ func TestComposer_Filter(t *testing.T) {
 				mockError := errors.New("some error")
 				mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(&TogetherAIResponse{}, mockError)
 			} else {
-				jsonNews, _ := tt.args.news.ToContentJSON()
-				expectedJSONNews, _ := tt.want.ToContentJSON()
+				jsonNews, _ := tt.args.news.RemoveFlagged().ToContentJSON()
+				expectedJSONNews, _ := tt.want.RemoveFlagged().ToContentJSON()
 
 				mockClient.On("CreateChatCompletion",
 					mock.Anything,

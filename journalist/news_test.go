@@ -387,3 +387,48 @@ func TestNewsList_ToContentJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestNewsList_RemoveFlagged(t *testing.T) {
+	tests := []struct {
+		name string
+		n    NewsList
+		want NewsList
+	}{
+		{
+			name: "remove flagged",
+			n: NewsList{
+				{
+					ID:          "id1",
+					Title:       "Some news about United States",
+					Description: "Read more about United States",
+					IsFiltered:  true,
+				},
+				{
+					ID:           "id2",
+					Title:        "Some news about kek",
+					Description:  "Read more about kek",
+					IsSuspicious: true,
+				},
+				{
+					ID:          "id3",
+					Title:       "Some news about something",
+					Description: "Read more about something",
+				},
+			},
+			want: NewsList{
+				{
+					ID:          "id3",
+					Title:       "Some news about something",
+					Description: "Read more about something",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.n.RemoveFlagged(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("RemoveFlagged() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
