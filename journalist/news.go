@@ -22,6 +22,7 @@ type News struct {
 	Date         time.Time // Date is the date of the news
 	ProviderName string    // ProviderName is the Name of the provider that fetched the news
 	IsSuspicious bool      // IsSuspicious is true if the news contains keywords that should be checked by human before publishing
+	IsFiltered   bool      // IsFiltered is true if the news was filtered by others service (e.g. Composer.Filter)
 	// TODO: Add creator field if possible
 }
 
@@ -61,6 +62,7 @@ func newNews(title, description, link, date, provider string) (*News, error) {
 		Link:         link,
 		Date:         dateTime,
 		ProviderName: provider,
+		IsFiltered:   false,
 	}, nil
 }
 

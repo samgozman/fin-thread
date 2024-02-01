@@ -264,27 +264,18 @@ func TestNewsList_FlagByKeywords(t *testing.T) {
 }
 
 func TestNews_Contains(t *testing.T) {
-	type fields struct {
-		ID           string
-		Title        string
-		Description  string
-		Link         string
-		Date         time.Time
-		ProviderName string
-		IsSuspicious bool
-	}
 	type args struct {
 		keywords []string
 	}
 	tests := []struct {
 		name   string
-		fields fields
+		fields News
 		args   args
 		want   bool
 	}{
 		{
 			name: "contains one keyword",
-			fields: fields{
+			fields: News{
 				Title:       "Some news about United States",
 				Description: "Read more about United States",
 			},
@@ -295,7 +286,7 @@ func TestNews_Contains(t *testing.T) {
 		},
 		{
 			name: "contains none",
-			fields: fields{
+			fields: News{
 				Title:       "Some news about United States",
 				Description: "Read more about United States",
 			},
@@ -306,7 +297,7 @@ func TestNews_Contains(t *testing.T) {
 		},
 		{
 			name: "contains none full words",
-			fields: fields{
+			fields: News{
 				Title:       "Some news about United States",
 				Description: "Read more about United States",
 			},
@@ -317,7 +308,7 @@ func TestNews_Contains(t *testing.T) {
 		},
 		{
 			name: "contains pronoun",
-			fields: fields{
+			fields: News{
 				Title:       "'I'm not a cat': Lawyer struggles with Zoom kitten filter during court case",
 				Description: "A lawyer in Texas has gone viral after accidentally appearing in court as a cat.",
 			},
@@ -328,7 +319,7 @@ func TestNews_Contains(t *testing.T) {
 		},
 		{
 			name: "contains symbol",
-			fields: fields{
+			fields: News{
 				Title:       "Some news about United States or not?",
 				Description: "Read more about United States",
 			},
@@ -373,7 +364,7 @@ func TestNewsList_ToJSON(t *testing.T) {
 					IsSuspicious: true,
 				},
 			},
-			want:    `[{"ID":"id1","Title":"Some news about United States","Description":"Read more about United States","Link":"","Date":"0001-01-01T00:00:00Z","ProviderName":"","IsSuspicious":false},{"ID":"id2","Title":"Some news about kek","Description":"Read more about kek","Link":"","Date":"0001-01-01T00:00:00Z","ProviderName":"","IsSuspicious":true}]`,
+			want:    `[{"ID":"id1","Title":"Some news about United States","Description":"Read more about United States","Link":"","Date":"0001-01-01T00:00:00Z","ProviderName":"","IsSuspicious":false,"IsFiltered":false},{"ID":"id2","Title":"Some news about kek","Description":"Read more about kek","Link":"","Date":"0001-01-01T00:00:00Z","ProviderName":"","IsSuspicious":true,"IsFiltered":false}]`,
 			wantErr: false,
 		},
 		{
