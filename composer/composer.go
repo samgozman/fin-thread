@@ -48,7 +48,8 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 	}
 
 	// Convert news to JSON
-	jsonNews, err := todayNews.ToContentJSON()
+	preFilteredNews := todayNews.RemoveFlagged()
+	jsonNews, err := preFilteredNews.ToContentJSON()
 	if err != nil {
 		return nil, newError(err, errlvl.ERROR, "Compose", "NewsList.ToContentJSON")
 	}
@@ -165,13 +166,15 @@ func (c *Composer) Summarise(ctx context.Context, headlines []*Headline, headlin
 	return h, nil
 }
 
-// Filter removes unnecessary news from the given news list using TogetherAI API.
+// Filter removes unnecessary news from the given news list using TogetherAI API
+// and returns the same news list with IsFiltered flag set to true for filtered out news.
 func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journalist.NewsList, error) {
 	if len(news) == 0 {
 		return nil, nil
 	}
 
-	jsonNews, err := news.ToContentJSON()
+	preFilteredNews := news.RemoveFlagged()
+	jsonNews, err := preFilteredNews.ToContentJSON()
 	if err != nil {
 		return nil, newError(err, errlvl.ERROR, "Filter", "ToContentJSON").WithValue(fmt.Sprintf("%+v", news))
 	}
@@ -198,24 +201,35 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 		return nil, newError(err, errlvl.ERROR, "Filter", "aiJSONStringFixer")
 	}
 
-	var filteredAi journalist.NewsList
-	err = json.Unmarshal([]byte(matches), &filteredAi)
+	var chosenByAi journalist.NewsList
+	err = json.Unmarshal([]byte(matches), &chosenByAi)
 	if err != nil {
 		return nil, newError(err, errlvl.ERROR, "Filter", "json.Unmarshal").WithValue(resp.Choices[0].Text)
 	}
 
-	// Map AI response back to the original news list
-	var filtered journalist.NewsList
+	// Create a map of chosenByAi news IDs to quickly find them
+	chosenMap := make(map[string]*journalist.News)
+	for _, n := range chosenByAi {
+		chosenMap[n.ID] = n
+	}
+
+	preFilteredMap := make(map[string]*journalist.News)
+	for _, n := range preFilteredNews {
+		preFilteredMap[n.ID] = n
+	}
+
+	// Add IsFiltered flag to the original news list if it is NOT chosen by AI (filtered out)
 	for _, n := range news {
-		for _, ai := range filteredAi {
-			if n.ID == ai.ID {
-				filtered = append(filtered, n)
-				break
-			}
+		_, isChosen := chosenMap[n.ID]
+		_, isPreFiltered := preFilteredMap[n.ID]
+
+		// Mark news as filtered only if it wasn't removed by pre-filtering before
+		if !isChosen && isPreFiltered {
+			n.IsFiltered = true
 		}
 	}
 
-	return filtered, nil
+	return news, nil
 }
 
 // Headline is the base data structure for the data to summarise.

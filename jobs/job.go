@@ -442,6 +442,7 @@ func (job *Job) saveNews(
 			OriginalDate:  n.Date,
 			URL:           n.Link,
 			IsSuspicious:  n.IsSuspicious,
+			IsFiltered:    n.IsFiltered,
 		}
 
 		// Save composed text and meta if found in the map
@@ -478,6 +479,11 @@ NewsRange:
 	for _, n := range news {
 		// Skip suspicious news if needed
 		if n.IsSuspicious && job.options.omitSuspicious {
+			continue
+		}
+
+		// Skip filtered news
+		if n.IsFiltered {
 			continue
 		}
 

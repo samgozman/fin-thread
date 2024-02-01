@@ -22,6 +22,7 @@ type News struct {
 	Date         time.Time // Date is the date of the news
 	ProviderName string    // ProviderName is the Name of the provider that fetched the news
 	IsSuspicious bool      // IsSuspicious is true if the news contains keywords that should be checked by human before publishing
+	IsFiltered   bool      // IsFiltered is true if the news was filtered out by others service (e.g. Composer.Filter)
 	// TODO: Add creator field if possible
 }
 
@@ -61,10 +62,11 @@ func newNews(title, description, link, date, provider string) (*News, error) {
 		Link:         link,
 		Date:         dateTime,
 		ProviderName: provider,
+		IsFiltered:   false,
 	}, nil
 }
 
-func (n *News) Contains(keywords []string) bool {
+func (n *News) contains(keywords []string) bool {
 	symbolsMatcherRe := regexp.MustCompile("^[^a-zA-Z0-9]*$")
 
 	for _, k := range keywords {
@@ -88,15 +90,6 @@ func (n *News) Contains(keywords []string) bool {
 }
 
 type NewsList []*News
-
-// ToJSON returns the JSON of the news list.
-func (n NewsList) ToJSON() (string, error) {
-	jsonData, err := json.Marshal(n)
-	if err != nil {
-		return "", newError(errlvl.ERROR, errMarshalNewsList, err)
-	}
-	return string(jsonData), nil
-}
 
 // ToContentJSON returns the JSON of the news content only: id, title, description.
 func (n NewsList) ToContentJSON() (string, error) {
@@ -122,11 +115,23 @@ func (n NewsList) ToContentJSON() (string, error) {
 	return string(jsonData), nil
 }
 
+// RemoveFlagged returns a new NewsList without the flagged (IsFiltered, IsSuspicious) news.
+func (n NewsList) RemoveFlagged() NewsList {
+	var news NewsList
+	for _, n := range n {
+		if !n.IsFiltered && !n.IsSuspicious {
+			news = append(news, n)
+		}
+	}
+
+	return news
+}
+
 // filterByKeywords returns only a list of news that contains at least one of the keywords.
 func (n NewsList) filterByKeywords(keywords []string) NewsList {
 	var filteredNews NewsList
 	for _, n := range n {
-		if n.Contains(keywords) {
+		if n.contains(keywords) {
 			filteredNews = append(filteredNews, n)
 		}
 	}
@@ -137,7 +142,7 @@ func (n NewsList) filterByKeywords(keywords []string) NewsList {
 // flagByKeywords sets IsSuspicious to true if the news contains at least one of the keywords.
 func (n NewsList) flagByKeywords(keywords []string) {
 	for _, news := range n {
-		if news.Contains(keywords) {
+		if news.contains(keywords) {
 			news.IsSuspicious = true
 		}
 	}

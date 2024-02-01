@@ -8,7 +8,6 @@ import (
 
 var (
 	errFetchingNews       = errors.New("failed to fetch news")
-	errMarshalNewsList    = errors.New("failed to marshal NewsList")
 	errMarshalSimpleNews  = errors.New("failed to marshal simpleNews")
 	errPanicGetLatestNews = errors.New("panic in Journalist.GetLatestNews")
 	errPanicUnknown       = errors.New("unknown panic")

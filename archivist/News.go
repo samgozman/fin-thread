@@ -33,6 +33,7 @@ type News struct {
 	ComposedText  string         `gorm:"size:512" json:"composed_text"`             // Composed text
 	MetaData      datatypes.JSON `gorm:"" json:"meta_data"`                         // Meta data (tickers, markets, hashtags, etc.)
 	IsSuspicious  bool           `gorm:"default:false" json:"is_suspicious"`        // Is the news suspicious (contains keywords that should be checked by human before publishing)
+	IsFiltered    bool           `gorm:"default:false" json:"is_filtered"`          // Is the news filtered out by others service (e.g. Composer.Filter)
 	PublishedAt   time.Time      `gorm:"default:null" json:"published_at"`          // Composed News publication date
 	OriginalDate  time.Time      `gorm:"not null" json:"original_date"`             // Original News date
 	CreatedAt     time.Time      `gorm:"default:CURRENT_TIMESTAMP" json:"created_at,omitempty"`
