@@ -66,7 +66,7 @@ func newNews(title, description, link, date, provider string) (*News, error) {
 	}, nil
 }
 
-func (n *News) Contains(keywords []string) bool {
+func (n *News) contains(keywords []string) bool {
 	symbolsMatcherRe := regexp.MustCompile("^[^a-zA-Z0-9]*$")
 
 	for _, k := range keywords {
@@ -128,7 +128,7 @@ func (n NewsList) ToContentJSON() (string, error) {
 func (n NewsList) filterByKeywords(keywords []string) NewsList {
 	var filteredNews NewsList
 	for _, n := range n {
-		if n.Contains(keywords) {
+		if n.contains(keywords) {
 			filteredNews = append(filteredNews, n)
 		}
 	}
@@ -139,7 +139,7 @@ func (n NewsList) filterByKeywords(keywords []string) NewsList {
 // flagByKeywords sets IsSuspicious to true if the news contains at least one of the keywords.
 func (n NewsList) flagByKeywords(keywords []string) {
 	for _, news := range n {
-		if news.Contains(keywords) {
+		if news.contains(keywords) {
 			news.IsSuspicious = true
 		}
 	}

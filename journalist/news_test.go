@@ -263,7 +263,7 @@ func TestNewsList_FlagByKeywords(t *testing.T) {
 	}
 }
 
-func TestNews_Contains(t *testing.T) {
+func TestNews_contains(t *testing.T) {
 	type args struct {
 		keywords []string
 	}
@@ -335,8 +335,8 @@ func TestNews_Contains(t *testing.T) {
 				Title:       tt.fields.Title,
 				Description: tt.fields.Description,
 			}
-			if got := n.Contains(tt.args.keywords); got != tt.want {
-				t.Errorf("Contains() = %v, want %v", got, tt.want)
+			if got := n.contains(tt.args.keywords); got != tt.want {
+				t.Errorf("contains() = %v, want %v", got, tt.want)
 			}
 		})
 	}
