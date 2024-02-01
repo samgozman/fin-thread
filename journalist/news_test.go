@@ -342,52 +342,6 @@ func TestNews_contains(t *testing.T) {
 	}
 }
 
-func TestNewsList_ToJSON(t *testing.T) {
-	tests := []struct {
-		name    string
-		n       NewsList
-		want    string
-		wantErr bool
-	}{
-		{
-			name: "valid news list",
-			n: NewsList{
-				{
-					ID:          "id1",
-					Title:       "Some news about United States",
-					Description: "Read more about United States",
-				},
-				{
-					ID:           "id2",
-					Title:        "Some news about kek",
-					Description:  "Read more about kek",
-					IsSuspicious: true,
-				},
-			},
-			want:    `[{"ID":"id1","Title":"Some news about United States","Description":"Read more about United States","Link":"","Date":"0001-01-01T00:00:00Z","ProviderName":"","IsSuspicious":false,"IsFiltered":false},{"ID":"id2","Title":"Some news about kek","Description":"Read more about kek","Link":"","Date":"0001-01-01T00:00:00Z","ProviderName":"","IsSuspicious":true,"IsFiltered":false}]`,
-			wantErr: false,
-		},
-		{
-			name:    "empty news list",
-			n:       NewsList{},
-			want:    `[]`,
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.n.ToJSON()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ToJSON() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("ToJSON() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestNewsList_ToContentJSON(t *testing.T) {
 	tests := []struct {
 		name    string

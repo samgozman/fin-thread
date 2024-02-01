@@ -91,15 +91,6 @@ func (n *News) contains(keywords []string) bool {
 
 type NewsList []*News
 
-// ToJSON returns the JSON of the news list.
-func (n NewsList) ToJSON() (string, error) {
-	jsonData, err := json.Marshal(n)
-	if err != nil {
-		return "", newError(errlvl.ERROR, errMarshalNewsList, err)
-	}
-	return string(jsonData), nil
-}
-
 // ToContentJSON returns the JSON of the news content only: id, title, description.
 func (n NewsList) ToContentJSON() (string, error) {
 	type simpleNews struct {
