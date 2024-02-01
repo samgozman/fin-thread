@@ -324,6 +324,7 @@ func TestComposer_Filter(t *testing.T) {
 						Link:         "https://www.cnbc.com/",
 						Date:         time.Now().UTC(),
 						ProviderName: "cnbc",
+						IsFiltered:   false,
 					},
 					{
 						ID:           "2",
@@ -332,6 +333,7 @@ func TestComposer_Filter(t *testing.T) {
 						Link:         "https://www.cnbc.com/",
 						Date:         time.Now().UTC(),
 						ProviderName: "cnbc",
+						IsFiltered:   false,
 					},
 					{
 						ID:           "3",
@@ -340,6 +342,7 @@ func TestComposer_Filter(t *testing.T) {
 						Link:         "https://www.cnbc.com/",
 						Date:         time.Now().UTC(),
 						ProviderName: "cnbc",
+						IsFiltered:   false,
 					},
 				},
 			},
@@ -351,6 +354,16 @@ func TestComposer_Filter(t *testing.T) {
 					Link:         "https://www.cnbc.com/",
 					Date:         time.Now().UTC(),
 					ProviderName: "cnbc",
+					IsFiltered:   false,
+				},
+				{
+					ID:           "2",
+					Title:        "The market thinks the Fed is going to start cutting rates aggressively. Investors could be in for a letdown",
+					Description:  "Markets may be at least a tad optimistic, particularly considering the cautious approach central bank officials have taken.",
+					Link:         "https://www.cnbc.com/",
+					Date:         time.Now().UTC(),
+					ProviderName: "cnbc",
+					IsFiltered:   true,
 				},
 				{
 					ID:           "3",
@@ -359,6 +372,7 @@ func TestComposer_Filter(t *testing.T) {
 					Link:         "https://www.cnbc.com/",
 					Date:         time.Now().UTC(),
 					ProviderName: "cnbc",
+					IsFiltered:   false,
 				},
 			},
 			wantErr: false,
