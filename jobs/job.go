@@ -482,6 +482,11 @@ NewsRange:
 			continue
 		}
 
+		// Skip filtered news
+		if n.IsFiltered {
+			continue
+		}
+
 		// TODO: Change Unmarshal with find method among ComposedNews
 		var meta composer.ComposedMeta
 		err := json.Unmarshal(n.MetaData, &meta)

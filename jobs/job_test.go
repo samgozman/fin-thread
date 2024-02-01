@@ -265,6 +265,38 @@ func TestJob_prepublishFilter(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
+		{
+			name: "Omit filtered news",
+			fields: fields{
+				stocks:  nil,
+				options: &jobOptions{},
+			},
+			args: args{
+				news: []*archivist.News{
+					{
+						ID:           uuid.New(),
+						ComposedText: "Some AAPL news about AAPL stock.",
+						MetaData:     d1,
+						IsFiltered:   true,
+					},
+					{
+						ID:           okID,
+						ComposedText: "Some other AAPL news.",
+						MetaData:     d1,
+						IsFiltered:   false,
+					},
+				},
+			},
+			want: []*archivist.News{
+				{
+					ID:           okID,
+					ComposedText: "Some other AAPL news.",
+					MetaData:     d1,
+					IsFiltered:   false,
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
