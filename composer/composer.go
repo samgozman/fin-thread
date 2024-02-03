@@ -193,6 +193,14 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 		return nil, newError(err, errlvl.WARN, "Filter", "GoogleGeminiClient.CreateChatCompletion")
 	}
 
+	if len(resp.Candidates) == 0 {
+		return nil, newError(fmt.Errorf("empty response %v", resp.Candidates), errlvl.WARN, "Filter", "GoogleGeminiClient.CreateChatCompletion")
+	}
+
+	if len(resp.Candidates[0].Content.Parts) == 0 {
+		return nil, newError(fmt.Errorf("empty response %s", resp.Candidates[0].Content), errlvl.WARN, "Filter", "GoogleGeminiClient.CreateChatCompletion")
+	}
+
 	matches, err := aiJSONStringFixer(
 		fmt.Sprintf("%s", resp.Candidates[0].Content.Parts[0]),
 	)
