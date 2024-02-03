@@ -166,7 +166,7 @@ func (c *Composer) Summarise(ctx context.Context, headlines []*Headline, headlin
 	return h, nil
 }
 
-// Filter removes unnecessary news from the given news list using GoogleGemini API
+// Filter removes unnecessary news from the given news list using TogetherAI API
 // and returns the same news list with IsFiltered flag set to true for filtered out news.
 func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journalist.NewsList, error) {
 	if len(news) == 0 {
@@ -179,23 +179,24 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 		return nil, newError(err, errlvl.ERROR, "Filter", "ToContentJSON").WithValue(fmt.Sprintf("%+v", news))
 	}
 
-	resp, err := c.GoogleGeminiClient.CreateChatCompletion(
+	resp, err := c.TogetherAIClient.CreateChatCompletion(
 		ctx,
-		GoogleGeminiRequest{
-			Prompt:      c.Config.FilterPromptInstruct(jsonNews),
-			MaxTokens:   2048,
-			Temperature: 0.9,
-			TopP:        1,
-			TopK:        1,
+		togetherAIRequest{
+			Model:             "mistralai/Mixtral-8x7B-Instruct-v0.1",
+			Prompt:            c.Config.FilterPromptInstruct(jsonNews),
+			MaxTokens:         2048,
+			Temperature:       0.7,
+			TopP:              0.7,
+			TopK:              50,
+			RepetitionPenalty: 1,
+			Stop:              []string{"[/INST]", "</s>"},
 		},
 	)
 	if err != nil {
-		return nil, newError(err, errlvl.WARN, "Filter", "GoogleGeminiClient.CreateChatCompletion")
+		return nil, newError(err, errlvl.WARN, "Filter", "TogetherAIClient.CreateChatCompletion")
 	}
 
-	matches, err := aiJSONStringFixer(
-		fmt.Sprintf("%s", resp.Candidates[0].Content.Parts[0]),
-	)
+	matches, err := aiJSONStringFixer(resp.Choices[0].Text)
 	if err != nil {
 		return nil, newError(err, errlvl.ERROR, "Filter", "aiJSONStringFixer")
 	}
@@ -203,7 +204,7 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 	var chosenByAi journalist.NewsList
 	err = json.Unmarshal([]byte(matches), &chosenByAi)
 	if err != nil {
-		return nil, newError(err, errlvl.ERROR, "Filter", "json.Unmarshal").WithValue(matches)
+		return nil, newError(err, errlvl.ERROR, "Filter", "json.Unmarshal").WithValue(resp.Choices[0].Text)
 	}
 
 	// Create a map of chosenByAi news IDs to quickly find them

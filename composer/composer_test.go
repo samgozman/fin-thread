@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/generative-ai-go/genai"
 	"github.com/sashabaranov/go-openai"
 	"reflect"
 	"testing"
@@ -31,15 +30,6 @@ type MockTogetherAIClient struct {
 func (m *MockTogetherAIClient) CreateChatCompletion(ctx context.Context, options togetherAIRequest) (*TogetherAIResponse, error) {
 	args := m.Called(ctx, options)
 	return args.Get(0).(*TogetherAIResponse), args.Error(1) //nolint:wrapcheck
-}
-
-type MockGoogleGeminiClient struct {
-	mock.Mock
-}
-
-func (m *MockGoogleGeminiClient) CreateChatCompletion(ctx context.Context, req GoogleGeminiRequest) (*genai.GenerateContentResponse, error) {
-	args := m.Called(ctx, req)
-	return args.Get(0).(*genai.GenerateContentResponse), args.Error(1)
 }
 
 func TestComposer_Compose(t *testing.T) {
@@ -402,7 +392,7 @@ func TestComposer_Filter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClient := new(MockGoogleGeminiClient)
+			mockClient := new(MockTogetherAIClient)
 			defConf := defaultPromptConfig()
 
 			// Set expectations for the mock client
@@ -415,29 +405,30 @@ func TestComposer_Filter(t *testing.T) {
 
 				mockClient.On("CreateChatCompletion",
 					mock.Anything,
-					GoogleGeminiRequest{
-						Prompt:      defConf.FilterPromptInstruct(jsonNews),
-						MaxTokens:   2048,
-						Temperature: 0.9,
-						TopP:        1,
-						TopK:        1,
+					togetherAIRequest{
+						Model:             "mistralai/Mixtral-8x7B-Instruct-v0.1",
+						Prompt:            defConf.FilterPromptInstruct(jsonNews),
+						MaxTokens:         2048,
+						Temperature:       0.7,
+						TopP:              0.7,
+						TopK:              50,
+						RepetitionPenalty: 1,
+						Stop:              []string{"[/INST]", "</s>"},
 					},
-				).Return().Return(&genai.GenerateContentResponse{
-					Candidates: []*genai.Candidate{
+				).Return(&TogetherAIResponse{
+					Choices: []struct {
+						Text string `json:"text"`
+					}{
 						{
-							Content: &genai.Content{
-								Parts: []genai.Part{
-									genai.Text(expectedJSONNews),
-								},
-							},
+							Text: expectedJSONNews,
 						},
 					},
 				}, nil)
 			}
 
 			c := &Composer{
-				GoogleGeminiClient: mockClient,
-				Config:             defaultPromptConfig(),
+				TogetherAIClient: mockClient,
+				Config:           defaultPromptConfig(),
 			}
 			got, err := c.Filter(context.Background(), tt.args.news)
 			if (err != nil) != tt.wantErr {
