@@ -17,7 +17,7 @@ require (
 	github.com/sashabaranov/go-openai v1.19.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/sync v0.6.0
-	google.golang.org/api v0.159.0
+	google.golang.org/api v0.161.0
 	gorm.io/datatypes v1.2.0
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/gorm v1.25.6
