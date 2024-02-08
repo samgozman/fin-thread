@@ -20,6 +20,7 @@ import (
 
 // Job will be executed by the scheduler and will fetch, compose, publish and save news to the database.
 type Job struct {
+	name       string                       // name of the job
 	composer   *composer.Composer           // composer that will compose text for the article using OpenAI
 	publisher  *publisher.TelegramPublisher // publisher that will publish news to the channel
 	archivist  *archivist.Archivist         // archivist that will save news to the database
@@ -50,6 +51,7 @@ func NewJob(
 	stocks *stocks.StockMap,
 ) *Job {
 	return &Job{
+		name:       fmt.Sprintf("Run.%s", journalist.Name),
 		composer:   composer,
 		publisher:  publisher,
 		archivist:  archivist,
@@ -131,9 +133,7 @@ func (job *Job) Run() JobFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 		defer cancel()
 
-		jobName := fmt.Sprintf("Run.%s", job.journalist.Name)
-
-		tx := sentry.StartTransaction(ctx, fmt.Sprintf("Job.%s", jobName))
+		tx := sentry.StartTransaction(ctx, fmt.Sprintf("Job.%s", job.name))
 		tx.Op = "job"
 
 		// Sentry performance monitoring
@@ -147,199 +147,97 @@ func (job *Job) Run() JobFunc {
 		defer hub.Flush(2 * time.Second)
 		defer hub.Recover(nil)
 
-		// Note: all functions are wrapped with sentry.Span for performance monitoring.
-		// Placing them in separate functions for better readability (experimental).
-
-		getLatestNews := func() journalist.NewsList {
-			span := tx.StartChild("GetLatestNews")
-			news, err := job.journalist.GetLatestNews(ctx, job.options.until)
-			span.Finish()
-			if err != nil {
-				e := fmt.Errorf("[%s][GetLatestNews]: %w", jobName, err)
-				job.logger.Info(e.Error())
-				utils.CaptureSentryException("jobGetLatestNewsError", hub, e)
-			}
-
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "successful",
-				Message:  fmt.Sprintf("GetLatestNews returned %d news", len(news)),
-				Level:    sentry.LevelInfo,
-			}, nil)
-
-			return news
-		}
-		removeDuplicates := func(news journalist.NewsList) (journalist.NewsList, error) {
-			span := tx.StartChild("removeDuplicates")
-			news, err := job.removeDuplicates(ctx, news)
-			span.Finish()
-			if err != nil {
-				e := fmt.Errorf("[%s][removeDuplicates]: %w", jobName, err)
-				job.logger.Info(e.Error())
-				utils.CaptureSentryException("jobRemoveDuplicatesError", hub, e)
-				return nil, e
-			}
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "successful",
-				Message:  fmt.Sprintf("removeDuplicates returned %d news", len(news)),
-				Level:    sentry.LevelInfo,
-			}, nil)
-
-			return news, nil
-		}
-		filterByComposer := func(news journalist.NewsList) (journalist.NewsList, error) {
-			span := tx.StartChild("filter")
-			news, err := job.composer.Filter(ctx, news)
-			span.Finish()
-			if err != nil {
-				e := fmt.Errorf("[%s][Filter]: %w", jobName, err)
-				job.logger.Info(e.Error())
-				utils.CaptureSentryException("jobComposerFilterError", hub, e)
-				return nil, e
-			}
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "successful",
-				Message:  fmt.Sprintf("filter returned %d news", len(news)),
-				Level:    sentry.LevelInfo,
-			}, nil)
-
-			return news, nil
-		}
-		composeNews := func(news journalist.NewsList) ([]*composer.ComposedNews, error) {
-			span := tx.StartChild("composeNews")
-			composedNews, err := job.composeNews(ctx, news)
-			span.Finish()
-			if err != nil {
-				job.logger.Warn(fmt.Sprintf("[%s][composeNews]", jobName), "error", err)
-				utils.CaptureSentryException("jobComposeNewsError", hub, err)
-				return nil, err
-			}
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "successful",
-				Message:  fmt.Sprintf("composeNews returned %d news", len(composedNews)),
-				Level:    sentry.LevelInfo,
-			}, nil)
-
-			return composedNews, nil
-		}
-		saveNews := func(news journalist.NewsList, composedNews []*composer.ComposedNews) ([]*archivist.News, error) {
-			span := tx.StartChild("saveNews")
-			dbNews, err := job.saveNews(ctx, news, composedNews)
-			span.Finish()
-			if err != nil {
-				job.logger.Warn(fmt.Sprintf("[%s][saveNews]", jobName), "error", err)
-				utils.CaptureSentryException("jobSaveNewsError", hub, err)
-				return nil, err
-			}
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "successful",
-				Message:  fmt.Sprintf("saveNews returned %d news", len(dbNews)),
-				Level:    sentry.LevelInfo,
-			}, nil)
-
-			return dbNews, nil
-		}
-		prepublishFilter := func(dbNews []*archivist.News) ([]*archivist.News, error) {
-			span := tx.StartChild("prepublishFilter")
-			filteredNews, err := job.prepublishFilter(dbNews)
-			span.Finish()
-			if err != nil {
-				job.logger.Warn(fmt.Sprintf("[%s][prepublishFilter]", jobName), "error", err)
-				utils.CaptureSentryException("jobPrepublishFilterError", hub, err)
-				return nil, err
-			}
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "successful",
-				Message:  fmt.Sprintf("prepublishFilter returned %d news", len(filteredNews)),
-				Level:    sentry.LevelInfo,
-			}, nil)
-
-			return filteredNews, nil
-		}
-		publishNews := func(filteredNews []*archivist.News) ([]*archivist.News, error) {
-			span := tx.StartChild("publishNews")
-			publishedNews, err := job.publish(ctx, filteredNews)
-			span.Finish()
-			if err != nil {
-				job.logger.Warn(fmt.Sprintf("[%s][publishNews]", jobName), "error", err)
-				utils.CaptureSentryException("jobPublishError", hub, err)
-				return nil, err
-			}
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "successful",
-				Message:  fmt.Sprintf("publishNews returned %d news", len(publishedNews)),
-				Level:    sentry.LevelInfo,
-			}, nil)
-
-			return publishedNews, nil
-		}
-		updateNews := func(publishedNews []*archivist.News) error {
-			span := tx.StartChild("updateNews")
-			err := job.updateNews(ctx, publishedNews)
-			span.Finish()
-			if err != nil {
-				job.logger.Warn(fmt.Sprintf("[%s][updateNews]", jobName), "error", err)
-				utils.CaptureSentryException("jobUpdateNewsError", hub, err)
-				return err
-			}
-			hub.AddBreadcrumb(&sentry.Breadcrumb{
-				Category: "successful",
-				Message:  "updateNews finished",
-				Level:    sentry.LevelInfo,
-			}, nil)
-
-			return nil
-		}
-
-		news := getLatestNews()
-		if len(news) == 0 {
+		news, err := job.getLatestNews(ctx, tx, hub)
+		if len(news) == 0 || err != nil {
 			return
 		}
 
-		news, err := removeDuplicates(news)
+		news, err = job.removeDuplicates(ctx, tx, hub, news)
 		if err != nil || len(news) == 0 {
 			return
 		}
 
-		news, err = filterByComposer(news)
+		news, err = job.filterByComposer(ctx, tx, hub, news)
 		if err != nil || len(news) == 0 {
 			return
 		}
 
-		composedNews, err := composeNews(news)
+		composedNews, err := job.composeNews(ctx, tx, hub, news)
 		if err != nil || len(composedNews) == 0 {
 			return
 		}
 
-		dbNews, err := saveNews(news, composedNews)
+		dbNews, err := job.saveNews(ctx, tx, hub, news, composedNews)
 		if err != nil || len(dbNews) == 0 {
 			return
 		}
 
-		filteredNews, err := prepublishFilter(dbNews)
+		filteredNews, err := job.prepublishFilter(tx, hub, dbNews)
 		if err != nil || len(filteredNews) == 0 {
 			return
 		}
 
-		publishedNews, err := publishNews(filteredNews)
+		publishedNews, err := job.publish(tx, hub, filteredNews)
 		if err != nil || len(publishedNews) == 0 {
 			return
 		}
 
-		err = updateNews(publishedNews)
+		err = job.updateNews(ctx, tx, hub, publishedNews)
 		if err != nil {
 			return
 		}
 	}
 }
 
+func (job *Job) filterByComposer(
+	ctx context.Context,
+	tx *sentry.Span,
+	hub *sentry.Hub,
+	news journalist.NewsList,
+) (journalist.NewsList, error) {
+	span := tx.StartChild("filterByComposer.Filter")
+	news, err := job.composer.Filter(ctx, news)
+	span.Finish()
+	if err != nil {
+		e := fmt.Errorf("[%s][Filter]: %w", job.name, err)
+		job.logger.Info(e.Error())
+		utils.CaptureSentryException("jobComposerFilterError", hub, e)
+		return nil, e
+	}
+	hub.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: "successful",
+		Message:  fmt.Sprintf("filter returned %d news", len(news)),
+		Level:    sentry.LevelInfo,
+	}, nil)
+
+	return news, nil
+}
+
+func (job *Job) getLatestNews(ctx context.Context, tx *sentry.Span, hub *sentry.Hub) (journalist.NewsList, error) {
+	span := tx.StartChild("getLatestNews.GetLatestNews")
+	news, err := job.journalist.GetLatestNews(ctx, job.options.until)
+	span.Finish()
+	if err != nil {
+		e := fmt.Errorf("[%s][getLatestNews.GetLatestNews]: %w", job.name, err)
+		job.logger.Info(e.Error())
+		utils.CaptureSentryException("jobGetLatestNewsError", hub, e)
+		return nil, e
+	}
+
+	hub.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: "successful",
+		Message:  fmt.Sprintf("GetLatestNews returned %d news", len(news)),
+		Level:    sentry.LevelInfo,
+	}, nil)
+
+	return news, nil
+}
+
 // removeDuplicates removes duplicated news in place found in the DB.
-func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) (journalist.NewsList, error) {
+func (job *Job) removeDuplicates(ctx context.Context, tx *sentry.Span, hub *sentry.Hub, news journalist.NewsList) (journalist.NewsList, error) {
 	if !job.options.shouldRemoveClones || !job.options.shouldSaveToDB {
 		return nil, nil
 	}
-
-	txName := sentry.WithTransactionName("Job.removeDuplicates")
-	span := sentry.StartSpan(ctx, "FindAllByHashes", txName)
 
 	hashes := make([]string, len(news))
 	for i, n := range news {
@@ -347,22 +245,26 @@ func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) 
 	}
 
 	// TODO: Replace with ExistsByHashes
+	span := tx.StartChild("removeDuplicates.FindAllByHashes")
 	existsByHash, err := job.archivist.Entities.News.FindAllByHashes(ctx, hashes)
 	span.Finish()
 	if err != nil {
-		return nil, fmt.Errorf("[Job.removeDuplicates][News.FindAllByHashes]: %w", err)
+		e := fmt.Errorf("[%s][removeDuplicates.FindAllByHashes]: %w", job.name, err)
+		utils.CaptureSentryException("jobRemoveDuplicatesError", hub, e)
+		return nil, e
 	}
-
-	span = sentry.StartSpan(ctx, "FindAllByUrls", txName)
 
 	urls := make([]string, len(news))
 	for i, n := range news {
 		urls[i] = n.Link
 	}
 
+	span = tx.StartChild("removeDuplicates.FindAllByUrls")
 	existsByURL, err := job.archivist.Entities.News.FindAllByUrls(ctx, urls)
 	if err != nil {
-		return nil, fmt.Errorf("[Job.removeDuplicates][News.FindAllByUrls]: %w", err)
+		e := fmt.Errorf("[%s][removeDuplicates.FindAllByUrls]: %w", job.name, err)
+		utils.CaptureSentryException("jobRemoveDuplicatesError", hub, e)
+		return nil, e
 	}
 
 	span.Finish()
@@ -392,28 +294,44 @@ func (job *Job) removeDuplicates(ctx context.Context, news journalist.NewsList) 
 		result = append(result, n)
 	}
 
+	hub.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: "successful",
+		Message:  fmt.Sprintf("removeDuplicates returned %d news", len(news)),
+		Level:    sentry.LevelInfo,
+	}, nil)
+
 	return result, nil
 }
 
 // composeNews composes text for the article using OpenAI and finds meta.
-func (job *Job) composeNews(ctx context.Context, news journalist.NewsList) ([]*composer.ComposedNews, error) {
+func (job *Job) composeNews(ctx context.Context, tx *sentry.Span, hub *sentry.Hub, news journalist.NewsList) ([]*composer.ComposedNews, error) {
 	if !job.options.shouldComposeText {
 		return nil, nil
 	}
 
 	// TODO: Split openai jobs - 1: remove unnecessary news, 2: compose text
-	span := sentry.StartSpan(ctx, "Compose", sentry.WithTransactionName("Job.composeNews"))
+	span := tx.StartChild("composeNews.Compose")
 	composedNews, err := job.composer.Compose(ctx, news)
 	span.Finish()
 	if err != nil {
-		return nil, fmt.Errorf("[Job.composeNews][composer.Compose]: %w", err)
+		e := fmt.Errorf("[%s][composeNews.Compose]: %w", job.name, err)
+		utils.CaptureSentryException("jobComposeNewsError", hub, e)
+		return nil, e
 	}
+
+	hub.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: "successful",
+		Message:  fmt.Sprintf("composeNews returned %d news", len(composedNews)),
+		Level:    sentry.LevelInfo,
+	}, nil)
 
 	return composedNews, nil
 }
 
 func (job *Job) saveNews(
 	ctx context.Context,
+	tx *sentry.Span,
+	hub *sentry.Hub,
 	news journalist.NewsList,
 	composedNews []*composer.ComposedNews,
 ) ([]*archivist.News, error) {
@@ -461,19 +379,32 @@ func (job *Job) saveNews(
 		}
 	}
 
-	span := sentry.StartSpan(ctx, "News.Create", sentry.WithTransactionName("Job.saveNews"))
+	span := tx.StartChild("saveNews.News.Create")
 	err := job.archivist.Entities.News.Create(ctx, dbNews)
 	span.Finish()
 	if err != nil {
-		return nil, fmt.Errorf("[Job.saveNews][News.Create]: %w", err)
+		e := fmt.Errorf("[%s][saveNews.News.Create]: %w", job.name, err)
+		utils.CaptureSentryException("jobSaveNewsError", hub, e)
+		return nil, e
 	}
+
+	hub.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: "successful",
+		Message:  fmt.Sprintf("saveNews returned %d news", len(dbNews)),
+		Level:    sentry.LevelInfo,
+	}, nil)
 
 	return dbNews, nil
 }
 
 // prepublishFilter final filter before publishing which will use all options and gathered info from previous steps.
-func (job *Job) prepublishFilter(news []*archivist.News) ([]*archivist.News, error) {
+func (job *Job) prepublishFilter(
+	tx *sentry.Span,
+	hub *sentry.Hub,
+	news []*archivist.News,
+) ([]*archivist.News, error) {
 	filteredNews := make([]*archivist.News, 0, len(news))
+	span := tx.StartChild("prepublishFilter")
 
 NewsRange:
 	for _, n := range news {
@@ -491,7 +422,9 @@ NewsRange:
 		var meta composer.ComposedMeta
 		err := json.Unmarshal(n.MetaData, &meta)
 		if err != nil {
-			return nil, fmt.Errorf("[Job.publish][json.Unmarshal] meta: %w. Value: %v", err, n.MetaData)
+			e := fmt.Errorf("[Job.publish][json.Unmarshal] meta: %w. Value: %v", err, n.MetaData)
+			utils.CaptureSentryException("jobPrepublishFilterError", hub, e)
+			return nil, e
 		}
 
 		// Skip news with empty meta if needed
@@ -527,11 +460,23 @@ NewsRange:
 		filteredNews = append(filteredNews, n)
 	}
 
+	span.Finish()
+
+	hub.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: "successful",
+		Message:  fmt.Sprintf("prepublishFilter returned %d news", len(filteredNews)),
+		Level:    sentry.LevelInfo,
+	}, nil)
+
 	return filteredNews, nil
 }
 
 // publish publishes the news to the channel and updates dbNews with PublicationID and PublishedAt fields.
-func (job *Job) publish(ctx context.Context, news []*archivist.News) ([]*archivist.News, error) {
+func (job *Job) publish(
+	tx *sentry.Span,
+	hub *sentry.Hub,
+	news []*archivist.News,
+) ([]*archivist.News, error) {
 	updatedNews := make([]*archivist.News, 0, len(news))
 
 	for _, n := range news {
@@ -543,13 +488,15 @@ func (job *Job) publish(ctx context.Context, news []*archivist.News) ([]*archivi
 			formattedText = n.OriginalTitle + "\n" + n.OriginalDesc
 		}
 
-		span := sentry.StartSpan(ctx, "Publish", sentry.WithTransactionName("Job.publish"))
+		span := tx.StartChild("publish.Publish")
 		span.SetTag("news_hash", n.Hash)
 		id, err := job.publisher.Publish(formattedText)
 		span.Finish()
 
 		if err != nil {
-			return nil, fmt.Errorf("[Job.publish][publisher.Publish]: %w", err)
+			e := fmt.Errorf("[Job.publish][publisher.Publish]: %w", err)
+			utils.CaptureSentryException("jobPublishError", hub, e)
+			return nil, e
 		}
 
 		// Save publication data to the entity
@@ -559,25 +506,44 @@ func (job *Job) publish(ctx context.Context, news []*archivist.News) ([]*archivi
 		updatedNews = append(updatedNews, n)
 	}
 
+	hub.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: "successful",
+		Message:  fmt.Sprintf("publishNews returned %d news", len(updatedNews)),
+		Level:    sentry.LevelInfo,
+	}, nil)
+
 	return updatedNews, nil
 }
 
 // updateNews updates news in the database.
-func (job *Job) updateNews(ctx context.Context, dbNews []*archivist.News) error {
+func (job *Job) updateNews(
+	ctx context.Context,
+	tx *sentry.Span,
+	hub *sentry.Hub,
+	dbNews []*archivist.News,
+) error {
 	if !job.options.shouldSaveToDB {
 		return nil
 	}
 
 	for _, n := range dbNews {
 		// TODO: add update many method to archivist with transaction
-		span := sentry.StartSpan(ctx, "News.Update", sentry.WithTransactionName("Job.updateNews"))
+		span := tx.StartChild("updateNews.News.Update")
 		span.SetTag("news_hash", n.Hash)
 		err := job.archivist.Entities.News.Update(ctx, n)
 		span.Finish()
 		if err != nil {
-			return fmt.Errorf("[Job.updateNews][News.Update]: %w", err)
+			e := fmt.Errorf("[%s][updateNews.News.Update]: %w", job.name, err)
+			utils.CaptureSentryException("jobUpdateNewsError", hub, e)
+			return e
 		}
 	}
+
+	hub.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: "successful",
+		Message:  "updateNews finished",
+		Level:    sentry.LevelInfo,
+	}, nil)
 
 	return nil
 }

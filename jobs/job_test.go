@@ -1,7 +1,9 @@
 package jobs
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/samgozman/fin-thread/archivist"
 	"github.com/samgozman/fin-thread/composer"
@@ -304,7 +306,10 @@ func TestJob_prepublishFilter(t *testing.T) {
 				stocks:  tt.fields.stocks,
 				options: tt.fields.options,
 			}
-			got, err := job.prepublishFilter(tt.args.news)
+			tx := sentry.StartTransaction(context.Background(), "test")
+			hub := sentry.CurrentHub().Clone()
+
+			got, err := job.prepublishFilter(tx, hub, tt.args.news)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("prepublishFilter() error = %v, wantErr %v", err, tt.wantErr)
 				return
