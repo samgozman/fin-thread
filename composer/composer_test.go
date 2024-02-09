@@ -141,7 +141,7 @@ func TestComposer_Compose(t *testing.T) {
 			wantNewsJSON = []byte(fmt.Sprintf("```{%s}```", wantNewsJSON))
 
 			mockClient.On("CreateChatCompletion", mock.Anything, openai.ChatCompletionRequest{
-				Model: openai.GPT3Dot5Turbo1106,
+				Model: openai.GPT3Dot5Turbo0125,
 				Messages: []openai.ChatCompletionMessage{
 					{
 						Role:    openai.ChatMessageRoleSystem,
@@ -269,7 +269,7 @@ func TestComposer_Summarise(t *testing.T) {
 			wantHeadlines = []byte(fmt.Sprintf("```{%s}```", wantHeadlines))
 
 			mockClient.On("CreateChatCompletion", mock.Anything, openai.ChatCompletionRequest{
-				Model: openai.GPT3Dot5Turbo1106,
+				Model: openai.GPT3Dot5Turbo0125,
 				Messages: []openai.ChatCompletionMessage{
 					{
 						Role:    openai.ChatMessageRoleSystem,
