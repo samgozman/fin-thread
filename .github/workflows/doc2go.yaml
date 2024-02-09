@@ -40,7 +40,7 @@ jobs:
       - name: Generate API reference
         run: doc2go ./...
       - name: Upload pages
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
 
   publish:
     name: Publish website
