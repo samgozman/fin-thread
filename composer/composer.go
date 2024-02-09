@@ -130,7 +130,7 @@ func (c *Composer) Summarise(ctx context.Context, headlines []*Headline, headlin
 	resp, err := c.OpenAiClient.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT3Dot5Turbo1106,
+			Model: openai.GPT3Dot5Turbo0125,
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
