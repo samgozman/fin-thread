@@ -19,8 +19,8 @@ require (
 	golang.org/x/sync v0.6.0
 	google.golang.org/api v0.163.0
 	gorm.io/datatypes v1.2.0
-	gorm.io/driver/postgres v1.5.4
-	gorm.io/gorm v1.25.6
+	gorm.io/driver/postgres v1.5.6
+	gorm.io/gorm v1.25.7-0.20240204074919-46816ad31dde
 )
 
 require (
