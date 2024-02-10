@@ -6,7 +6,7 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o finfeed
 
-FROM gcr.io/distroless/static-debian11:latest
+FROM gcr.io/distroless/static-debian12:latest
 COPY --from=builder /app/finfeed /finfeed
 WORKDIR /app
 CMD ["/finfeed"]
