@@ -81,6 +81,10 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 		return nil, newError(err, errlvl.WARN, "Compose", "OpenAiClient.CreateChatCompletion")
 	}
 
+	if len(resp.Choices) == 0 {
+		return nil, newError(errors.New("empty response"), errlvl.WARN, "Compose", "OpenAiClient.CreateChatCompletion")
+	}
+
 	matches, err := aiJSONStringFixer(resp.Choices[0].Message.Content)
 	if err != nil {
 		return nil, newError(err, errlvl.ERROR, "Compose", "aiJSONStringFixer")
@@ -152,6 +156,10 @@ func (c *Composer) Summarise(ctx context.Context, headlines []*Headline, headlin
 		return nil, newError(err, errlvl.WARN, "Summarise", "OpenAiClient.CreateChatCompletion")
 	}
 
+	if len(resp.Choices) == 0 {
+		return nil, newError(errors.New("empty response"), errlvl.WARN, "Summarise", "OpenAiClient.CreateChatCompletion")
+	}
+
 	matches, err := aiJSONStringFixer(resp.Choices[0].Message.Content)
 	if err != nil {
 		return nil, newError(err, errlvl.ERROR, "Summarise", "aiJSONStringFixer")
@@ -194,6 +202,10 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 	)
 	if err != nil {
 		return nil, newError(err, errlvl.WARN, "Filter", "TogetherAIClient.CreateChatCompletion")
+	}
+
+	if len(resp.Choices) == 0 {
+		return nil, newError(errors.New("empty response"), errlvl.WARN, "Filter", "TogetherAIClient.CreateChatCompletion")
 	}
 
 	matches, err := aiJSONStringFixer(resp.Choices[0].Text)
