@@ -9,7 +9,7 @@ require (
 	github.com/go-co-op/gocron/v2 v2.2.4
 	github.com/go-playground/validator/v10 v10.18.0
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
-	github.com/google/generative-ai-go v0.7.0
+	github.com/google/generative-ai-go v0.10.0
 	github.com/google/uuid v1.6.0
 	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/mmcdole/gofeed v1.2.1
@@ -24,6 +24,7 @@ require (
 )
 
 require (
+	cloud.google.com/go v0.112.0 // indirect
 	cloud.google.com/go/ai v0.3.2 // indirect
 	cloud.google.com/go/compute v1.23.4 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
