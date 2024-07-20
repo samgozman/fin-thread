@@ -4,9 +4,9 @@ go 1.22.0
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
-	github.com/cenkalti/backoff/v4 v4.2.1
-	github.com/getsentry/sentry-go v0.27.0
-	github.com/go-co-op/gocron/v2 v2.2.4
+	github.com/cenkalti/backoff/v4 v4.3.0
+	github.com/getsentry/sentry-go v0.28.1
+	github.com/go-co-op/gocron/v2 v2.10.1
 	github.com/go-playground/validator/v10 v10.18.0
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/google/generative-ai-go v0.7.0
@@ -14,9 +14,9 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/mmcdole/gofeed v1.2.1
 	github.com/samber/lo v1.39.0
-	github.com/sashabaranov/go-openai v1.20.2
-	github.com/stretchr/testify v1.8.4
-	golang.org/x/sync v0.6.0
+	github.com/sashabaranov/go-openai v1.27.0
+	github.com/stretchr/testify v1.9.0
+	golang.org/x/sync v0.7.0
 	google.golang.org/api v0.163.0
 	gorm.io/datatypes v1.2.0
 	gorm.io/driver/postgres v1.5.4
@@ -60,7 +60,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
-	github.com/stretchr/objx v0.5.1 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.48.0 // indirect
@@ -69,10 +69,10 @@ require (
 	go.opentelemetry.io/otel/metric v1.23.1 // indirect
 	go.opentelemetry.io/otel/trace v1.23.1 // indirect
 	golang.org/x/crypto v0.19.0 // indirect
-	golang.org/x/exp v0.0.0-20240205201215-2c58cdc269a3 // indirect
+	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/oauth2 v0.17.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
