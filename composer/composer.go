@@ -58,7 +58,7 @@ func (c *Composer) Compose(ctx context.Context, news journalist.NewsList) ([]*Co
 	resp, err := c.OpenAiClient.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT3Dot5Turbo0125,
+			Model: openai.GPT4oMini,
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
@@ -134,7 +134,7 @@ func (c *Composer) Summarise(ctx context.Context, headlines []*Headline, headlin
 	resp, err := c.OpenAiClient.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT3Dot5Turbo0125,
+			Model: openai.GPT4oMini,
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
