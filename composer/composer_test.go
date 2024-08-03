@@ -23,15 +23,6 @@ func (m *MockOpenAiClient) CreateChatCompletion(ctx context.Context, req openai.
 	return args.Get(0).(openai.ChatCompletionResponse), args.Error(1) //nolint:wrapcheck
 }
 
-type MockTogetherAIClient struct {
-	mock.Mock
-}
-
-func (m *MockTogetherAIClient) CreateChatCompletion(ctx context.Context, options togetherAIRequest) (*TogetherAIResponse, error) {
-	args := m.Called(ctx, options)
-	return args.Get(0).(*TogetherAIResponse), args.Error(1) //nolint:wrapcheck
-}
-
 func TestComposer_Compose(t *testing.T) {
 	news := journalist.NewsList{
 		{
@@ -392,43 +383,49 @@ func TestComposer_Filter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClient := new(MockTogetherAIClient)
+			mockClient := new(MockOpenAiClient)
 			defConf := defaultPromptConfig()
 
 			// Set expectations for the mock client
 			if tt.wantErr {
 				mockError := errors.New("some error")
-				mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(&TogetherAIResponse{}, mockError)
+				mockClient.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(&openai.ChatCompletionResponse{}, mockError)
 			} else {
 				jsonNews, _ := tt.args.news.RemoveFlagged().ToContentJSON()
 				expectedJSONNews, _ := tt.want.RemoveFlagged().ToContentJSON()
 
-				mockClient.On("CreateChatCompletion",
-					mock.Anything,
-					togetherAIRequest{
-						Model:             "mistralai/Mixtral-8x7B-Instruct-v0.1",
-						Prompt:            defConf.FilterPromptInstruct(jsonNews),
-						MaxTokens:         2048,
-						Temperature:       0.7,
-						TopP:              0.7,
-						TopK:              50,
-						RepetitionPenalty: 1,
-						Stop:              []string{"[/INST]", "</s>"},
-					},
-				).Return(&TogetherAIResponse{
-					Choices: []struct {
-						Text string `json:"text"`
-					}{
+				mockClient.On("CreateChatCompletion", mock.Anything, openai.ChatCompletionRequest{
+					Model: openai.GPT4oMini,
+					Messages: []openai.ChatCompletionMessage{
 						{
-							Text: expectedJSONNews,
+							Role:    openai.ChatMessageRoleSystem,
+							Content: defConf.FilterPrompt(),
+						},
+						{
+							Role:    openai.ChatMessageRoleUser,
+							Content: jsonNews,
+						},
+					},
+					Temperature:      0.7,
+					MaxTokens:        2048,
+					TopP:             0.7,
+					FrequencyPenalty: 0,
+					PresencePenalty:  0,
+				},
+				).Return(openai.ChatCompletionResponse{
+					Choices: []openai.ChatCompletionChoice{
+						{
+							Message: openai.ChatCompletionMessage{
+								Content: expectedJSONNews,
+							},
 						},
 					},
 				}, nil)
 			}
 
 			c := &Composer{
-				TogetherAIClient: mockClient,
-				Config:           defaultPromptConfig(),
+				OpenAiClient: mockClient,
+				Config:       defaultPromptConfig(),
 			}
 			got, err := c.Filter(context.Background(), tt.args.news)
 			if (err != nil) != tt.wantErr {
