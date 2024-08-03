@@ -187,28 +187,37 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 		return nil, newError(err, errlvl.ERROR, "Filter", "ToContentJSON").WithValue(fmt.Sprintf("%+v", news))
 	}
 
-	resp, err := c.TogetherAIClient.CreateChatCompletion(
+	resp, err := c.OpenAiClient.CreateChatCompletion(
 		ctx,
-		togetherAIRequest{
-			Model:             "mistralai/Mixtral-8x7B-Instruct-v0.1",
-			Prompt:            c.Config.FilterPromptInstruct(jsonNews),
-			MaxTokens:         2048,
-			Temperature:       0.7,
-			TopP:              0.7,
-			TopK:              50,
-			RepetitionPenalty: 1,
-			Stop:              []string{"[/INST]", "</s>"},
+		openai.ChatCompletionRequest{
+			Model: openai.GPT4oMini,
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role:    openai.ChatMessageRoleSystem,
+					Content: c.Config.FilterPrompt(),
+				},
+				{
+					Role:    openai.ChatMessageRoleUser,
+					Content: jsonNews,
+				},
+			},
+			Temperature:      0.7,
+			MaxTokens:        2048,
+			TopP:             0.7,
+			FrequencyPenalty: 0,
+			PresencePenalty:  0,
 		},
 	)
+
 	if err != nil {
-		return nil, newError(err, errlvl.WARN, "Filter", "TogetherAIClient.CreateChatCompletion")
+		return nil, newError(err, errlvl.WARN, "Filter", "OpenAiClient.CreateChatCompletion")
 	}
 
 	if len(resp.Choices) == 0 {
-		return nil, newError(errors.New("empty response"), errlvl.WARN, "Filter", "TogetherAIClient.CreateChatCompletion")
+		return nil, newError(errors.New("empty response"), errlvl.WARN, "Filter", "OpenAiClient.CreateChatCompletion")
 	}
 
-	matches, err := aiJSONStringFixer(resp.Choices[0].Text)
+	matches, err := aiJSONStringFixer(resp.Choices[0].Message.Content)
 	if err != nil {
 		return nil, newError(err, errlvl.ERROR, "Filter", "aiJSONStringFixer")
 	}
@@ -216,7 +225,7 @@ func (c *Composer) Filter(ctx context.Context, news journalist.NewsList) (journa
 	var chosenByAi journalist.NewsList
 	err = json.Unmarshal([]byte(matches), &chosenByAi)
 	if err != nil {
-		return nil, newError(err, errlvl.ERROR, "Filter", "json.Unmarshal").WithValue(resp.Choices[0].Text)
+		return nil, newError(err, errlvl.ERROR, "Filter", "json.Unmarshal").WithValue(resp.Choices[0].Message.Content)
 	}
 
 	// Create a map of chosenByAi news IDs to quickly find them
